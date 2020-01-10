@@ -8,15 +8,18 @@
 // @brief ISP implementation
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <iostream>
+#include <math.h>
+#include <windows.h>
+#include <fstream> 
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/photo.hpp"
-#include <iostream>
-#include <math.h>
-#include <windows.h>
-#include <fstream> 
+
+#include "ImageSignalProcess.h"
 
 using namespace cv;
 using namespace std;
@@ -31,32 +34,32 @@ using namespace std;
 #define WIDTH 1920
 #define HEIGHT 1080
 
-void Mipidecode(unsigned char* src, int* dst);
-void BlackLevelCorrection(int* data, int BLValue, bool enable);
-void ReadChannels(int* data, int* B, int* G, int* R);
+ISPResult Mipidecode(unsigned char* src, int* dst);
+ISPResult BlackLevelCorrection(int* data, int BLValue, bool enable);
+ISPResult ReadChannels(int* data, int* B, int* G, int* R);
 void intDataSaveAsText(int* data, int height, int width, string TextPath);
 void CharDataSaveAsText(unsigned char* data, int height, int width, string TextPath);
-void Demosaic(int* data, int* B, int* G, int* R);
+ISPResult Demosaic(int* data, int* B, int* G, int* R);
 void FirstPixelInsertProcess(int* src, int* dst);
 void TwoGPixelInsertProcess(int* src, int* dst);
 void LastPixelInsertProcess(int* src, int* dst);
 void Compress10to8(int* src, unsigned char* dst);
 void setBMP(BYTE* data, Mat gamadst);
 void saveBMP(BYTE* data, string BMPPath);
-void GammaCorrection(int* B, int* G, int* R, bool enable);
-void GreenImbalanceCorrection(int* gdata, float GICweight, bool enable);
-void Whitebalance(int* B, int* G, int* R, float bgain, float ggain, float rgain, bool enable);
+ISPResult GammaCorrection(int* B, int* G, int* R, bool enable);
+ISPResult GreenImbalanceCorrection(int* gdata, float GICweight, bool enable);
+ISPResult Whitebalance(int* B, int* G, int* R, float bgain, float ggain, float rgain, bool enable);
 void BF(unsigned char* b, unsigned char* g, unsigned char* r, int dec, int Colorsigma, int Spacesigma, bool enable);
-void ColorCorrection(int* B, int* G, int* R, bool enable);
-void LensShadingCorrection(int* data, bool enable);
+ISPResult ColorCorrection(int* B, int* G, int* R, bool enable);
+ISPResult LensShadingCorrection(int* data, bool enable);
 void EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable);
 
 Mat getim(Mat src, int depth, int Imgsizey, int Imgsize, int channel, int strength1, int strength2, int strength3);
 Mat WDT(const Mat& _src, const string _wname, const int _level);
 Mat waveletDecompose(Mat _src, Mat _lowFilter, Mat _highFilter);
 void wavelet(const string _wname, Mat& _lowFilter, Mat& _highFilter);
-void SWNR(Mat YUV, int Imgsizey, int Imgsizex, int strength1, int strength2, int strength3, bool enable);
-void Sharpness(Mat YUV, bool enable);
+ISPResult SWNR(Mat YUV, int Imgsizey, int Imgsizex, int strength1, int strength2, int strength3, bool enable);
+ISPResult Sharpness(Mat YUV, bool enable);
 
 void main() {
 	int Imgsizex, Imgsizey;
@@ -76,6 +79,7 @@ void main() {
 		//exit(0);
 	}
 	else {
+		ISPResult result = ISPSuccess;
 		size_t numPixel = WIDTH * HEIGHT;
 		unsigned char* data = new unsigned char[numPixel * 5 / 4];
 		int* decodedata = new int[numPixel];
@@ -95,7 +99,7 @@ void main() {
 		OpenFile.read((char*)data, WIDTH * HEIGHT * 5 / 4);
 
 		data = reinterpret_cast<unsigned char*>(data);
-		Mipidecode(data, decodedata);//decode
+		result = Mipidecode(data, decodedata);//decode
 		//intDataSaveAsText(decodedata, HEIGHT, WIDTH, LOGPATH);
 
 		bool BLCen, LSCen, GICen, WBen, CCen, Gammaen, SWNRen, Sharpen;
@@ -109,16 +113,16 @@ void main() {
 		Sharpen = false;
 
 		//Bayer Space Process
-		BlackLevelCorrection(decodedata, 16 * 4, BLCen);
-		LensShadingCorrection(decodedata, LSCen);
-		ReadChannels(decodedata, Bdata, Gdata, Rdata);//pick up RGB  channels from Raw
-		GreenImbalanceCorrection(Gdata, 0.5, GICen);
-		Demosaic(decodedata, Bdata, Gdata, Rdata);
+		result = BlackLevelCorrection(decodedata, 16 * 4, BLCen);
+		result = LensShadingCorrection(decodedata, LSCen);
+		result = ReadChannels(decodedata, Bdata, Gdata, Rdata);//pick up RGB  channels from Raw
+		result = GreenImbalanceCorrection(Gdata, 0.5, GICen);
+		result = Demosaic(decodedata, Bdata, Gdata, Rdata);
 
 		//RGB Space Process
-		Whitebalance(Bdata, Gdata, Rdata, Bgain, Ggain, Rgain, WBen);
-		ColorCorrection(Bdata, Gdata, Rdata, CCen);
-		GammaCorrection(Bdata, Gdata, Rdata, Gammaen);
+		result = Whitebalance(Bdata, Gdata, Rdata, Bgain, Ggain, Rgain, WBen);
+		result = ColorCorrection(Bdata, Gdata, Rdata, CCen);
+		result = GammaCorrection(Bdata, Gdata, Rdata, Gammaen);
 
 		Compress10to8(Bdata, b);
 		Compress10to8(Gdata, g);
@@ -138,21 +142,21 @@ void main() {
 		cvtColor(YUV, YUV, COLOR_BGR2YCrCb, 0);
 
 		//YUV Space Process
-		SWNR(YUV, Imgsizey, Imgsizex, 20, 20, 50, SWNRen);
-		Sharpness(YUV, Sharpen);
+		result = SWNR(YUV, Imgsizey, Imgsizex, 20, 20, 50, SWNRen);
+		result = Sharpness(YUV, Sharpen);
 
 		cvtColor(YUV, dst, COLOR_YCrCb2BGR, 0);
 
 		//Save the result
-		Mat result;
-		result = dst.clone();
+		Mat output;
+		output = dst.clone();
 		BYTE* BMPdata = new BYTE[numPixel * dst.channels()];
-		setBMP(BMPdata, result);
+		setBMP(BMPdata, output);
 		saveBMP(BMPdata, OUTPUTPATH);
 		delete BMPdata;
 		namedWindow(RESNAME, 0);
 		resizeWindow(RESNAME, Imgsizex, Imgsizey);
-		imshow(RESNAME, result);
+		imshow(RESNAME, output);
 		waitKey(0);
 		OpenFile.close();
 	}
@@ -210,11 +214,13 @@ void EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable) {
 	}
 }
 
-void Demosaic(int* data, int* B, int* G, int* R) {
+ISPResult Demosaic(int* data, int* B, int* G, int* R) {
+	ISPResult result = ISPSuccess;
 	FirstPixelInsertProcess(data, B);
 	TwoGPixelInsertProcess(data, G);
 	LastPixelInsertProcess(data, R);
 	cout << " Demosaic finished" << endl;
+	return result;
 }
 
 void intDataSaveAsText(int* data, int height, int width, string TextPath) {
@@ -245,7 +251,8 @@ void CharDataSaveAsText(unsigned char* data, int height, int width, string TextP
 	cout << " Data saved as TXT finished " << endl;
 }
 
-void Mipidecode(unsigned char* src, int* dst) {
+ISPResult Mipidecode(unsigned char* src, int* dst) {
+	ISPResult result = ISPSuccess;
 	int i;
 	for (i = 0; i < WIDTH * HEIGHT * 5 / 4; i += 5) {
 		dst[i * 4 / 5] = ((int)src[i] << 2) + (src[i + 4] & 0x3);
@@ -254,9 +261,11 @@ void Mipidecode(unsigned char* src, int* dst) {
 		dst[i * 4 / 5 + 3] = ((int)src[i + 3] << 2) + ((src[i + 4] >> 6) & 0x3);
 	}
 	cout << " Mipi decode finished " << endl;
+	return result;
 }
 
-void BlackLevelCorrection(int* data, int BLValue, bool enable) {
+ISPResult BlackLevelCorrection(int* data, int BLValue, bool enable) {
+	ISPResult result = ISPSuccess;
 	if (enable == true) {
 		int i;
 		int temp = 0;
@@ -266,11 +275,15 @@ void BlackLevelCorrection(int* data, int BLValue, bool enable) {
 				temp = 0;
 			data[i] = temp;
 		}
+		cout << " BLC finished" << endl;
+	} else {
+		cout << " BLC disabled" << endl;
 	}
-	cout << " BLC finished" << endl;
+	return result;
 }
 
-void ReadChannels(int* data, int* B, int* G, int* R) {
+ISPResult ReadChannels(int* data, int* B, int* G, int* R) {
+	ISPResult result = ISPSuccess;
 	int i, j;
 	for (i = 0; i < HEIGHT; i++) {
 		for (j = 0; j < WIDTH; j++) {
@@ -283,6 +296,7 @@ void ReadChannels(int* data, int* B, int* G, int* R) {
 		}
 	}
 	cout << " Read RGB channels finished " << endl;
+	return result;
 }
 
 void FirstPixelInsertProcess(int* src, int* dst) {
@@ -598,8 +612,9 @@ void GenerateGammaLookUpTable(unsigned int* lut) {
 	lut[1016] = 1020; lut[1017] = 1020; lut[1018] = 1021; lut[1019] = 1021; lut[1020] = 1022; lut[1021] = 1022; lut[1022] = 1022; lut[1023] = 1023;
 }
 
-void GammaCorrection(int* B, int* G, int* R, bool enable)
+ISPResult GammaCorrection(int* B, int* G, int* R, bool enable)
 {
+	ISPResult result = ISPSuccess;
 	unsigned int lut[1024];
 	unsigned int* plut;
 	plut = lut;
@@ -615,11 +630,13 @@ void GammaCorrection(int* B, int* G, int* R, bool enable)
 		}
 		cout << " Gamma finished" << endl;
 	}
+	return result;
 }
 
 
 
-void GreenImbalanceCorrection(int* gdata, float GICweight, bool enable) {
+ISPResult GreenImbalanceCorrection(int* gdata, float GICweight, bool enable) {
+	ISPResult result = ISPSuccess;
 	if (enable == true) {
 		int i, j;
 		float temp = 1.0;
@@ -647,9 +664,11 @@ void GreenImbalanceCorrection(int* gdata, float GICweight, bool enable) {
 		}*/
 		cout << " GIC finished" << endl;
 	}
+	return result;
 }
 
-void Whitebalance(int* B, int* G, int* R, float bgain, float ggain, float rgain, bool enable) {
+ISPResult Whitebalance(int* B, int* G, int* R, float bgain, float ggain, float rgain, bool enable) {
+	ISPResult result = ISPSuccess;
 	if (enable == true) {
 		int i;
 		for (i = 0; i < WIDTH * HEIGHT; i++)
@@ -660,6 +679,7 @@ void Whitebalance(int* B, int* G, int* R, float bgain, float ggain, float rgain,
 		}
 		cout << " WB finished" << endl;
 	}
+	return result;
 }
 
 
@@ -686,8 +706,8 @@ void BF(unsigned char* b, unsigned char* g, unsigned char* r, int dec, int Color
 
 
 
-void ColorCorrection(int* B, int* G, int* R, bool enable) {
-
+ISPResult ColorCorrection(int* B, int* G, int* R, bool enable) {
+	ISPResult result = ISPSuccess;
 	Mat A_cc = Mat::zeros(3, 3, CV_32FC1);
 	A_cc.at<float>(0, 0) = 1.819;	A_cc.at<float>(0, 1) = -0.248;	A_cc.at<float>(0, 2) = 0.213;
 	A_cc.at<float>(1, 0) = -1.069;	A_cc.at<float>(1, 1) = 1.322;	A_cc.at<float>(1, 2) = -1.078;
@@ -742,6 +762,7 @@ void ColorCorrection(int* B, int* G, int* R, bool enable) {
 		//CharDataSaveAsText(dst.data, "C:\\Users\\penghao6\\Desktop\\output2.txt");
 		cout << " CC finished" << endl;
 	}
+	return result;
 }
 
 
@@ -811,7 +832,8 @@ void GenerateLSCGainTable(float** Rgain, float** Grgain, float** Gbgain, float**
 	Bgain[12][0] = 3.00785327; Bgain[12][1] = 2.7100594; Bgain[12][2] = 2.293494; Bgain[12][3] = 1.98375225; Bgain[12][4] = 1.78258061; Bgain[12][5] = 1.63429224; Bgain[12][6] = 1.53504336; Bgain[12][7] = 1.476219; Bgain[12][8] = 1.45520091; Bgain[12][9] = 1.47230053; Bgain[12][10] = 1.53835821; Bgain[12][11] = 1.63606775; Bgain[12][12] = 1.78734374; Bgain[12][13] = 1.98851943; Bgain[12][14] = 2.287967; Bgain[12][15] = 2.707317; Bgain[12][16] = 3.12480426;
 }
 
-void LensShadingCorrection(int* data, bool enable) {
+ISPResult LensShadingCorrection(int* data, bool enable) {
+	ISPResult result = ISPSuccess;
 	if (enable == true) {
 
 		float R_lsc[13][17], Gr_lsc[13][17], Gb_lsc[13][17], B_lsc[13][17];
@@ -873,6 +895,7 @@ void LensShadingCorrection(int* data, bool enable) {
 		free(ppB);
 		cout << " LSC finished" << endl;
 	}
+	return result;
 }
 
 
@@ -1339,7 +1362,8 @@ Mat getim(Mat src, int depth, int Imgsizey, int Imgsizex, int channel, int stren
 	return imr;
 }
 
-void SWNR(Mat YUV, int Imgsizey, int Imgsizex, int strength1, int strength2, int strength3, bool enable) {
+ISPResult SWNR(Mat YUV, int Imgsizey, int Imgsizex, int strength1, int strength2, int strength3, bool enable) {
+	ISPResult result = ISPSuccess;
 	int i, j;
 	Mat onechannel(HEIGHT, WIDTH, CV_8U);
 	Mat onechannel2(HEIGHT, WIDTH, CV_8U);
@@ -1396,9 +1420,11 @@ void SWNR(Mat YUV, int Imgsizey, int Imgsizex, int strength1, int strength2, int
 		}
 		cout << " SW finished" << endl;
 	}
+	return result;
 }
 
-void Sharpness(Mat YUV, bool enable) {
+ISPResult Sharpness(Mat YUV, bool enable) {
+	ISPResult result = ISPSuccess;
 	int i, j;
 	Mat onechannel(HEIGHT, WIDTH, CV_8U);
 
@@ -1464,4 +1490,5 @@ void Sharpness(Mat YUV, bool enable) {
 		//fastNlMeansDenoisingColored(dst, result, 3, 3, 3, 9);
 		cout << " Sharpness finished" << endl;
 	}
+	return result;
 }
