@@ -12,6 +12,7 @@
 #include <math.h>
 #include <windows.h>
 #include <fstream> 
+#include <string.h>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -19,6 +20,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/photo.hpp"
 
+#include "ImageFileManager.h"
 #include "ImageSignalProcess.h"
 
 using namespace cv;
@@ -44,8 +46,6 @@ void FirstPixelInsertProcess(int* src, int* dst);
 void TwoGPixelInsertProcess(int* src, int* dst);
 void LastPixelInsertProcess(int* src, int* dst);
 void Compress10to8(int* src, unsigned char* dst);
-void setBMP(BYTE* data, Mat gamadst);
-void saveBMP(BYTE* data, string BMPPath);
 ISPResult GammaCorrection(int* B, int* G, int* R, bool enable);
 ISPResult GreenImbalanceCorrection(int* gdata, float GICweight, bool enable);
 ISPResult Whitebalance(int* B, int* G, int* R, float bgain, float ggain, float rgain, bool enable);
@@ -62,6 +62,24 @@ ISPResult SWNR(Mat YUV, int Imgsizey, int Imgsizex, int strength1, int strength2
 ISPResult Sharpness(Mat YUV, bool enable);
 
 void main() {
+	ISPResult result = ISPSuccess;
+	InputImgInfo inputInfo;
+	OutputImgInfo outputInfo;
+	string inputPath = INPUTPATH;
+	string outputPath = OUTPUTPATH;
+	inputInfo.pInputPath = const_cast<char*>(inputPath.c_str());
+	outputInfo.pOutputPath = const_cast<char*>(outputPath.c_str());
+	outputInfo.width = WIDTH;
+	outputInfo.hight = HEIGHT;
+	
+	ImageFileManager* pImgFileManager = nullptr;
+	if (pImgFileManager == nullptr) {
+		pImgFileManager = new ImageFileManager;
+	}
+	pImgFileManager->Init();
+	pImgFileManager->SetInputImgInfo(inputInfo);
+	pImgFileManager->SetOutputImgInfo(outputInfo);
+
 	int Imgsizex, Imgsizey;
 	int Winsizex, Winsizey;
 	Winsizex = GetSystemMetrics(SM_CXSCREEN);
@@ -72,33 +90,24 @@ void main() {
 	//float Rgain = 1.378,Ggain=1.0,Bgain=1.493;// from gama to WB
 	float Rgain = 1.994, Ggain = 1.0, Bgain = 2.372;//from WB to gama
 
-	ifstream OpenFile(INPUTPATH, ios::in | ios::binary);
-	if (OpenFile.fail())
-	{
-		cout << "Open RAW failed!" << endl;
-		//exit(0);
+	size_t numPixel = WIDTH * HEIGHT;
+	unsigned char* data = new unsigned char[numPixel * 5 / 4];
+	int* decodedata = new int[numPixel];
+	int* Bdata = new int[numPixel];
+	int* Gdata = new int[numPixel];
+	int* Rdata = new int[numPixel];
+	unsigned char* r = new unsigned char[numPixel];
+	unsigned char* g = new unsigned char[numPixel];
+	unsigned char* b = new unsigned char[numPixel];
+	Mat dst(HEIGHT, WIDTH, CV_8UC3, Scalar(0, 0, 0));
+	for (i = 0; i < numPixel; i++) {
+		Bdata[i] = 0;
+		Gdata[i] = 0;
+		Rdata[i] = 0;
 	}
-	else {
-		ISPResult result = ISPSuccess;
-		size_t numPixel = WIDTH * HEIGHT;
-		unsigned char* data = new unsigned char[numPixel * 5 / 4];
-		int* decodedata = new int[numPixel];
-		int* Bdata = new int[numPixel];
-		int* Gdata = new int[numPixel];
-		int* Rdata = new int[numPixel];
-		unsigned char* r = new unsigned char[numPixel];
-		unsigned char* g = new unsigned char[numPixel];
-		unsigned char* b = new unsigned char[numPixel];
-		Mat dst(HEIGHT, WIDTH, CV_8UC3, Scalar(0, 0, 0));
-		for (i = 0; i < numPixel; i++) {
-			Bdata[i] = 0;
-			Gdata[i] = 0;
-			Rdata[i] = 0;
-		}
-
-		OpenFile.read((char*)data, WIDTH * HEIGHT * 5 / 4);
-
-		data = reinterpret_cast<unsigned char*>(data);
+	result = pImgFileManager->ReadRawData(data, Mipi10Bit);
+	if (result == ISPSuccess) {
+		//data = reinterpret_cast<unsigned char*>(data);
 		result = Mipidecode(data, decodedata);//decode
 		//intDataSaveAsText(decodedata, HEIGHT, WIDTH, LOGPATH);
 
@@ -150,15 +159,12 @@ void main() {
 		//Save the result
 		Mat output;
 		output = dst.clone();
-		BYTE* BMPdata = new BYTE[numPixel * dst.channels()];
-		setBMP(BMPdata, output);
-		saveBMP(BMPdata, OUTPUTPATH);
-		delete BMPdata;
+		result = pImgFileManager->SaveBMP(output.data, output.channels());
+		delete pImgFileManager;
 		namedWindow(RESNAME, 0);
 		resizeWindow(RESNAME, Imgsizex, Imgsizey);
 		imshow(RESNAME, output);
 		waitKey(0);
-		OpenFile.close();
 	}
 	cin >> i;
 }
@@ -392,93 +398,6 @@ void Compress10to8(int* src, unsigned char* dst) {
 			}
 		}
 	}
-}
-
-void setBMP(BYTE* data, Mat datasrc)
-{
-	int j = 0;
-	int row = 0;
-	int col = 0;
-	int size;
-	BYTE temp;
-	size = WIDTH * HEIGHT * datasrc.channels();
-	memset(data, 0x00, size);
-	if (datasrc.channels() == 3) {
-		for (int i = 0; i < WIDTH * HEIGHT; i++) {
-			data[i * 3] = datasrc.data[i * 3];
-			data[i * 3 + 1] = datasrc.data[i * 3 + 1];
-			data[i * 3 + 2] = datasrc.data[i * 3 + 2];
-		}
-		//¾ØÕó·´×ª
-		while (j < 3 * WIDTH * HEIGHT - j) {
-			temp = data[3 * WIDTH * HEIGHT - j - 1];
-			data[3 * WIDTH * HEIGHT - j - 1] = data[j];
-			data[j] = temp;
-			j++;
-		}
-		//Í¼Ïñ¾µÏñ·­×ª
-		for (row = 0; row < HEIGHT; row++) {
-			while (col < 3 * WIDTH - col) {
-				temp = data[row * 3 * WIDTH + 3 * WIDTH - col - 1];
-				data[3 * row * WIDTH + 3 * WIDTH - col - 1] = data[3 * row * WIDTH + col];
-				data[3 * row * WIDTH + col] = temp;
-				col++;
-			}
-			col = 0;
-		}
-	}
-	//else if (datasrc.channels() == 1) {
-	//	for (int i = 0; i < WIDTH * HEIGHT; i++) {
-	//		data[i] = datasrc.data[i];
-	//	}
-		//¾ØÕó·´×ª
-		/*
-		while (j < 3 * WIDTH * HEIGHT - j) {
-			temp = data[3 * WIDTH * HEIGHT - j - 1];
-			data[3 * WIDTH * HEIGHT - j - 1] = data[j];
-			data[j] = temp;
-			j++;
-		}
-		//Í¼Ïñ¾µÏñ·­×ª
-		for (row = 0; row < HEIGHT; row++) {
-			while (col < 3 * WIDTH - col) {
-				temp = data[row * 3 * WIDTH + 3 * WIDTH - col - 1];
-				data[3 * row*WIDTH + 3 * WIDTH - col - 1] = data[3 * row*WIDTH + col];
-				data[3 * row*WIDTH + col] = temp;
-				col++;
-			}
-			col = 0;
-		}*/
-
-		//}
-}
-
-void saveBMP(BYTE* data, string BMPPath) {
-	BITMAPFILEHEADER header;
-	BITMAPINFOHEADER headerinfo;
-	int size = WIDTH * HEIGHT * 3;
-
-	header.bfType = 0x4D42;
-	header.bfReserved1 = 0;
-	header.bfReserved2 = 0;
-	header.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + size;
-	header.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-	headerinfo.biSize = sizeof(BITMAPINFOHEADER);
-	headerinfo.biHeight = HEIGHT;
-	headerinfo.biWidth = WIDTH;
-	headerinfo.biPlanes = 1;
-	headerinfo.biBitCount = 24;
-	headerinfo.biCompression = 0; //BI_RGB
-	headerinfo.biSizeImage = size;
-	headerinfo.biClrUsed = 0;
-	headerinfo.biClrImportant = 0;
-	cout << " BMPPath: " << BMPPath << endl;
-	ofstream out(BMPPath, ios::binary);
-	out.write((char*)& header, sizeof(BITMAPFILEHEADER));
-	out.write((char*)& headerinfo, sizeof(BITMAPINFOHEADER));
-	out.write((char*)data, size);
-	out.close();
-	cout << " BMP saved " << endl;
 }
 
 void GenerateGammaLookUpTable(unsigned int* lut) {

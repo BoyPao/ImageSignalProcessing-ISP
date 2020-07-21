@@ -14,4 +14,13 @@ typedef int32_t ISPResult;
 static const ISPResult ISPSuccess   = 0;
 static const ISPResult ISPFailed    = 1;
 static const ISPResult ISPDisabled  = 2;
-static const ISPResult ISPENoMemory = 3;
+static const ISPResult ISPNoMemory  = 3;
+static const ISPResult ISPInvalied  = 4;
+
+typedef int32_t ISPState;
+static const ISPState Uninited = 0;
+static const ISPState Inited   = 1;
+
+typedef int32_t ISPRawFormate;
+static const ISPRawFormate Mipi10Bit = 0;
+
