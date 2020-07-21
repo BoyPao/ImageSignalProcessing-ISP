@@ -1,3 +1,13 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// Author: Peng Hao
+// License: GPL
+//////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////
+// @file: ImageFileManager.cpp
+// @brief A file manager to manage image file, provoid file operations
+//////////////////////////////////////////////////////////////////////////////////////
+
 #include <fstream> 
 #include <iostream>
 
@@ -99,13 +109,13 @@ ISPResult ImageFileManager::ReadRawData(unsigned char* container, ISPRawFormate 
 	if (result == ISPSuccess) {
 		ifstream OpenFile(this->mInputImg.pInputPath, ios::in | ios::binary);
 		if (OpenFile.fail()) {
-			cout << "Open RAW failed!" << endl;
+			cout << __FUNCTION__ << " Open RAW failed!" << endl;
 			return ISPFailed;
 		}
 		OpenFile.seekg(0, ios::end);
 		streampos fileSize = OpenFile.tellg();
 		this->mInputImg.rawSize = (unsigned int)fileSize;
-		cout << __FUNCTION__ << "Image file raw size:" << fileSize << endl;
+		cout << __FUNCTION__ << " Raw size:" << fileSize << endl;
 		OpenFile.seekg(0, ios::beg);
 
 		if (formate == Mipi10Bit) {
@@ -169,7 +179,7 @@ void ImageFileManager::SetBMP(unsigned char* srcData, unsigned int channels, BYT
 		}
 	}
 	else {
-		cout << __FUNCTION__ << "current Bitmap support for 3 channnels"<<endl;
+		cout << __FUNCTION__ << " Current Bitmap support only for 3 channnels"<<endl;
 		//Wait for developing here
 	}
 }

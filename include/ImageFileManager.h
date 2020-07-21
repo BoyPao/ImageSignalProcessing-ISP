@@ -1,3 +1,13 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// Author: Peng Hao
+// License: GPL
+//////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////
+// @file: ImageFileManager.cpp
+// @brief A file manager to manage image file, provoid file operations
+//////////////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 #include <windows.h>
 
@@ -28,6 +38,8 @@ public:
 	~ImageFileManager() { mState = this->Deinit(); };
 	ISPState Init();
 	ISPState Deinit();
+	InputImgInfo GetInputImgInfo() { return mInputImg; };
+	OutputImgInfo GetOutputImgInfo() { return mOutputImg; };
 	ISPResult SetInputImgInfo(InputImgInfo info);
 	ISPResult SetInputImgInfo(char* path, unsigned int size);
 	ISPResult SetInputImgInfo(char* path);

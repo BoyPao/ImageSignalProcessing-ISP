@@ -5,7 +5,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////
 // @file: ImageSignalProcess.cpp
-// @brief ISP implementation
+// @brief ISP main function implementation
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
@@ -36,7 +36,9 @@ using namespace std;
 #define WIDTH 1920
 #define HEIGHT 1080
 
-ISPResult Mipidecode(unsigned char* src, int* dst);
+//#define LOGSWITCHON 
+
+ISPResult Mipi10decode(unsigned char* src, int* dst, unsigned int rawSize);
 ISPResult BlackLevelCorrection(int* data, int BLValue, bool enable);
 ISPResult ReadChannels(int* data, int* B, int* G, int* R);
 void intDataSaveAsText(int* data, int height, int width, string TextPath);
@@ -63,6 +65,7 @@ ISPResult Sharpness(Mat YUV, bool enable);
 
 void main() {
 	ISPResult result = ISPSuccess;
+
 	InputImgInfo inputInfo;
 	OutputImgInfo outputInfo;
 	string inputPath = INPUTPATH;
@@ -80,16 +83,6 @@ void main() {
 	pImgFileManager->SetInputImgInfo(inputInfo);
 	pImgFileManager->SetOutputImgInfo(outputInfo);
 
-	int Imgsizex, Imgsizey;
-	int Winsizex, Winsizey;
-	Winsizex = GetSystemMetrics(SM_CXSCREEN);
-	Winsizey = GetSystemMetrics(SM_CYSCREEN);
-	Imgsizey = Winsizey * 2 / 3;
-	Imgsizex = Imgsizey * WIDTH / HEIGHT;
-	int i, j;
-	//float Rgain = 1.378,Ggain=1.0,Bgain=1.493;// from gama to WB
-	float Rgain = 1.994, Ggain = 1.0, Bgain = 2.372;//from WB to gama
-
 	size_t numPixel = WIDTH * HEIGHT;
 	unsigned char* data = new unsigned char[numPixel * 5 / 4];
 	int* decodedata = new int[numPixel];
@@ -100,16 +93,33 @@ void main() {
 	unsigned char* g = new unsigned char[numPixel];
 	unsigned char* b = new unsigned char[numPixel];
 	Mat dst(HEIGHT, WIDTH, CV_8UC3, Scalar(0, 0, 0));
+	int i, j;
 	for (i = 0; i < numPixel; i++) {
 		Bdata[i] = 0;
 		Gdata[i] = 0;
 		Rdata[i] = 0;
 	}
+
 	result = pImgFileManager->ReadRawData(data, Mipi10Bit);
 	if (result == ISPSuccess) {
-		//data = reinterpret_cast<unsigned char*>(data);
-		result = Mipidecode(data, decodedata);//decode
-		//intDataSaveAsText(decodedata, HEIGHT, WIDTH, LOGPATH);
+		int Imgsizex, Imgsizey;
+		int Winsizex, Winsizey;
+		Winsizex = GetSystemMetrics(SM_CXSCREEN);
+		Winsizey = GetSystemMetrics(SM_CYSCREEN);
+		Imgsizey = Winsizey * 2 / 3;
+		Imgsizex = Imgsizey * WIDTH / HEIGHT;
+
+		bool is_WB1st_Gamma2nd = true;
+		const float Rgain = is_WB1st_Gamma2nd ? 1.994 : 1.378;
+		const float Ggain = is_WB1st_Gamma2nd ? 1.0 : 1.0;
+		const float Bgain = is_WB1st_Gamma2nd ? 2.372 : 1.493;
+
+		//Mipi10 decode
+		result = Mipi10decode(data, decodedata,pImgFileManager->GetInputImgInfo().rawSize);
+
+#ifdef LOGSWITCHON
+		intDataSaveAsText(decodedata, HEIGHT, WIDTH, LOGPATH);
+#endif
 
 		bool BLCen, LSCen, GICen, WBen, CCen, Gammaen, SWNRen, Sharpen;
 		BLCen = true;
@@ -225,7 +235,7 @@ ISPResult Demosaic(int* data, int* B, int* G, int* R) {
 	FirstPixelInsertProcess(data, B);
 	TwoGPixelInsertProcess(data, G);
 	LastPixelInsertProcess(data, R);
-	cout << " Demosaic finished" << endl;
+	cout << __FUNCTION__<< " finished" << endl;
 	return result;
 }
 
@@ -257,16 +267,16 @@ void CharDataSaveAsText(unsigned char* data, int height, int width, string TextP
 	cout << " Data saved as TXT finished " << endl;
 }
 
-ISPResult Mipidecode(unsigned char* src, int* dst) {
+ISPResult Mipi10decode(unsigned char* src, int* dst, unsigned int rawSize) {
 	ISPResult result = ISPSuccess;
 	int i;
-	for (i = 0; i < WIDTH * HEIGHT * 5 / 4; i += 5) {
+	for (i = 0; i < rawSize; i += 5) {
 		dst[i * 4 / 5] = ((int)src[i] << 2) + (src[i + 4] & 0x3);
 		dst[i * 4 / 5 + 1] = ((int)src[i + 1] << 2) + ((src[i + 4] >> 2) & 0x3);
 		dst[i * 4 / 5 + 2] = ((int)src[i + 2] << 2) + ((src[i + 4] >> 4) & 0x3);
 		dst[i * 4 / 5 + 3] = ((int)src[i + 3] << 2) + ((src[i + 4] >> 6) & 0x3);
 	}
-	cout << " Mipi decode finished " << endl;
+	cout << __FUNCTION__ << " finished" << endl;
 	return result;
 }
 
@@ -281,9 +291,9 @@ ISPResult BlackLevelCorrection(int* data, int BLValue, bool enable) {
 				temp = 0;
 			data[i] = temp;
 		}
-		cout << " BLC finished" << endl;
+		cout << __FUNCTION__ << " finished" << endl;
 	} else {
-		cout << " BLC disabled" << endl;
+		cout << __FUNCTION__ << " BLC disabled" << endl;
 	}
 	return result;
 }
@@ -301,7 +311,7 @@ ISPResult ReadChannels(int* data, int* B, int* G, int* R) {
 				R[i * WIDTH + j] = data[i * WIDTH + j];
 		}
 	}
-	cout << " Read RGB channels finished " << endl;
+	cout << __FUNCTION__ << " finished" << endl;
 	return result;
 }
 
@@ -547,7 +557,7 @@ ISPResult GammaCorrection(int* B, int* G, int* R, bool enable)
 			G[i] = lut[G[i]];
 			R[i] = lut[R[i]];
 		}
-		cout << " Gamma finished" << endl;
+		cout << __FUNCTION__ << " finished" << endl;
 	}
 	return result;
 }
@@ -581,7 +591,7 @@ ISPResult GreenImbalanceCorrection(int* gdata, float GICweight, bool enable) {
 				}
 			}
 		}*/
-		cout << " GIC finished" << endl;
+		cout << __FUNCTION__ << " finished" << endl;
 	}
 	return result;
 }
@@ -596,7 +606,7 @@ ISPResult Whitebalance(int* B, int* G, int* R, float bgain, float ggain, float r
 			G[i] = G[i] * ggain;
 			R[i] = R[i] * rgain;
 		}
-		cout << " WB finished" << endl;
+		cout << __FUNCTION__ << " finished" << endl;
 	}
 	return result;
 }
@@ -619,7 +629,7 @@ void BF(unsigned char* b, unsigned char* g, unsigned char* r, int dec, int Color
 			g[i] = ABFg.data[i];
 			r[i] = ABFr.data[i];
 		}
-		cout << " ABF finished" << endl;
+		cout << __FUNCTION__ << " finished" << endl;
 	}
 }
 
@@ -679,7 +689,7 @@ ISPResult ColorCorrection(int* B, int* G, int* R, bool enable) {
 		//OutFile5 <<income;
 		//OutFile5.close();
 		//CharDataSaveAsText(dst.data, "C:\\Users\\penghao6\\Desktop\\output2.txt");
-		cout << " CC finished" << endl;
+		cout << __FUNCTION__ << " finished" << endl;
 	}
 	return result;
 }
@@ -812,11 +822,10 @@ ISPResult LensShadingCorrection(int* data, bool enable) {
 		free(ppGr);
 		free(ppGb);
 		free(ppB);
-		cout << " LSC finished" << endl;
+		cout << __FUNCTION__ << " finished" << endl;
 	}
 	return result;
 }
-
 
 
 
@@ -1337,7 +1346,7 @@ ISPResult SWNR(Mat YUV, int Imgsizey, int Imgsizex, int strength1, int strength2
 				YUV.data[i * 3 * WIDTH + 3 * j + 2] = onechannel2.data[i * WIDTH + j];
 			}
 		}
-		cout << " SW finished" << endl;
+		cout << __FUNCTION__ << " finished" << endl;
 	}
 	return result;
 }
@@ -1407,7 +1416,7 @@ ISPResult Sharpness(Mat YUV, bool enable) {
 		}
 		*/
 		//fastNlMeansDenoisingColored(dst, result, 3, 3, 3, 9);
-		cout << " Sharpness finished" << endl;
+		cout << __FUNCTION__ << " finished" << endl;
 	}
 	return result;
 }
