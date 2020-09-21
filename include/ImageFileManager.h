@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////
-// Author: Peng Hao
+// Author: Peng Hao <635945005@qq.com>
 // License: GPL
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -9,8 +9,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include <windows.h>
-
+#include "Utils.h"
 #include "ImageSignalProcess.h"
 
 //#define PATH_MAX_LENGTH 40
@@ -18,13 +17,13 @@
 struct InputImgInfo
 {
 	char* pInputPath;
-	unsigned int rawSize;
+	int32_t rawSize;
 };
 
 struct OutputImgInfo {
 	char* pOutputPath;
-	unsigned int width;
-	unsigned int hight;
+	int32_t width;
+	int32_t hight;
 };
 
 class ImageFileManager {

@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////
-// Author: Peng Hao
+// Author: Peng Hao <635945005@qq.com>
 // License: GPL
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -19,7 +19,9 @@ const string PROCESSNAME[] = {
 	"Color Correction",
 	"Gamma Correction",
 	"Small Wave Niose Reduction",
-	"Sharpness"
+	"Sharpness",
+	"Color Space Change",
+	"None",
 };
 
 class ISPNode {
@@ -40,11 +42,21 @@ private:
 	ISPNode* next;
 };
 
+//Color Space Change Node
+class ISPCSTNode : public ISPNode {   
+
+};
+
 class Pipeline {
 public:
 	Pipeline() {};
 	~Pipeline() {};
 	//Wait to develop NodeList
+	ISPResult AddNode(PROCESS_TYPE type);
+	uint32_t GetNodeNum();
+
 private:
 	ISPNode mHead;
+	bool mInited;
+	uint32_t mNodeNum;
 };
