@@ -100,10 +100,10 @@ void BF(unsigned char* b, unsigned char* g, unsigned char* r, int dec, int Color
 	}
 }
 
-ISPResult BlackLevelCorrection(void* data, uint32_t argNum, ...) {
+ISPResult BlackLevelCorrection(void* data, int32_t argNum, ...) {
 	ISPResult result = ISPSuccess;
 
-	int32_t offset;
+	uint16_t offset;
 	int32_t WIDTH, HEIGHT;
 	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
 	if (result == ISPSuccess) {
@@ -117,11 +117,8 @@ ISPResult BlackLevelCorrection(void* data, uint32_t argNum, ...) {
 	}
 
 	if (result == ISPSuccess) {
-		int temp = 0;
-
-		for (int i = 0; i < WIDTH * HEIGHT; i++) {
-			temp = static_cast<int*>(data)[i] - offset;
-			static_cast<int*>(data)[i] = (temp < 0) ? 0 : temp;
+		for (int32_t i = 0; i < WIDTH * HEIGHT; i++) {
+			static_cast<uint16_t*>(data)[i] -= offset;
 		}
 		cout << __FUNCTION__ << " finished" << endl;
 	}
@@ -131,7 +128,7 @@ ISPResult BlackLevelCorrection(void* data, uint32_t argNum, ...) {
 
 float LSCinterpolation(int32_t WIDTH, int32_t HEIGHT, 
 	float LT, float RT, float LB, float RB, 
-	int row, int col) 
+	int32_t row, int32_t col) 
 {
 	float TempT, TempB, result;
 	TempT = LT - (LT - RT) * (col % (WIDTH / 16)) * 16 / WIDTH;
@@ -140,12 +137,12 @@ float LSCinterpolation(int32_t WIDTH, int32_t HEIGHT,
 	return result;
 }
 
-ISPResult LensShadingCorrection(void* data, uint32_t argNum, ...)
+ISPResult LensShadingCorrection(void* data, int32_t argNum, ...)
 {
 	ISPResult result = ISPSuccess;
 
 	int32_t WIDTH, HEIGHT;
-	int i, j;
+	int32_t i, j;
 	float R_lsc[13][17], Gr_lsc[13][17], Gb_lsc[13][17], B_lsc[13][17];
 	float** ppR = NULL;
 	float** ppGr = NULL;
@@ -179,36 +176,36 @@ ISPResult LensShadingCorrection(void* data, uint32_t argNum, ...)
 		for (i = 0; i < HEIGHT; i++) {
 			for (j = 0; j < WIDTH; j++) {
 				if (i % 2 == 0 && j % 2 == 0) {
-					static_cast<int*>(data)[i * WIDTH + j] = (int)(static_cast<int*>(data)[i * WIDTH + j] *
+					static_cast<uint16_t*>(data)[i * WIDTH + j] = static_cast<uint16_t*>(data)[i * WIDTH + j] *
 						LSCinterpolation(WIDTH, HEIGHT,
 							B_lsc[i * 12 / HEIGHT][j * 16 / WIDTH],
 							B_lsc[i * 12 / HEIGHT][j * 16 / WIDTH + 1],
 							B_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH],
-							B_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH + 1], i, j));
+							B_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH + 1], i, j);
 				}
 				if (i % 2 == 0 && j % 2 == 1) {
-					static_cast<int*>(data)[i * WIDTH + j] = (int)(static_cast<int*>(data)[i * WIDTH + j] *
+					static_cast<uint16_t*>(data)[i * WIDTH + j] = static_cast<uint16_t*>(data)[i * WIDTH + j] *
 						LSCinterpolation(WIDTH, HEIGHT,
 							Gb_lsc[i * 12 / HEIGHT][j * 16 / WIDTH],
 							Gb_lsc[i * 12 / HEIGHT][j * 16 / WIDTH + 1],
 							Gb_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH],
-							Gb_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH + 1], i, j));
+							Gb_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH + 1], i, j);
 				}
 				if (i % 2 == 1 && j % 2 == 0) {
-					static_cast<int*>(data)[i * WIDTH + j] = (int)(static_cast<int*>(data)[i * WIDTH + j] *
+					static_cast<uint16_t*>(data)[i * WIDTH + j] = static_cast<uint16_t*>(data)[i * WIDTH + j] *
 						LSCinterpolation(WIDTH, HEIGHT,
 							Gr_lsc[i * 12 / HEIGHT][j * 16 / WIDTH],
 							Gr_lsc[i * 12 / HEIGHT][j * 16 / WIDTH + 1],
 							Gr_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH],
-							Gr_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH + 1], i, j));
+							Gr_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH + 1], i, j);
 				}
 				if (i % 2 == 1 && j % 2 == 1) {
-					static_cast<int*>(data)[i * WIDTH + j] = (int)(static_cast<int*>(data)[i * WIDTH + j] *
+					static_cast<uint16_t*>(data)[i * WIDTH + j] = static_cast<uint16_t*>(data)[i * WIDTH + j] *
 						LSCinterpolation(WIDTH, HEIGHT,
 							R_lsc[i * 12 / HEIGHT][j * 16 / WIDTH],
 							R_lsc[i * 12 / HEIGHT][j * 16 / WIDTH + 1],
 							R_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH],
-							R_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH + 1], i, j));
+							R_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH + 1], i, j);
 				}
 			}
 		}
@@ -223,7 +220,7 @@ ISPResult LensShadingCorrection(void* data, uint32_t argNum, ...)
 }
 
 //GCC now is too simple, it should be considered more
-ISPResult GreenChannelsCorrection(void* gdata, uint32_t argNum, ...)
+ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...)
 {
 	ISPResult result = ISPSuccess;
 
@@ -242,10 +239,9 @@ ISPResult GreenChannelsCorrection(void* gdata, uint32_t argNum, ...)
 	}
 
 	if (result == ISPSuccess) {
-		int i, j;
 		float temp = 1.0;
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 1; j < WIDTH; j++) {
+		for (int32_t i = 0; i < HEIGHT; i++) {
+			for (int32_t j = 1; j < WIDTH; j++) {
 				if (i % 2 == 0 && j % 2 == 1 && i > 0 &&
 					i < HEIGHT - 1 && j > 0 && j < WIDTH - 1) {
 					temp = ((int)static_cast<int*>(gdata)[(i - 1) * WIDTH + j - 1] +
@@ -273,7 +269,7 @@ ISPResult GreenChannelsCorrection(void* gdata, uint32_t argNum, ...)
 	return result;
 }
 
-ISPResult WhiteBalance(void* data, uint32_t argNum, ...)
+ISPResult WhiteBalance(void* data, int32_t argNum, ...)
 {
 	ISPResult result = ISPSuccess;
 
@@ -291,9 +287,9 @@ ISPResult WhiteBalance(void* data, uint32_t argNum, ...)
 		cout << __FUNCTION__ << " get IMG Dimension failed. result:" << result << endl;
 	}
 
-	int* B = static_cast<int*>(data);
-	int* G = B + WIDTH * HEIGHT;
-	int* R = G + WIDTH * HEIGHT;
+	uint16_t* B = static_cast<uint16_t*>(data);
+	uint16_t* G = B + WIDTH * HEIGHT;
+	uint16_t* R = G + WIDTH * HEIGHT;
 
 	if (result == ISPSuccess) {
 		for (int i = 0; i < WIDTH * HEIGHT; i++)
@@ -308,13 +304,13 @@ ISPResult WhiteBalance(void* data, uint32_t argNum, ...)
 	return result;
 }
 
-ISPResult ColorCorrection(void* data, uint32_t argNum, ...) {
+ISPResult ColorCorrection(void* data, int32_t argNum, ...) {
 
 	ISPResult result = ISPSuccess;
 	int32_t WIDTH, HEIGHT;
 
 	Mat A_cc = Mat::zeros(3, 3, CV_32FC1);
-	int i, j;
+	int32_t i, j;
 	float temp;
 	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
 	if (result == ISPSuccess) {
@@ -334,9 +330,9 @@ ISPResult ColorCorrection(void* data, uint32_t argNum, ...) {
 	}
 
 	if (result == ISPSuccess) {
-		int* B = static_cast<int*>(data);
-		int* G = B + WIDTH * HEIGHT;
-		int* R = G + WIDTH * HEIGHT;
+		uint16_t* B = static_cast<uint16_t*>(data);
+		uint16_t* G = B + WIDTH * HEIGHT;
+		uint16_t* R = G + WIDTH * HEIGHT;
 
 		Mat Pmatric;
 		Mat Oritransform(WIDTH * HEIGHT, 3, CV_32FC1);
@@ -370,9 +366,9 @@ ISPResult ColorCorrection(void* data, uint32_t argNum, ...) {
 				Pmatric.at<float>(i, 2) = 1023;
 			if (Pmatric.at<float>(i, 2) < 0)
 				Pmatric.at<float>(i, 2) = 0;
-			B[i] = (int)Pmatric.at<float>(i, 0);
-			G[i] = (int)Pmatric.at<float>(i, 1);
-			R[i] = (int)Pmatric.at<float>(i, 2);
+			B[i] = (uint16_t)Pmatric.at<float>(i, 0);
+			G[i] = (uint16_t)Pmatric.at<float>(i, 1);
+			R[i] = (uint16_t)Pmatric.at<float>(i, 2);
 		}
 
 		//ofstream OutFile4("C:\\Users\\penghao6\\Desktop\\∑¥±‰–Œ.txt");
@@ -388,13 +384,13 @@ ISPResult ColorCorrection(void* data, uint32_t argNum, ...) {
 	return result;
 }
 
-ISPResult GammaCorrection(void* data, uint32_t argNum, ...)
+ISPResult GammaCorrection(void* data, int32_t argNum, ...)
 {
 	ISPResult result = ISPSuccess;
 
 	int32_t WIDTH, HEIGHT;
-	unsigned int lut[1024];
-	unsigned int* plut = nullptr;
+	uint16_t lut[1024];
+	uint16_t* plut = nullptr;
 	plut = lut;
 	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
 	if (result == ISPSuccess) {
@@ -408,11 +404,11 @@ ISPResult GammaCorrection(void* data, uint32_t argNum, ...)
 	}
 
 	if (result == ISPSuccess) {
-		int* B = static_cast<int*>(data);
-		int* G = B + WIDTH * HEIGHT;
-		int* R = G + WIDTH * HEIGHT;
+		uint16_t* B = static_cast<uint16_t*>(data);
+		uint16_t* G = B + WIDTH * HEIGHT;
+		uint16_t* R = G + WIDTH * HEIGHT;
 
-		for (int i = 0; i < WIDTH * HEIGHT; i++)
+		for (int32_t i = 0; i < WIDTH * HEIGHT; i++)
 		{
 			B[i] = plut[B[i]];
 			G[i] = plut[G[i]];
@@ -888,14 +884,14 @@ Mat getim(Mat src, int32_t WIDTH, int32_t HEIGHT,
 	return imr;
 }
 
-ISPResult SmallWaveNR(void* data, uint32_t argNum, ...)
+ISPResult SmallWaveNR(void* data, int32_t argNum, ...)
 {
 	ISPResult result = ISPSuccess;
 	int32_t WIDTH, HEIGHT;
 
-	int strength1;
-	int strength2;
-	int strength3;
+	int32_t strength1;
+	int32_t strength2;
+	int32_t strength3;
 
 	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
 	if (result == ISPSuccess) {
@@ -910,11 +906,11 @@ ISPResult SmallWaveNR(void* data, uint32_t argNum, ...)
 
 	va_list(va);
 	__crt_va_start(va, argNum);
-	int Imgsizey = static_cast<int>(__crt_va_arg(va, int));
-	int Imgsizex = static_cast<int>(__crt_va_arg(va, int));
+	int32_t Imgsizey = static_cast<int32_t>(__crt_va_arg(va, int32_t));
+	int32_t Imgsizex = static_cast<int32_t>(__crt_va_arg(va, int32_t));
 	__crt_va_end(va);
 
-	int i, j;
+	int32_t i, j;
 	Mat onechannel(HEIGHT, WIDTH, CV_8U);
 	Mat onechannel2(HEIGHT, WIDTH, CV_8U);
 
@@ -974,7 +970,7 @@ ISPResult SmallWaveNR(void* data, uint32_t argNum, ...)
 }
 
 
-ISPResult Sharpness(void* data, uint32_t argNum, ...)
+ISPResult Sharpness(void* data, int32_t argNum, ...)
 {
 	ISPResult result = ISPSuccess;
 	int32_t WIDTH, HEIGHT;
@@ -993,7 +989,7 @@ ISPResult Sharpness(void* data, uint32_t argNum, ...)
 	
 
 	if (result == ISPSuccess) {
-		int i, j;
+		int32_t i, j;
 		Mat onechannel(HEIGHT, WIDTH, CV_8U);
 
 		//NRYUV = YUV.clone();

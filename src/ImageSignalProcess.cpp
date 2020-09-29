@@ -16,6 +16,8 @@
 using namespace cv;
 using namespace std;
 
+#define DUMP_NEEDED false
+
 #define SOURCE "Source"
 #define RESNAME "Result"
 #define TEMP "Temp"
@@ -26,9 +28,8 @@ using namespace std;
 #define WIDTH 1920
 #define HEIGHT 1080
 
-//#define LOG_SWITCH_ON 
 
-void main() {
+int main() {
 	ISPResult result = ISPSuccess;
 
 	ISPParameter param;
@@ -49,43 +50,31 @@ void main() {
 	pImgFileManager->SetOutputImgInfo(outputInfo);
 
 	size_t numPixel = WIDTH * HEIGHT;
-	unsigned char* data = new unsigned char[numPixel * 5 / 4];
-	int* decodedata = new int[numPixel];
-	int* BGRdata = new int[numPixel * 3];
-	int* Bdata = BGRdata;
-	int* Gdata = Bdata + numPixel;
-	int* Rdata = Gdata + numPixel;
-
-	unsigned char* rgb = new unsigned char[numPixel * 3];
-	unsigned char* r = rgb;
-	unsigned char* g = r + numPixel;
-	unsigned char* b = g + numPixel;
+	uint8_t* mipiRawData = new uint8_t[numPixel * 5 / 4];
+	uint16_t* rawData = new uint16_t[numPixel];
+	uint16_t* bgrData = new uint16_t[numPixel * 3];
+	uint16_t* bData = bgrData;
+	uint16_t* gData = bData + numPixel;
+	uint16_t* rData = gData + numPixel;
+	memset(bgrData, 0, numPixel * 3);
+	uint8_t* rgb8bit = new uint8_t[numPixel * 3];
+	uint8_t* r8bit = rgb8bit;
+	uint8_t* g8bit = r8bit + numPixel;
+	uint8_t* b8bit = g8bit + numPixel;
 	Mat dst(HEIGHT, WIDTH, CV_8UC3, Scalar(0, 0, 0));
-	int i, j;
-	for (i = 0; i < 3 * numPixel; i++) {
-		BGRdata[i] = 0;
-	}
+	int32_t i, j;
 
-	result = pImgFileManager->ReadRawData(data, Mipi10Bit);
+	result = pImgFileManager->ReadRawData(mipiRawData, numPixel * 5 / 4, Mipi10Bit);
 	if (result == ISPSuccess) {
-		int Imgsizex, Imgsizey;
-		int Winsizex, Winsizey;
+		int32_t Imgsizex, Imgsizey;
+		int32_t Winsizex, Winsizey;
 		Winsizex = GetSystemMetrics(SM_CXSCREEN);
 		Winsizey = GetSystemMetrics(SM_CYSCREEN);
 		Imgsizey = Winsizey * 2 / 3;
 		Imgsizex = Imgsizey * WIDTH / HEIGHT;
 
-		bool is_WB1st_Gamma2nd = true;
-		const float Rgain = is_WB1st_Gamma2nd ? 1.994 : 1.378;
-		const float Ggain = is_WB1st_Gamma2nd ? 1.0 : 1.0;
-		const float Bgain = is_WB1st_Gamma2nd ? 2.372 : 1.493;
-
 		//Mipi10 decode
-		result = Mipi10decode(data, decodedata,pImgFileManager->GetInputImgInfo().rawSize);
-
-#ifdef LOG_SWITCH_ON
-		intDataSaveAsText(decodedata, HEIGHT, WIDTH, LOGPATH);
-#endif
+		result = Mipi10decode((void*)mipiRawData, (void*)rawData,pImgFileManager->GetInputImgInfo().rawSize);
 
 		bool BLCen, LSCen, GICen, WBen, CCen, Gammaen, SWNRen, Sharpen;
 		BLCen = true;
@@ -98,33 +87,39 @@ void main() {
 		Sharpen = true;
 		ISPNode* node = new ISPNode;
 		result = node->Init(BLC);
-		result = node->Process((void*)decodedata, /*argNum*/0);
+		result = node->Process((void*)rawData, /*argNum*/0);
 		result = node->Init(LSC);
-		result = node->Process((void*)decodedata, /*argNum*/0);
+		result = node->Process((void*)rawData, /*argNum*/0);
 		//Bayer Space Process
-		result = ReadChannels(decodedata, Bdata, Gdata, Rdata);//pick up RGB  channels from Raw
+		result = ReadChannels(rawData, bData, gData, rData);//pick up RGB  channels from Raw
 		result = node->Init(GCC);
-		result = node->Process((void*)Gdata, /*argNum*/0);
-		result = Demosaic(decodedata, Bdata, Gdata, Rdata);
+		//result = node->Process((void*)gData, /*argNum*/0);
+		result = Demosaic(rawData, bData, gData, rData);
+
+#if  DUMP_NEEDED
+		if (result == ISPSuccess) {
+			DumpImgDataAsText((void*)gData, HEIGHT, WIDTH, sizeof(uint16_t), LOGPATH);
+		}
+#endif
 
 		//RGB Space Process
 		result = node->Init(WB);
-		result = node->Process((void*)BGRdata, /*argNum*/0);
+		result = node->Process((void*)bgrData, /*argNum*/0);
 		result = node->Init(CC);
-		result = node->Process((void*)BGRdata, /*argNum*/0);
+		result = node->Process((void*)bgrData, /*argNum*/0);
 		result = node->Init(GAMMA);
-		result = node->Process((void*)BGRdata, /*argNum*/0);
+		result = node->Process((void*)bgrData, /*argNum*/0);
 
-		Compress10to8(Bdata, b);
-		Compress10to8(Gdata, g);
-		Compress10to8(Rdata, r);
+		Compress10to8(bData, b8bit);
+		Compress10to8(gData, g8bit);
+		Compress10to8(rData, r8bit);
 
 		//Fill a BMP data use three channals data
 		for (i = 0; i < HEIGHT; i++) {
 			for (j = 0; j < WIDTH; j++) {
-				dst.data[i * WIDTH * 3 + 3 * j] = (unsigned int)b[i * WIDTH + j];
-				dst.data[i * WIDTH * 3 + 3 * j + 1] = (unsigned int)g[i * WIDTH + j];
-				dst.data[i * WIDTH * 3 + 3 * j + 2] = (unsigned int)r[i * WIDTH + j];
+				dst.data[i * WIDTH * 3 + 3 * j] = (unsigned int)b8bit[i * WIDTH + j];
+				dst.data[i * WIDTH * 3 + 3 * j + 1] = (unsigned int)g8bit[i * WIDTH + j];
+				dst.data[i * WIDTH * 3 + 3 * j + 2] = (unsigned int)r8bit[i * WIDTH + j];
 			}
 		}
 
@@ -145,19 +140,21 @@ void main() {
 		output = dst.clone();
 		result = pImgFileManager->SaveBMP(output.data, output.channels());
 		delete pImgFileManager;
-		delete[] data;
-		delete[] decodedata;
-		delete[] BGRdata;
-		delete[] rgb;
+		delete[] mipiRawData;
+		delete[] rawData;
+		delete[] bgrData;
+		delete[] rgb8bit;
 		namedWindow(RESNAME, 0);
 		resizeWindow(RESNAME, Imgsizex, Imgsizey);
 		imshow(RESNAME, output);
 		waitKey(0);
 	}
 	cin >> i;
+
+	return 0;
 }
 
-ISPResult Demosaic(int* data, int* B, int* G, int* R) {
+ISPResult Demosaic(uint16_t* data, uint16_t* B, uint16_t* G, uint16_t* R) {
 	ISPResult result = ISPSuccess;
 	FirstPixelInsertProcess(data, B);
 	TwoGPixelInsertProcess(data, G);
@@ -167,49 +164,30 @@ ISPResult Demosaic(int* data, int* B, int* G, int* R) {
 }
 
 
-ISPResult Mipi10decode(unsigned char* src, int* dst, unsigned int rawSize) {
+ISPResult Mipi10decode(void* src, void* dst, int32_t rawSize) {
 	ISPResult result = ISPSuccess;
-	int i;
-	for (i = 0; i < rawSize; i += 5) {
-		dst[i * 4 / 5] = ((int)src[i] << 2) + (src[i + 4] & 0x3);
-		dst[i * 4 / 5 + 1] = ((int)src[i + 1] << 2) + ((src[i + 4] >> 2) & 0x3);
-		dst[i * 4 / 5 + 2] = ((int)src[i + 2] << 2) + ((src[i + 4] >> 4) & 0x3);
-		dst[i * 4 / 5 + 3] = ((int)src[i + 3] << 2) + ((src[i + 4] >> 6) & 0x3);
 
-		if (dst[i * 4 / 5] < 0) {
-			dst[i * 4 / 5] = 0;
-		} else if (dst[i * 4 / 5] > 255 * 4) {
-			dst[i * 4 / 5] = 255 * 4;
-		}
-
-		if (dst[i * 4 / 5 + 1] < 0) {
-			dst[i * 4 / 5 + 1] = 0;
-		}
-		else if (dst[i * 4 / 5 +1] > 255 * 4) {
-			dst[i * 4 / 5+ 1] = 255 * 4;
-		}
-
-		if (dst[i * 4 / 5 + 2] < 0) {
-			dst[i * 4 / 5 + 2] = 0;
-		}
-		else if (dst[i * 4 / 5 + 2] > 255 * 4) {
-			dst[i * 4 / 5 + 2] = 255 * 4;
-		}
-
-		if (dst[i * 4 / 5 + 3] < 0) {
-			dst[i * 4 / 5 + 3] = 0;
-		}
-		else if (dst[i * 4 / 5 + 3] > 255 * 4) {
-			dst[i * 4 / 5 + 3] = 255 * 4;
-		}
+	for (int32_t i = 0; i < rawSize; i += 5) {
+		static_cast<uint16_t*>(dst)[i * 4 / 5] =
+			((static_cast<uint8_t*>(src)[i] & 0xffff) << 2) |
+			(static_cast<uint8_t*>(src) [i + 4] &0x3) & 0x3ff;
+		static_cast<uint16_t*>(dst)[i * 4 / 5 + 1] = 
+			((static_cast<uint8_t*>(src)[i + 1] & 0xffff) << 2) |
+			((static_cast<uint8_t*>(src)[i + 4] >> 2) & 0x3) & 0x3ff;
+		static_cast<uint16_t*>(dst)[i * 4 / 5 + 2] = 
+			((static_cast<uint8_t*>(src)[i + 2] & 0xffff) << 2) |
+			((static_cast<uint8_t*>(src)[i + 4] >> 4) & 0x3) & 0x3ff;
+		static_cast<uint16_t*>(dst)[i * 4 / 5 + 3] = 
+			((static_cast<uint8_t*>(src)[i + 3] & 0xffff) << 2) |
+			((static_cast<uint8_t*>(src)[i + 4] >> 6) & 0x3) & 0x3ff;
 	}
 	cout << __FUNCTION__ << " finished" << endl;
 	return result;
 }
 
-ISPResult ReadChannels(int* data, int* B, int* G, int* R) {
+ISPResult ReadChannels(uint16_t* data, uint16_t* B, uint16_t* G, uint16_t* R) {
 	ISPResult result = ISPSuccess;
-	int i, j;
+	int32_t i, j;
 	for (i = 0; i < HEIGHT; i++) {
 		for (j = 0; j < WIDTH; j++) {
 			if (i % 2 == 0 && j % 2 == 0)
@@ -224,46 +202,91 @@ ISPResult ReadChannels(int* data, int* B, int* G, int* R) {
 	return result;
 }
 
-void FirstPixelInsertProcess(int* src, int* dst) {
-	int i, j;
+void FirstPixelInsertProcess(uint16_t* src, uint16_t* dst) {
+	int32_t i, j;
 	for (i = 0; i < HEIGHT; i++) {
 		for (j = 0; j < WIDTH; j++) {
-			if (i % 2 == 0 && j % 2 == 1 && j > 0 && j < WIDTH - 1) {
-				dst[i * WIDTH + j] = (src[i * WIDTH + j - 1] +
-					src[i * WIDTH + j + 1]) / 2;
+			if (i % 2 == 0 && j % 2 == 1) {
+				if (j == WIDTH - 1) {
+					dst[i * WIDTH + j] = src[i * WIDTH + j - 1];
+				}
+				else {
+					dst[i * WIDTH + j] = (src[i * WIDTH + j - 1] +
+						src[i * WIDTH + j + 1]) / 2;
+				}
 			}
-			if (i % 2 == 1 && j % 2 == 0 && i > 0 && i < HEIGHT - 1) {
-				dst[i * WIDTH + j] = (src[(i - 1) * WIDTH + j] +
-					src[(i + 1) * WIDTH + j]) / 2;
+			if (i % 2 == 1 && j % 2 == 0) {
+				if (i == HEIGHT - 1) {
+					dst[i * WIDTH + j] = src[(i - 1) * WIDTH + j];
+				}
+				else {
+					dst[i * WIDTH + j] = (src[(i - 1) * WIDTH + j] +
+						src[(i + 1) * WIDTH + j]) / 2;
+				}
 			}
 		}
 	}
 	for (i = 0; i < HEIGHT; i++) {
 		for (j = 0; j < WIDTH; j++) {
-			if (i % 2 == 1 && j % 2 == 1 && j > 0 &&
-				j < WIDTH - 1 && i > 0 && i < HEIGHT - 1) {
-				dst[i * WIDTH + j] = (src[(i - 1) * WIDTH + j - 1] +
-					src[(i - 1) * WIDTH + j + 1] +
-					src[(i + 1) * WIDTH + j - 1] +
-					src[(i + 1) * WIDTH + j + 1]) / 4;
+			if (i % 2 == 1 && j % 2 == 1){
+				if (j < WIDTH - 1 && i < HEIGHT - 1) {
+					dst[i * WIDTH + j] = (src[(i - 1) * WIDTH + j - 1] +
+						src[(i - 1) * WIDTH + j + 1] +
+						src[(i + 1) * WIDTH + j - 1] +
+						src[(i + 1) * WIDTH + j + 1]) / 4;
+				}
+				else if (i == HEIGHT - 1 && j < WIDTH - 1) {
+					dst[i * WIDTH + j] = (src[(i - 1) * WIDTH + j - 1] +
+						src[(i - 1) * WIDTH + j + 1]) / 2;
+				}
+				else if (i < HEIGHT - 1 && j == WIDTH - 1) {
+					dst[i * WIDTH + j] = (src[(i - 1) * WIDTH + j - 1] +
+						src[(i + 1) * WIDTH + j - 1]) / 2;
+				}
+				else {
+					dst[i * WIDTH + j] = src[(i - 1) * WIDTH + j - 1];
+				}
+					
 			}
 		}
 	}
 	//cout << " First Pixel Insert Process finished " << endl;
 }
 
-void TwoGPixelInsertProcess(int* src, int* dst) {
-	int i, j;
+void TwoGPixelInsertProcess(uint16_t* src, uint16_t* dst) {
+	int32_t i, j;
 	for (i = 0; i < HEIGHT; i++) {
 		for (j = 0; j < WIDTH; j++) {
-			if (i % 2 == 0 && j % 2 == 0 && j > 0 &&
-				j < WIDTH - 1 && i > 0 && i < HEIGHT - 1) {
-				dst[i * WIDTH + j] = (src[i * WIDTH + j - 1] +
-					src[i * WIDTH + j + 1] +
-					src[(i - 1) * WIDTH + j] +
-					src[(i + 1) * WIDTH + j]) / 4;
+			if (i == 0 && j == 0) {
+				dst[i * WIDTH + j] = (src[(i + 1) * WIDTH + j] +
+					src[i * WIDTH + j + 1]) / 2;
 			}
-			if (i % 2 == 1 && j % 2 == 1 && j > 0 && j < WIDTH - 1 && i > 0 && i < HEIGHT - 1) {
+			else if (i == 0 && j > 0 && j % 2 == 0) {
+				dst[i * WIDTH + j] = (src[i * WIDTH + j - 1] +
+					src[(i + 1) * WIDTH + j] +
+					src[i * WIDTH + j + 1]) / 3;
+			}
+			else if (i > 0 && j == 0 && i % 2 == 0) {
+				dst[i * WIDTH + j] = (src[(i - 1) * WIDTH + j] +
+					src[i * WIDTH + j + 1] +
+					src[(i + 1) * WIDTH + j]) / 3;
+			}
+			else if (i == HEIGHT - 1 && j < WIDTH - 1 && j % 2 == 1) {
+				dst[i * WIDTH + j] = (src[i * WIDTH + j - 1] +
+					src[(i - 1) * WIDTH + j] +
+					src[i * WIDTH + j + 1]) / 3;
+			}
+			else if (i < HEIGHT - 1 && j == WIDTH - 1 && i % 2 == 1) {
+				dst[i * WIDTH + j] = (src[(i - 1) * WIDTH + j] +
+					src[i * WIDTH + j - 1] +
+					src[(i + 1) * WIDTH + j]) / 3;
+			}
+			else if (i == HEIGHT - 1 && j == WIDTH - 1) {
+				dst[i * WIDTH + j] = (src[(i - 1) * WIDTH + j] +
+					src[i * WIDTH + j - 1]) / 2;
+			}
+			else if ((i % 2 == 0 && j % 2 == 0) ||
+				(i % 2 == 1 && j % 2 == 1)){
 				dst[i * WIDTH + j] = (src[i * WIDTH + j - 1] +
 					src[i * WIDTH + j + 1] +
 					src[(i - 1) * WIDTH + j] +
@@ -274,47 +297,58 @@ void TwoGPixelInsertProcess(int* src, int* dst) {
 	//cout << " TWO Green Pixel Insert Process finished " << endl;
 }
 
-void LastPixelInsertProcess(int* src, int* dst) {
-	int i, j;
+void LastPixelInsertProcess(uint16_t* src, uint16_t* dst) {
+	int32_t i, j;
 	for (i = 0; i < HEIGHT; i++) {
 		for (j = 0; j < WIDTH; j++) {
-			if (i % 2 == 1 && j % 2 == 0 && j > 0 && j < WIDTH - 1) {
-				dst[i * WIDTH + j] = (src[i * WIDTH + j - 1] +
-					src[i * WIDTH + j + 1]) / 2;
+			if (i % 2 == 1 && j % 2 == 0) {
+				if (j == 0) {
+					dst[i * WIDTH + j] = src[i * WIDTH + j + 1];
+				}
+				else {
+					dst[i * WIDTH + j] = (src[i * WIDTH + j - 1] +
+						src[i * WIDTH + j + 1]) / 2;
+				}
 			}
-			if (i % 2 == 0 && j % 2 == 1 && i > 0 && i < HEIGHT - 1) {
-				dst[i * WIDTH + j] = (src[(i - 1) * WIDTH + j] +
-					src[(i + 1) * WIDTH + j]) / 2;
+			if (i % 2 == 0 && j % 2 == 1) {
+				if (i == 0) {
+					dst[i * WIDTH + j] = src[(i + 1) * WIDTH + j];
+				}
+				else {
+					dst[i * WIDTH + j] = (src[(i - 1) * WIDTH + j] +
+						src[(i + 1) * WIDTH + j]) / 2;
+				}
 			}
 		}
 	}
 	for (i = 0; i < HEIGHT; i++) {
 		for (j = 0; j < WIDTH; j++) {
-			if (i % 2 == 0 && j % 2 == 0 && j > 0 &&
-				j < WIDTH - 1 && i > 0 && i < HEIGHT - 1) {
-				dst[i * WIDTH + j] = (src[(i - 1) * WIDTH + j - 1] +
-					src[(i - 1) * WIDTH + j + 1] +
-					src[(i + 1) * WIDTH + j - 1] +
-					src[(i + 1) * WIDTH + j + 1]) / 4;
+			if (i % 2 == 0 && j % 2 == 0) {
+				if (i > 0 && j > 0) {
+					dst[i * WIDTH + j] = (src[(i - 1) * WIDTH + j - 1] +
+						src[(i - 1) * WIDTH + j + 1] +
+						src[(i + 1) * WIDTH + j - 1] +
+						src[(i + 1) * WIDTH + j + 1]) / 4;
+				}
+				else if (i == 0 && j > 0) {
+					dst[i * WIDTH + j] = (src[(i + 1) * WIDTH + j - 1] +
+						src[(i + 1) * WIDTH + j + 1]) / 2;
+				}
+				else if (i > 0 && j == 0) {
+					dst[i * WIDTH + j] = (src[(i - 1) * WIDTH + j + 1] +
+						src[(i + 1) * WIDTH + j + 1]) / 2;
+				}
+				else {
+					dst[i * WIDTH + j] = src[(i + 1) * WIDTH + j + 1];
+				}
 			}
 		}
 	}
 	//cout << " Last Pixel Insert Process finished " << endl;
 }
 
-void Compress10to8(int* src, unsigned char* dst) {
-	int i, j;
-	for (i = 0; i < HEIGHT; i++) {
-		for (j = 0; j < WIDTH; j++) {
-			if ((src[i * WIDTH + j] >> 2) > 255) {
-				dst[i * WIDTH + j] = 255;
-			}
-			else if ((src[i * WIDTH + j] >> 2) < 0) {
-				dst[i * WIDTH + j] = 0;
-			}
-			else {
-				dst[i * WIDTH + j] = (src[i * WIDTH + j] >> 2) & 255;
-			}
-		}
+void Compress10to8(uint16_t* src, unsigned char* dst) {
+	for (int i = 0; i < WIDTH * HEIGHT; i++) {
+		dst[i] = (src[i] >> 2) & 0xff;
 	}
 }

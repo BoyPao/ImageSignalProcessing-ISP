@@ -25,11 +25,11 @@ const string PROCESSNAME[] = {
 };
 
 class ISPNode {
-	typedef ISPResult(*FUNCTPRT)(void* data, uint32_t argNum, ...);
+	typedef ISPResult(*FUNCTPRT)(void* data, int32_t argNum, ...);
 public:
 	ISPResult getNodeName(string* name);
 	ISPResult Init(PROCESS_TYPE type);
-	ISPResult Process(void* data, uint32_t argNum, ...);
+	ISPResult Process(void* data, int32_t argNum, ...);
 	
 private:
 	
@@ -53,10 +53,10 @@ public:
 	~Pipeline() {};
 	//Wait to develop NodeList
 	ISPResult AddNode(PROCESS_TYPE type);
-	uint32_t GetNodeNum();
+	int32_t GetNodeNum();
 
 private:
 	ISPNode mHead;
 	bool mInited;
-	uint32_t mNodeNum;
+	int32_t mNodeNum;
 };

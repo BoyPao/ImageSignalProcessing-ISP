@@ -13,13 +13,13 @@
 
 struct IMG_INFO
 {
-	int width;
-	int height;
+	int32_t width;
+	int32_t height;
 };
 
 struct BLC_PARAM {
-	int bitNum;
-	int BLCDefaultValue;
+	uint32_t bitNum;
+	uint16_t BLCDefaultValue;
 };
 
 struct LSC_PARAM {
@@ -50,25 +50,25 @@ struct CC_PARAM {
 };
 
 struct GAMMA_PARAM {
-	unsigned int gain[1024];
+	uint16_t lut[1024];
 };
 
 struct WNR_PARAM {
-	int L1_threshold;
-	int L2_threshold;
-	int L3_threshold;
+	int32_t L1_threshold;
+	int32_t L2_threshold;
+	int32_t L3_threshold;
 };
 
 class ISPParameter {
 public:
 	ISPResult GetIMGDimension(int32_t* width, int32_t* height);
-	ISPResult GetBLCParam(int32_t* offset);
+	ISPResult GetBLCParam(uint16_t* offset);
 	ISPResult GetLSCParam(float** rGain, float** grGain, float ** gbGain, float ** bGain);
 	ISPResult GetGCCParam(double * weight);
 
 	ISPResult GetWBParam(double* rGain, double* gGain, double* bGain);
-	ISPResult GetCCParam(float* gain, int row, int col);
-	ISPResult GetGAMMAPARAM(unsigned int* plut);
+	ISPResult GetCCParam(float* gain, int32_t row, int32_t col);
+	ISPResult GetGAMMAPARAM(uint16_t* plut);
 
-	ISPResult GetWNRPARAM(int* l1Threshold, int* l2Threshold, int* l3Threshold);
+	ISPResult GetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, int32_t* l3Threshold);
 };

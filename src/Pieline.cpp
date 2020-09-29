@@ -28,14 +28,12 @@ ISPResult ISPNode::Init(PROCESS_TYPE type){//, Args&&... args) {
 	return result;
 }
 
-ISPResult ISPNode::Process(void* data, uint32_t argNum, ...) {
+ISPResult ISPNode::Process(void* data, int32_t argNum, ...) {
 	ISPResult rt = ISPSuccess;
 	if (!mInited) {
 		return ISPNotInited;
 	}
 	va_list va;
-	int Imgsizey, Imgsizex, strength1, strength2, strength3;
-	double GCCweight, bgain, ggain, rgain;
 	bool enable;
 	switch (mType) {
 	case BLC:
@@ -64,9 +62,10 @@ ISPResult ISPNode::Process(void* data, uint32_t argNum, ...) {
 		break;
 	case SWNR:
 		pProcess = &SmallWaveNR;
+		int32_t Imgsizey, Imgsizex;
 		__crt_va_start(va, argNum);
-		Imgsizey = static_cast<int>(__crt_va_arg(va, int));
-		Imgsizex = static_cast<int>(__crt_va_arg(va, int));
+		Imgsizey = static_cast<int32_t>(__crt_va_arg(va, int32_t));
+		Imgsizex = static_cast<int32_t>(__crt_va_arg(va, int32_t));
 		__crt_va_end(va);
 		rt = pProcess(data, argNum, Imgsizey, Imgsizex);
 		break;
@@ -78,7 +77,7 @@ ISPResult ISPNode::Process(void* data, uint32_t argNum, ...) {
 	case PROCESS_TYPE_MAX:
 	default:
 		pProcess = nullptr;
-		rt = ISPInvalied;
+		rt = ISPInvalid;
 	}
 
 	return rt;

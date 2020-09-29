@@ -16,18 +16,18 @@ void BF(unsigned char* b, unsigned char* g, unsigned char* r, int dec, int Color
 ISPResult EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable);// wait for rewrite alg
 
 //Bayer Process
-ISPResult BlackLevelCorrection(void* data, uint32_t argNum, ...);
-ISPResult LensShadingCorrection(void* data, uint32_t argNum, ...);
-ISPResult GreenChannelsCorrection(void* gdata, uint32_t argNum, ...); // wait for rewrite alg
+ISPResult BlackLevelCorrection(void* data, int32_t argNum, ...);
+ISPResult LensShadingCorrection(void* data, int32_t argNum, ...);
+ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...); // wait for rewrite alg
 
 //RGB Process
-ISPResult WhiteBalance(void* data, uint32_t argNum, ...);
-ISPResult ColorCorrection(void* data, uint32_t argNum, ...);
-ISPResult GammaCorrection(void* data, uint32_t argNum, ...);
+ISPResult WhiteBalance(void* data, int32_t argNum, ...);
+ISPResult ColorCorrection(void* data, int32_t argNum, ...);
+ISPResult GammaCorrection(void* data, int32_t argNum, ...);
 
 //YUVProcess
-ISPResult SmallWaveNR(void* data, uint32_t argNum, ...);
-ISPResult Sharpness(void* data, uint32_t argNum, ...);
+ISPResult SmallWaveNR(void* data, int32_t argNum, ...);
+ISPResult Sharpness(void* data, int32_t argNum, ...);
 
 Mat getim(Mat src, int32_t WIDTH, int32_t HEIGHT,
 	int depth, int Imgsizey, int Imgsize, int channel,

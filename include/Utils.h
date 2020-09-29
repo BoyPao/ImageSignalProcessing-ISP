@@ -25,5 +25,4 @@
 
 using namespace std;
 
-void intDataSaveAsText(int* data, int height, int width, string TextPath);
-void CharDataSaveAsText(unsigned char* data, int height, int width, string TextPath);
+void DumpImgDataAsText(void* data, int32_t height, int32_t width, size_t bitWidth, string TextPath);

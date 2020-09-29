@@ -241,7 +241,7 @@ ISPResult ISPParameter::GetIMGDimension(int32_t* width, int32_t* height)
 	return result;
 }
 
-ISPResult ISPParameter::GetBLCParam(int32_t* offset)
+ISPResult ISPParameter::GetBLCParam(uint16_t* offset)
 {
 	ISPResult result = ISPSuccess;
 
@@ -258,7 +258,7 @@ ISPResult ISPParameter::GetBLCParam(int32_t* offset)
 ISPResult ISPParameter::GetLSCParam(float** rGain, float** grGain, float ** gbGain, float ** bGain)
 {
 	ISPResult result = ISPSuccess;
-	for (int i = 0; i < 13; i++) {
+	for (int32_t i = 0; i < 13; i++) {
 		memcpy(rGain[i], LSCPARM.rGain[i], 17 * sizeof(float));
 		memcpy(grGain[i], LSCPARM.grGain[i], 17 * sizeof(float));
 		memcpy(gbGain[i], LSCPARM.gbGain[i], 17 * sizeof(float));
@@ -287,7 +287,7 @@ ISPResult ISPParameter::GetWBParam(double* rGain, double* gGain, double* bGain)
 	return result;
 }
 
-ISPResult ISPParameter::GetCCParam(float* gain, int row, int col) 
+ISPResult ISPParameter::GetCCParam(float* gain, int32_t row, int32_t col)
 {
 	ISPResult result = ISPSuccess;
 	*gain = CCPARAM.CCM[row][col];
@@ -295,11 +295,11 @@ ISPResult ISPParameter::GetCCParam(float* gain, int row, int col)
 	return result;
 }
 
-ISPResult ISPParameter::GetGAMMAPARAM(unsigned int* plut)
+ISPResult ISPParameter::GetGAMMAPARAM(uint16_t* plut)
 {
 	ISPResult result = ISPSuccess;
 	if (plut) {
-		memcpy(plut, &GAMMAPARAM.gain, 1024 * sizeof(unsigned int));
+		memcpy(plut, &GAMMAPARAM.lut, 1024 * sizeof(uint16_t));
 	}
 	else {
 		cout << __FUNCTION__ << " null ptr" << endl;
@@ -308,7 +308,7 @@ ISPResult ISPParameter::GetGAMMAPARAM(unsigned int* plut)
 	return result;
 }
 
-ISPResult ISPParameter::GetWNRPARAM(int* l1Threshold, int* l2Threshold, int* l3Threshold)
+ISPResult ISPParameter::GetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, int32_t* l3Threshold)
 {
 	ISPResult result = ISPSuccess;
 

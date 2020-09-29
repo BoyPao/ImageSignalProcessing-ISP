@@ -40,7 +40,7 @@ ISPResult ImageFileManager::SetInputImgInfo(InputImgInfo info)
 	return result;
 }
 
-ISPResult ImageFileManager::SetInputImgInfo(char* path, unsigned int rawSize)
+ISPResult ImageFileManager::SetInputImgInfo(char* path, int32_t rawSize)
 {
 	ISPResult result = ISPSuccess;
 	this->mInputImg.pInputPath = path;
@@ -55,7 +55,7 @@ ISPResult ImageFileManager::SetInputImgInfo(char* path)
 	return result;
 }
 
-ISPResult ImageFileManager::SetInputImgInfo(unsigned int rawSize)
+ISPResult ImageFileManager::SetInputImgInfo(int32_t rawSize)
 {
 	ISPResult result = ISPSuccess;
 	this->mInputImg.rawSize = rawSize;
@@ -71,7 +71,7 @@ ISPResult ImageFileManager::SetOutputImgInfo(OutputImgInfo info)
 	return result;
 }
 
-ISPResult ImageFileManager::SetOutputImgInfo(char* path, unsigned int width, unsigned int hight)
+ISPResult ImageFileManager::SetOutputImgInfo(char* path, int32_t width, int32_t hight)
 {
 	ISPResult result = ISPSuccess;
 	this->mOutputImg.pOutputPath = path;
@@ -87,7 +87,7 @@ ISPResult ImageFileManager::SetOutputImgInfo(char* path)
 	return result;
 }
 
-ISPResult ImageFileManager::SetOutputImgInfo(unsigned width, unsigned int hight)
+ISPResult ImageFileManager::SetOutputImgInfo(int32_t width, int32_t hight)
 {
 	ISPResult result = ISPSuccess;
 	this->mOutputImg.width = width;
@@ -95,12 +95,12 @@ ISPResult ImageFileManager::SetOutputImgInfo(unsigned width, unsigned int hight)
 	return result;
 }
 
-ISPResult ImageFileManager::ReadRawData(unsigned char* container, ISPRawFormate formate)
+ISPResult ImageFileManager::ReadRawData(uint8_t* buffer, size_t bufferSize, ISPRawFormate formate)
 {
 	ISPResult result = ISPSuccess;
 
 	if (this->mState == Uninited) {
-		result = ISPInvalied;
+		result = ISPFailed;
 	}
 	
 	if (result == ISPSuccess) {
@@ -111,52 +111,54 @@ ISPResult ImageFileManager::ReadRawData(unsigned char* container, ISPRawFormate 
 		}
 		OpenFile.seekg(0, ios::end);
 		streampos fileSize = OpenFile.tellg();
-		this->mInputImg.rawSize = (unsigned int)fileSize;
+		this->mInputImg.rawSize = (int32_t)fileSize;
 		cout << __FUNCTION__ << " Raw size:" << fileSize << endl;
 		OpenFile.seekg(0, ios::beg);
 
-		if (formate == Mipi10Bit) {
-			unsigned char* data = new unsigned char[this->mInputImg.rawSize];
-			OpenFile.read((char*)data, this->mInputImg.rawSize);
-			memcpy((void* )container, (const void*)data, this->mInputImg.rawSize);
-			delete[] data;
+		if (bufferSize >= mInputImg.rawSize) {
+			if (formate == Mipi10Bit) {
+				OpenFile.read((char*)buffer, this->mInputImg.rawSize);
+			}
+		}else{
+			cout << __FUNCTION__ << " Invalid buffer size!" << endl;
+			buffer = nullptr;
+			result = ISPNoMemory;
 		}
+
 		OpenFile.close();
 	}
 	return result;
 }
 
-ISPResult ImageFileManager::SaveBMP(unsigned char* srcData,unsigned int channels)
+ISPResult ImageFileManager::SaveBMP(uint8_t* srcData, int32_t channels)
 {
 	ISPResult result = ISPSuccess;
 	if (this->mState == Uninited) {
 		result = ISPFailed;
 		cout << __FUNCTION__ << " ImageFile didnot init" << endl;
 	}
-	else {
+
+	if(result == ISPSuccess) {
 		BYTE* BMPdata = new BYTE[this->mOutputImg.width * this->mOutputImg.hight * channels];
-		memset(BMPdata, 0x00, this->mOutputImg.width * this->mOutputImg.hight * channels);
 		SetBMP(srcData, channels, BMPdata);
 		WriteBMP(BMPdata, channels);
-		delete BMPdata;
+		delete[] BMPdata;
 	}
 	return result;
 }
 
-void ImageFileManager::SetBMP(unsigned char* srcData, unsigned int channels, BYTE* dstData)
+void ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
 {
-	unsigned int j = 0;
-	unsigned int row = 0;
-	unsigned int col = 0;
-	unsigned int size = this->mOutputImg.width * this->mOutputImg.hight;
-	BYTE temp;
 	if (channels == 3) {
-		for (int i = 0; i < size; i++) {
+		int32_t size = this->mOutputImg.width * this->mOutputImg.hight;
+		for (int32_t i = 0; i < size; i++) {
 			dstData[i * 3] = srcData[i * 3];
 			dstData[i * 3 + 1] = srcData[i * 3 + 1];
 			dstData[i * 3 + 2] = srcData[i * 3 + 2];
 		}
 		//¾ØÕó·´×ª
+		int32_t j = 0;
+		BYTE temp;
 		while (j < 3 * size - j) {
 			temp = dstData[3 * size - j - 1];
 			dstData[3 * size - j - 1] = dstData[j];
@@ -164,7 +166,8 @@ void ImageFileManager::SetBMP(unsigned char* srcData, unsigned int channels, BYT
 			j++;
 		}
 		//Í¼Ïñ¾µÏñ·­×ª
-		for (row = 0; row < this->mOutputImg.hight; row++) {
+		for (int32_t row = 0; row < this->mOutputImg.hight; row++) {
+			int32_t col = 0;
 			while (col < 3 * this->mOutputImg.width - col) {
 				temp = dstData[row * 3 * this->mOutputImg.width + 3 * this->mOutputImg.width - col - 1];
 				dstData[3 * row * this->mOutputImg.width + 3 * this->mOutputImg.width - col - 1] = 
@@ -172,7 +175,6 @@ void ImageFileManager::SetBMP(unsigned char* srcData, unsigned int channels, BYT
 				dstData[3 * row * this->mOutputImg.width + col] = temp;
 				col++;
 			}
-			col = 0;
 		}
 	}
 	else {
@@ -181,10 +183,10 @@ void ImageFileManager::SetBMP(unsigned char* srcData, unsigned int channels, BYT
 	}
 }
 
-void ImageFileManager::WriteBMP(BYTE* data, unsigned channels) {
+void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 	BITMAPFILEHEADER header;
 	BITMAPINFOHEADER headerinfo;
-	unsigned int BMPSize = this->mOutputImg.width * this->mOutputImg.hight * channels;
+	int32_t BMPSize = this->mOutputImg.width * this->mOutputImg.hight * channels;
 
 	header.bfType = 0x4D42;
 	header.bfReserved1 = 0;
