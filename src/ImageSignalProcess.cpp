@@ -93,7 +93,7 @@ int main() {
 		//Bayer Space Process
 		result = ReadChannels(rawData, bData, gData, rData);//pick up RGB  channels from Raw
 		result = node->Init(GCC);
-		//result = node->Process((void*)gData, /*argNum*/0);
+		result = node->Process((void*)gData, /*argNum*/0);
 		result = Demosaic(rawData, bData, gData, rData);
 
 #if  DUMP_NEEDED
@@ -129,9 +129,9 @@ int main() {
 
 		//YUV Space Process
 		result = node->Init(SWNR);
-		result = node->Process((void*)YUV.data, /*argNum*/2, Imgsizey, Imgsizex);
+		//result = node->Process((void*)YUV.data, /*argNum*/2, Imgsizey, Imgsizex);
 		result = node->Init(SHARPNESS);
-		result = node->Process((void*)YUV.data, /*argNum*/0);
+		//result = node->Process((void*)YUV.data, /*argNum*/0);
 
 		cvtColor(YUV, dst, COLOR_YCrCb2BGR, 0);
 

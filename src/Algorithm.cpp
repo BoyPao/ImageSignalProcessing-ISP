@@ -244,25 +244,44 @@ ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...)
 			for (int32_t j = 1; j < WIDTH; j++) {
 				if (i % 2 == 0 && j % 2 == 1 && i > 0 &&
 					i < HEIGHT - 1 && j > 0 && j < WIDTH - 1) {
-					temp = ((int)static_cast<int*>(gdata)[(i - 1) * WIDTH + j - 1] +
-						(int)static_cast<int*>(gdata)[(i - 1) * WIDTH + j + 1] +
-						(int)static_cast<int*>(gdata)[(i + 1) * WIDTH + j - 1] +
-						(int)static_cast<int*>(gdata)[(i + 1) * WIDTH + j + 1]) << 2;
-					temp = (static_cast<int*>(gdata)[i * WIDTH + j] << 2) - temp / 4.0;
-					static_cast<int*>(gdata)[i * WIDTH + j] =
-						((int)((static_cast<int*>(gdata)[i * WIDTH + j] << 2) - temp * GCCWeight)) >> 2;
+					temp = (static_cast<uint16_t*>(gdata)[(i - 1) * WIDTH + j - 1] +
+						static_cast<uint16_t*>(gdata)[(i - 1) * WIDTH + j + 1] +
+						static_cast<uint16_t*>(gdata)[(i + 1) * WIDTH + j - 1] +
+						static_cast<uint16_t*>(gdata)[(i + 1) * WIDTH + j + 1]) << 2;
+					temp = (static_cast<uint16_t*>(gdata)[i * WIDTH + j] << 2) - temp / 4.0;
+					if (temp >= 0) {
+						static_cast<uint16_t*>(gdata)[i * WIDTH + j] =
+							((static_cast<uint16_t*>(gdata)[i * WIDTH + j] << 2) - (uint16_t)(temp * GCCWeight)) >> 2 & 0xffff;
+					}
+					else {
+						temp = -temp;
+						static_cast<uint16_t*>(gdata)[i * WIDTH + j] =
+							((static_cast<uint16_t*>(gdata)[i * WIDTH + j] << 2) + (uint16_t)(temp * GCCWeight)) >> 2 & 0xffff;
+					}
 				}
 			}
 		}
-		/*for (i = 0; i < HEIGHT; i++) {
-			for (j = 1; j < WIDTH; j++) {
-				if (i % 2 == 1 && j % 2 == 0 && i > 0 && i < HEIGHT - 1 && j>0 && j < WIDTH - 1) {
-					temp = ((int)gdata[(i - 1)*WIDTH + j - 1] + (int)gdata[(i - 1)*WIDTH + j + 1] + (int)gdata[(i + 1)*WIDTH + j - 1] + (int)gdata[(i + 1)*WIDTH + j + 1])<<2;
-					temp = (gdata[i *WIDTH + j]<<2) - temp / 4.0;
-					gdata[i *WIDTH + j] = ((int)((gdata[i *WIDTH + j]<<2)+ temp * GCCWeight))>>2;
+		for (int32_t i = 0; i < HEIGHT; i++) {
+			for (int32_t j = 1; j < WIDTH; j++) {
+				if (i % 2 == 1 && j % 2 == 0 && i > 0 &&
+					i < HEIGHT - 1 && j > 0 && j < WIDTH - 1) {
+					temp = (static_cast<uint16_t*>(gdata)[(i - 1) * WIDTH + j - 1] +
+						static_cast<uint16_t*>(gdata)[(i - 1) * WIDTH + j + 1] +
+						static_cast<uint16_t*>(gdata)[(i + 1) * WIDTH + j - 1] +
+						static_cast<uint16_t*>(gdata)[(i + 1) * WIDTH + j + 1]) << 2;
+					temp = (static_cast<uint16_t*>(gdata)[i * WIDTH + j] << 2) - temp / 4.0;
+					if (temp >= 0) {
+						static_cast<uint16_t*>(gdata)[i * WIDTH + j] =
+							((static_cast<uint16_t*>(gdata)[i * WIDTH + j] << 2) - (uint16_t)(temp * GCCWeight)) >> 2 & 0xffff;
+					}
+					else {
+						temp = -temp;
+						static_cast<uint16_t*>(gdata)[i * WIDTH + j] =
+							((static_cast<uint16_t*>(gdata)[i * WIDTH + j] << 2) + (uint16_t)(temp * GCCWeight)) >> 2 & 0xffff;
+					}
 				}
 			}
-		}*/
+		}
 		cout << __FUNCTION__ << " finished" << endl;
 	}
 
