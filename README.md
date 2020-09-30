@@ -1,5 +1,5 @@
 
-CSDN: https://editor.csdn.net/md/?articleId=102454839
+CSDN: https://blog.csdn.net/weixin_42910064/article/details/102454839
 
 WeiChat Official Accounts：泡视界
 
@@ -14,4 +14,9 @@ It is an basic implementation of ISP for learning only
 
 ## saveing BMP
 
+## Black Level Correction
+
+## White Balance
+
+## Gamma
 
