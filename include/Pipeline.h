@@ -20,7 +20,14 @@ const string PROCESSNAME[] = {
 	"Gamma Correction",
 	"Small Wave Niose Reduction",
 	"Sharpness",
-	"Color Space Change",
+	"Color Space Transfromation",
+	"None",
+};
+
+const string COLOR_SPACE_NAME[] = {
+	"Bayer",
+	"RGB",
+	"YUV",
 	"None",
 };
 
@@ -34,9 +41,9 @@ public:
 private:
 	
 	FUNCTPRT pProcess;
-	bool mEnable;
+	//bool mEnable;
 	bool mInited;
-	bool isNecessary;
+	//bool isNecessary;
 	string mName;
 	PROCESS_TYPE mType;
 	ISPNode* next;
@@ -44,7 +51,12 @@ private:
 
 //Color Space Change Node
 class ISPCSTNode : public ISPNode {   
-
+public:
+	ISPResult Process(void* data, int32_t argNum, ...);
+private:
+	string mSrcColorSpace;
+	string mDstColorSpace;
+	bool isNecessary;
 };
 
 class Pipeline {
@@ -52,6 +64,7 @@ public:
 	Pipeline() {};
 	~Pipeline() {};
 	//Wait to develop NodeList
+	Pipeline* CreateDefaultPipeline();
 	ISPResult AddNode(PROCESS_TYPE type);
 	int32_t GetNodeNum();
 

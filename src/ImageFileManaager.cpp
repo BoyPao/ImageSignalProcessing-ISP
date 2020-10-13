@@ -149,36 +149,34 @@ ISPResult ImageFileManager::SaveBMP(uint8_t* srcData, int32_t channels)
 
 void ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
 {
-	if (channels == 3) {
-		int32_t size = this->mOutputImg.width * this->mOutputImg.hight;
-		for (int32_t i = 0; i < size; i++) {
-			dstData[i * 3] = srcData[i * 3];
-			dstData[i * 3 + 1] = srcData[i * 3 + 1];
-			dstData[i * 3 + 2] = srcData[i * 3 + 2];
-		}
-		//¾ØÕó·´×ª
-		int32_t j = 0;
-		BYTE temp;
-		while (j < 3 * size - j) {
-			temp = dstData[3 * size - j - 1];
-			dstData[3 * size - j - 1] = dstData[j];
+	int32_t size = this->mOutputImg.width * this->mOutputImg.hight;
+	int32_t j = 0;
+	BYTE temp;
+	if (channels == 3 || channels == 1) {
+		memcpy(dstData, srcData, channels * size);
+
+		//¾ØÕó·´×ª	
+		while (j < channels * size - j) {
+			temp = dstData[channels * size - j - 1];
+			dstData[channels * size - j - 1] = dstData[j];
 			dstData[j] = temp;
 			j++;
 		}
+
 		//Í¼Ïñ¾µÏñ·­×ª
 		for (int32_t row = 0; row < this->mOutputImg.hight; row++) {
 			int32_t col = 0;
-			while (col < 3 * this->mOutputImg.width - col) {
-				temp = dstData[row * 3 * this->mOutputImg.width + 3 * this->mOutputImg.width - col - 1];
-				dstData[3 * row * this->mOutputImg.width + 3 * this->mOutputImg.width - col - 1] = 
-					dstData[3 * row * this->mOutputImg.width + col];
-				dstData[3 * row * this->mOutputImg.width + col] = temp;
+			while (col < channels * this->mOutputImg.width - col) {
+				temp = dstData[row * channels * this->mOutputImg.width + channels * this->mOutputImg.width - col - 1];
+				dstData[channels * row * this->mOutputImg.width + channels * this->mOutputImg.width - col - 1] =
+					dstData[channels * row * this->mOutputImg.width + col];
+				dstData[channels * row * this->mOutputImg.width + col] = temp;
 				col++;
 			}
 		}
 	}
-	else {
-		cout << __FUNCTION__ << " Current Bitmap support only for 3 channnels"<<endl;
+	else{
+		cout << __FUNCTION__ << " Invalid BMP output channnels:" << channels <<endl;
 		//Wait for developing here
 	}
 }

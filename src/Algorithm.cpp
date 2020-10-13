@@ -261,7 +261,7 @@ ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...)
 				}
 			}
 		}
-		for (int32_t i = 0; i < HEIGHT; i++) {
+		/*for (int32_t i = 0; i < HEIGHT; i++) {
 			for (int32_t j = 1; j < WIDTH; j++) {
 				if (i % 2 == 1 && j % 2 == 0 && i > 0 &&
 					i < HEIGHT - 1 && j > 0 && j < WIDTH - 1) {
@@ -281,7 +281,7 @@ ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...)
 					}
 				}
 			}
-		}
+		}*/
 		cout << __FUNCTION__ << " finished" << endl;
 	}
 

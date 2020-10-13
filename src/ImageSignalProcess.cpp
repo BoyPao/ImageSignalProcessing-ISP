@@ -56,11 +56,12 @@ int main() {
 	uint16_t* bData = bgrData;
 	uint16_t* gData = bData + numPixel;
 	uint16_t* rData = gData + numPixel;
-	memset(bgrData, 0, numPixel * 3);
+	memset(bgrData, 0x0, numPixel * 3);
 	uint8_t* rgb8bit = new uint8_t[numPixel * 3];
 	uint8_t* r8bit = rgb8bit;
 	uint8_t* g8bit = r8bit + numPixel;
 	uint8_t* b8bit = g8bit + numPixel;
+	memset(rgb8bit, 0x0, numPixel * 3);
 	Mat dst(HEIGHT, WIDTH, CV_8UC3, Scalar(0, 0, 0));
 	int32_t i, j;
 
@@ -75,7 +76,7 @@ int main() {
 
 		//Mipi10 decode
 		result = Mipi10decode((void*)mipiRawData, (void*)rawData,pImgFileManager->GetInputImgInfo().rawSize);
-
+		
 		bool BLCen, LSCen, GICen, WBen, CCen, Gammaen, SWNRen, Sharpen;
 		BLCen = true;
 		LSCen = true;
@@ -86,21 +87,21 @@ int main() {
 		SWNRen = true;
 		Sharpen = true;
 		ISPNode* node = new ISPNode;
+		//Bayer Space Process
 		result = node->Init(BLC);
 		result = node->Process((void*)rawData, /*argNum*/0);
 		result = node->Init(LSC);
 		result = node->Process((void*)rawData, /*argNum*/0);
-		//Bayer Space Process
-		result = ReadChannels(rawData, bData, gData, rData);//pick up RGB  channels from Raw
 		result = node->Init(GCC);
-		result = node->Process((void*)gData, /*argNum*/0);
-		result = Demosaic(rawData, bData, gData, rData);
+		result = node->Process((void*)rawData, /*argNum*/0);
+		result = ReadChannels(rawData, bData, gData, rData);//pick up RGB  channels from Raw
 
 #if  DUMP_NEEDED
 		if (result == ISPSuccess) {
 			DumpImgDataAsText((void*)gData, HEIGHT, WIDTH, sizeof(uint16_t), LOGPATH);
 		}
 #endif
+		result = Demosaic(rawData, bData, gData, rData);
 
 		//RGB Space Process
 		result = node->Init(WB);
@@ -110,10 +111,10 @@ int main() {
 		result = node->Init(GAMMA);
 		result = node->Process((void*)bgrData, /*argNum*/0);
 
-		Compress10to8(bData, b8bit);
-		Compress10to8(gData, g8bit);
-		Compress10to8(rData, r8bit);
-
+		Compress10to8(bData, b8bit, numPixel, true);
+		Compress10to8(gData, g8bit, numPixel, true);
+		Compress10to8(rData, r8bit, numPixel, true);
+		
 		//Fill a BMP data use three channals data
 		for (i = 0; i < HEIGHT; i++) {
 			for (j = 0; j < WIDTH; j++) {
@@ -129,7 +130,7 @@ int main() {
 
 		//YUV Space Process
 		result = node->Init(SWNR);
-		//result = node->Process((void*)YUV.data, /*argNum*/2, Imgsizey, Imgsizex);
+		result = node->Process((void*)YUV.data, /*argNum*/2, Imgsizey, Imgsizex);
 		result = node->Init(SHARPNESS);
 		//result = node->Process((void*)YUV.data, /*argNum*/0);
 
@@ -190,12 +191,21 @@ ISPResult ReadChannels(uint16_t* data, uint16_t* B, uint16_t* G, uint16_t* R) {
 	int32_t i, j;
 	for (i = 0; i < HEIGHT; i++) {
 		for (j = 0; j < WIDTH; j++) {
-			if (i % 2 == 0 && j % 2 == 0)
+			if (i % 2 == 0 && j % 2 == 0) {
 				B[i * WIDTH + j] = data[i * WIDTH + j];
-			if ((i % 2 == 0 && j % 2 == 1) || (i % 2 == 1 && j % 2 == 0))
+				G[i * WIDTH + j] = 0;
+				R[i * WIDTH + j] = 0;
+			}
+			else if ((i % 2 == 0 && j % 2 == 1) || (i % 2 == 1 && j % 2 == 0)) {
+				B[i * WIDTH + j] = 0;
 				G[i * WIDTH + j] = data[i * WIDTH + j];
-			if (i % 2 == 1 && j % 2 == 1)
+				R[i * WIDTH + j] = 0;
+			} 
+			else {
+				B[i * WIDTH + j] = 0;
+				G[i * WIDTH + j] = 0;
 				R[i * WIDTH + j] = data[i * WIDTH + j];
+			}
 		}
 	}
 	cout << __FUNCTION__ << " finished" << endl;
@@ -347,8 +357,26 @@ void LastPixelInsertProcess(uint16_t* src, uint16_t* dst) {
 	//cout << " Last Pixel Insert Process finished " << endl;
 }
 
-void Compress10to8(uint16_t* src, unsigned char* dst) {
-	for (int i = 0; i < WIDTH * HEIGHT; i++) {
-		dst[i] = (src[i] >> 2) & 0xff;
+void Compress10to8(uint16_t* src, unsigned char* dst, int32_t size, bool need_420_521)
+{
+	if (need_420_521) {
+		double temp;
+		uint16_t tempInt;
+		for (int i = 0; i < size; i++) {
+			temp = src[i] / 1024.0 * 256.0;
+			tempInt = (uint16_t)(temp * 10);
+			tempInt = tempInt % 10;
+			if (tempInt < 5 || temp > 255) {
+				dst[i] = (uint8_t)temp & 0xff;
+			}
+			else {
+				dst[i] = ((uint8_t)temp + 1) & 0xff;
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < size; i++) {
+			dst[i] = (src[i] >> 2) & 0xff;
+		}
 	}
 }

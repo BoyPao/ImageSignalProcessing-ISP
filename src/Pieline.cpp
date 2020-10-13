@@ -14,13 +14,13 @@
 
 using namespace std;
 
-ISPResult ISPNode::Init(PROCESS_TYPE type){//, Args&&... args) {
-
+ISPResult ISPNode::Init(PROCESS_TYPE type)//, Args&&... args) {
+{
 	ISPResult result = ISPSuccess;
 
 	mName = PROCESSNAME[type];
 	mType = type;
-	mEnable = true;
+	//mEnable = true;
 	pProcess = nullptr;
 	//isNecessary = true;  //Wait to do. Distinwish necessary process.	
 	next = nullptr;
@@ -28,7 +28,8 @@ ISPResult ISPNode::Init(PROCESS_TYPE type){//, Args&&... args) {
 	return result;
 }
 
-ISPResult ISPNode::Process(void* data, int32_t argNum, ...) {
+ISPResult ISPNode::Process(void* data, int32_t argNum, ...)
+{
 	ISPResult rt = ISPSuccess;
 	if (!mInited) {
 		return ISPNotInited;
@@ -93,3 +94,9 @@ ISPResult ISPNode::getNodeName(string* name)
 	}
 	return rt;
 }
+
+/*Pipeline* CreateDefaultPipeline()
+{
+	Pipeline* pPipeline = new Pipeline;
+	pPipeline->AddNode(CST);
+}*/

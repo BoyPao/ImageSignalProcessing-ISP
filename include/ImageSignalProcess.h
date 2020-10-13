@@ -49,4 +49,4 @@ ISPResult Demosaic(uint16_t* data, uint16_t* B, uint16_t* G, uint16_t* R);
 void FirstPixelInsertProcess(uint16_t* src, uint16_t* dst);
 void TwoGPixelInsertProcess(uint16_t* src, uint16_t* dst);
 void LastPixelInsertProcess(uint16_t* src, uint16_t* dst);
-void Compress10to8(uint16_t* src, unsigned char* dst);
+void Compress10to8(uint16_t* src, unsigned char* dst, int32_t size, bool need_420_521);
