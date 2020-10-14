@@ -140,15 +140,21 @@ ISPResult ImageFileManager::SaveBMP(uint8_t* srcData, int32_t channels)
 
 	if(result == ISPSuccess) {
 		BYTE* BMPdata = new BYTE[this->mOutputImg.width * this->mOutputImg.hight * channels];
-		SetBMP(srcData, channels, BMPdata);
-		WriteBMP(BMPdata, channels);
+		result = SetBMP(srcData, channels, BMPdata);
+		if (result == ISPSuccess) {
+			WriteBMP(BMPdata, channels);
+		}
+		else {
+			cout << __FUNCTION__ << " SetBMP failed. result:" << result << endl;
+		}
 		delete[] BMPdata;
 	}
 	return result;
 }
 
-void ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
+ISPResult ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
 {
+	ISPResult result = ISPSuccess;
 	int32_t size = this->mOutputImg.width * this->mOutputImg.hight;
 	int32_t j = 0;
 	BYTE temp;
@@ -176,9 +182,12 @@ void ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
 		}
 	}
 	else{
+		result = ISPInvalid;
 		cout << __FUNCTION__ << " Invalid BMP output channnels:" << channels <<endl;
 		//Wait for developing here
 	}
+
+	return result;
 }
 
 void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
@@ -186,26 +195,41 @@ void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 	BITMAPINFOHEADER headerinfo;
 	int32_t BMPSize = this->mOutputImg.width * this->mOutputImg.hight * channels;
 
-	header.bfType = 0x4D42;
-	header.bfReserved1 = 0;
-	header.bfReserved2 = 0;
-	header.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + BMPSize;
-	header.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
 	headerinfo.biSize = sizeof(BITMAPINFOHEADER);
 	headerinfo.biHeight = this->mOutputImg.hight;
 	headerinfo.biWidth = this->mOutputImg.width;
 	headerinfo.biPlanes = 1;
-	headerinfo.biBitCount = 24;
+	headerinfo.biBitCount = (channels == 1) ? 8 : 24;
 	headerinfo.biCompression = 0; //BI_RGB
 	headerinfo.biSizeImage = BMPSize;
-	headerinfo.biClrUsed = 0;
+	headerinfo.biClrUsed = (channels == 1) ? 256 : 0;
 	headerinfo.biClrImportant = 0;
+
+	header.bfType = ('M' << 8) + 'B'; // ÆäÖµÎª0x4D42;
+	header.bfReserved1 = 0;
+	header.bfReserved2 = 0;
+	header.bfOffBits = (channels == 1) ?
+		(sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD)) :
+		(sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER));
+	header.bfSize = header.bfOffBits + headerinfo.biSizeImage;
+
 	cout << " BMPPath: " << this->mOutputImg.pOutputPath << endl;
 	ofstream out(this->mOutputImg.pOutputPath, ios::binary);
 	out.write((char*)& header, sizeof(BITMAPFILEHEADER));
 	out.write((char*)& headerinfo, sizeof(BITMAPINFOHEADER));
+	if (channels == 1) {
+		static RGBQUAD palette[256];
+		for (unsigned int i = 0; i < 256; i++)
+		{
+			palette[i].rgbBlue = i;
+			palette[i].rgbGreen = i;
+			palette[i].rgbRed = i;
+		}
+		out.write((char*)palette, sizeof(RGBQUAD) * 256);
+	}
 	out.write((char*)data, BMPSize);
 	out.close();
+
 	cout << " BMP saved " << endl;
 }
 

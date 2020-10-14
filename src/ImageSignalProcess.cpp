@@ -124,15 +124,14 @@ int main() {
 			}
 		}
 
-		Mat YUV, NRYUV;
+		Mat YUV;
 		YUV = dst.clone();
 		cvtColor(YUV, YUV, COLOR_BGR2YCrCb, 0);
-
 		//YUV Space Process
 		result = node->Init(SWNR);
 		result = node->Process((void*)YUV.data, /*argNum*/2, Imgsizey, Imgsizex);
 		result = node->Init(SHARPNESS);
-		//result = node->Process((void*)YUV.data, /*argNum*/0);
+		result = node->Process((void*)YUV.data, /*argNum*/0);
 
 		cvtColor(YUV, dst, COLOR_YCrCb2BGR, 0);
 

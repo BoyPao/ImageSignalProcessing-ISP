@@ -59,6 +59,12 @@ struct WNR_PARAM {
 	int32_t L3_threshold;
 };
 
+struct EE_PARAM {
+	double alpha;
+	int32_t coreSize;
+	int32_t delta;
+};
+
 class ISPParameter {
 public:
 	ISPResult GetIMGDimension(int32_t* width, int32_t* height);
@@ -71,4 +77,5 @@ public:
 	ISPResult GetGAMMAPARAM(uint16_t* plut);
 
 	ISPResult GetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, int32_t* l3Threshold);
+	ISPResult GetEERPARAM(double* alph, int32_t* coreSize, int32_t* delta);
 };

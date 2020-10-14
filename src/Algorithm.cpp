@@ -936,19 +936,19 @@ ISPResult SmallWaveNR(void* data, int32_t argNum, ...)
 	if (result == ISPSuccess) {
 		//会产生严重格子现象
 		//Y通道小波
-		//for (i = 0; i < HEIGHT; i++) {
-		//	for (j = 0; j < WIDTH; j++) {
-		//		onechannel.data[i*WIDTH + j] = YUV.data[i * 3 * WIDTH + 3 * j];
-		//	}
-		//}
-		//onechannel2 = getim(onechannel, WIDTH, HEIGHT, 3, Imgsizey, Imgsizex, 0);
-		//for (i = 0; i < HEIGHT; i++) {
-		//	for (j = 0; j < WIDTH; j++) {
-		//		YUV.data[i * 3 * WIDTH + 3 * j ]= onechannel2.data[i*WIDTH + j];
-		//		//YUV.data[i * 3 * WIDTH + 3 * j + 1] = onechannel2.data[i*WIDTH + j];
-		//		//YUV.data[i * 3 * WIDTH + 3 * j + 2] = onechannel2.data[i*WIDTH + j];
-		//	}
-		//}
+		/*for (i = 0; i < HEIGHT; i++) {
+			for (j = 0; j < WIDTH; j++) {
+				onechannel.data[i*WIDTH + j] = static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j];
+			}
+		}
+		onechannel2 = getim(onechannel, WIDTH, HEIGHT, 3, Imgsizey, Imgsizex, 1, 50, 30, 20);
+		for (i = 0; i < HEIGHT; i++) {
+			for (j = 0; j < WIDTH; j++) {
+				static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j ]= onechannel2.data[i*WIDTH + j];
+				//YUV.data[i * 3 * WIDTH + 3 * j + 1] = onechannel2.data[i*WIDTH + j];
+				//YUV.data[i * 3 * WIDTH + 3 * j + 2] = onechannel2.data[i*WIDTH + j];
+			}
+		}*/
 
 		//U通道小波
 		for (i = 0; i < HEIGHT; i++) {
@@ -994,9 +994,12 @@ ISPResult Sharpness(void* data, int32_t argNum, ...)
 	ISPResult result = ISPSuccess;
 	int32_t WIDTH, HEIGHT;
 
+	double alpha;
+	int32_t coreSzie;
+	int32_t delta;
 	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
 	if (result == ISPSuccess) {
-		//reserve for sharpness parm
+		result = gParam.GetEERPARAM(&alpha, &coreSzie, &delta);
 		if (result != ISPSuccess) {
 			cout << __FUNCTION__ << " get SWNR param failed. result:" << result << endl;
 		}
@@ -1005,9 +1008,36 @@ ISPResult Sharpness(void* data, int32_t argNum, ...)
 		cout << __FUNCTION__ << " get IMG Dimension failed. result:" << result << endl;
 	}
 
-	
-
 	if (result == ISPSuccess) {
+		Mat blurred;
+		Mat Y(HEIGHT, WIDTH, CV_8UC1, Scalar(0));
+		int32_t i, j;
+		int32_t mask;
+		for (i = 0; i < HEIGHT; i++) {
+			for (j = 0; j < WIDTH; j++) {
+				Y.data[i * WIDTH + j] = static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j];
+			}
+		}
+
+		GaussianBlur(Y, blurred, Size(coreSzie, coreSzie), delta, delta);
+
+		for (i = 0; i < HEIGHT; i++) {
+			for (j = 0; j < WIDTH; j++) {
+				mask = Y.data[i * WIDTH + j] - blurred.data[i * WIDTH + j];
+				mask = (int)(static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j] + (int)(alpha * mask));
+				if (mask > 255) {
+					mask = 255;
+				}
+				else if (mask < 0) {
+					mask = 0;
+				}
+				static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j] = mask & 255;
+			}
+		}
+		cout << __FUNCTION__ << " finished" << endl;
+	}
+
+	/*if (result == ISPSuccess) {
 		int32_t i, j;
 		Mat onechannel(HEIGHT, WIDTH, CV_8U);
 
@@ -1032,15 +1062,7 @@ ISPResult Sharpness(void* data, int32_t argNum, ...)
 		blurried = onechannel.clone();
 		sharped = onechannel.clone();
 		bilateralFilter(onechannel, blurried, 5, 11, 15, BORDER_DEFAULT);
-		//medianBlur(onechannel, blurried, 5);
 		filter2D(blurried, sharped, blurried.depth(), kernel);
-		//Canny(sharped, edgedetect, 20, 60, 3, false);
-		//Mat Sobel_Mat_x, Sobel_Mat_y;
-		//Sobel(sharped, Sobel_Mat_x, sharped.depth(), 1, 0);
-		//Sobel(sharped, Sobel_Mat_y, sharped.depth(), 0, 1);
-		//convertScaleAbs(Sobel_Mat_x, Sobel_Mat_x);
-		//convertScaleAbs(Sobel_Mat_y, Sobel_Mat_y);
-		//addWeighted(Sobel_Mat_x, 0.5, Sobel_Mat_y, 0.5, 0, edgedetect);
 
 		for (i = 0; i < HEIGHT; i++) {
 			for (j = 0; j < WIDTH; j++) {
@@ -1049,27 +1071,9 @@ ISPResult Sharpness(void* data, int32_t argNum, ...)
 				//YUV.data[i * 3 * WIDTH + 3 * j + 2] = onechannel2.data[i*WIDTH + j];
 			}
 		}
-		/*
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				onechannel.data[i*WIDTH + j] = YUV.data[i * 3 * WIDTH + 3 * j];
-			}
-		}
-		fastNlMeansDenoising(onechannel, onechannel2, 3, 3, 9);
-		onechannel = onechannel2.clone();
 
-		//filter2D(onechannel, onechannel2, onechannel.depth(), kernel);
-
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				YUV.data[i * 3 * WIDTH + 3 * j ]= onechannel2.data[i*WIDTH + j];
-				//YUV.data[i * 3 * WIDTH + 3 * j + 1] = onechannel2.data[i*WIDTH + j];
-				//YUV.data[i * 3 * WIDTH + 3 * j + 2] = onechannel2.data[i*WIDTH + j];
-			}
-		}
-		*/
-		//fastNlMeansDenoisingColored(dst, result, 3, 3, 3, 9);
 		cout << __FUNCTION__ << " finished" << endl;
-	}
+	}*/
+
 	return result;
 }

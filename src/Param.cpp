@@ -230,7 +230,15 @@ GAMMA_PARAM GAMMAPARAM{
 };
 
 WNR_PARAM WNRPARAM{
-	20, 20, 50
+	20, 
+	20, 
+	50
+};
+
+EE_PARAM EEPARAM{
+	1.0, 
+	5, 
+	4,
 };
 
 ISPResult ISPParameter::GetIMGDimension(int32_t* width, int32_t* height)
@@ -317,4 +325,15 @@ ISPResult ISPParameter::GetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, 
 	*l3Threshold = WNRPARAM.L3_threshold;
 
  	return result;
+}
+
+ISPResult ISPParameter::GetEERPARAM(double* alpha, int32_t* coreSize, int32_t* delta)
+{
+	ISPResult result = ISPSuccess;
+
+	*alpha = EEPARAM.alpha;
+	*coreSize = EEPARAM.coreSize;
+	*delta = EEPARAM.delta;
+
+	return result;
 }

@@ -48,7 +48,7 @@ public:
 	ISPResult SetOutputImgInfo(char* path);
 	ISPResult SetOutputImgInfo(int32_t width, int32_t hight);
 	ISPResult ReadRawData(uint8_t* buffer, size_t bufferSize, ISPRawFormate formate);
-	void SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData);
+	ISPResult SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData);
 	void WriteBMP(BYTE* data, int32_t channels);
 	ISPResult SaveBMP(uint8_t* srcData, int32_t channels);
 };

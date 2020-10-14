@@ -20,10 +20,10 @@ void DumpImgDataAsText(void* data, int32_t height, int32_t width, size_t bitWidt
 			for (int32_t j = 0; j < width; j++) {
 				switch (bitWidth) {
 				case sizeof(uint16_t):
-					OutFile << static_cast<uint16_t*>(data)[i * width + j] << ' ';
+					OutFile << (int)static_cast<uint16_t*>(data)[i * width + j] << ' ';
 					break;
 				case sizeof(uint8_t):
-					OutFile << static_cast<uint8_t*>(data)[i * width + j] << ' ';
+					OutFile << (int)static_cast<uint8_t*>(data)[i * width + j] << ' ';
 					break;
 				default:
 					cout << "Dump failed. Unsopported data type." << endl;
