@@ -78,4 +78,18 @@ public:
 
 	ISPResult GetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, int32_t* l3Threshold);
 	ISPResult GetEERPARAM(double* alph, int32_t* coreSize, int32_t* delta);
+
+	ISPResult SetIMGDimension(int32_t* width, int32_t* height);
+	ISPResult SetIMGWidth(int32_t* width);
+	ISPResult SetIMGHeight(int32_t* height);
+	ISPResult SetBLCParam(uint16_t* offset);
+	ISPResult SetLSCParam(float** rGain, float** grGain, float** gbGain, float** bGain);
+	ISPResult SetGCCParam(double* weight);
+
+	ISPResult SetWBParam(double* rGain, double* gGain, double* bGain);
+	ISPResult SetCCParam(float* gain, int32_t row, int32_t col);
+	ISPResult SetGAMMAPARAM(uint16_t* plut);
+
+	ISPResult SetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, int32_t* l3Threshold);
+	ISPResult SetEERPARAM(double* alph, int32_t* coreSize, int32_t* delta);
 };

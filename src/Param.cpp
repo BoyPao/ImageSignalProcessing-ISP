@@ -337,3 +337,31 @@ ISPResult ISPParameter::GetEERPARAM(double* alpha, int32_t* coreSize, int32_t* d
 
 	return result;
 }
+
+ISPResult SetIMGDimension(int32_t* width, int32_t* height)
+{
+	ISPResult result = ISPSuccess;
+
+	IMGINFO.width = width;
+	IMGINFO.height = height;
+
+	return result;
+}
+
+ISPResult SetIMGWidth(int32_t* width)
+{
+	ISPResult result = ISPSuccess;
+
+	IMGINFO.width = width;
+
+	return result;
+}
+
+ISPResult SetIMGHeight(int32_t* height)
+{
+	ISPResult result = ISPSuccess;
+
+	IMGINFO.height = height;
+
+	return result;
+}
