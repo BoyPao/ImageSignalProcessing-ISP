@@ -35,3 +35,4 @@ Mat getim(Mat src, int32_t WIDTH, int32_t HEIGHT,
 Mat WDT(const Mat& _src, const string _wname, const int _level);
 Mat waveletDecompose(Mat _src, Mat _lowFilter, Mat _highFilter);
 void wavelet(const string _wname, Mat& _lowFilter, Mat& _highFilter);
+

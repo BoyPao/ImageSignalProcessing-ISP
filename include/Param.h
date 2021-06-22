@@ -93,3 +93,4 @@ public:
 	ISPResult SetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, int32_t* l3Threshold);
 	ISPResult SetEERPARAM(double* alph, int32_t* coreSize, int32_t* delta);
 };
+

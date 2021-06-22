@@ -243,7 +243,7 @@ EE_PARAM EEPARAM{
 
 ISPResult ISPParameter::GetIMGDimension(int32_t* width, int32_t* height)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 	*width = IMGINFO.width;
 	*height = IMGINFO.height;
 	return result;
@@ -251,7 +251,7 @@ ISPResult ISPParameter::GetIMGDimension(int32_t* width, int32_t* height)
 
 ISPResult ISPParameter::GetBLCParam(uint16_t* offset)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 
 	int difBitNum = BLCPARAM.bitNum - 8;
 	if (0 < difBitNum && difBitNum < 4) {
@@ -265,7 +265,7 @@ ISPResult ISPParameter::GetBLCParam(uint16_t* offset)
 
 ISPResult ISPParameter::GetLSCParam(float** rGain, float** grGain, float ** gbGain, float ** bGain)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 	for (int32_t i = 0; i < 13; i++) {
 		memcpy(rGain[i], LSCPARM.rGain[i], 17 * sizeof(float));
 		memcpy(grGain[i], LSCPARM.grGain[i], 17 * sizeof(float));
@@ -278,7 +278,7 @@ ISPResult ISPParameter::GetLSCParam(float** rGain, float** grGain, float ** gbGa
 
 ISPResult ISPParameter::GetGCCParam(double * weight)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 	*weight = GCCPARAM.weight;
 
 	return result;
@@ -286,7 +286,7 @@ ISPResult ISPParameter::GetGCCParam(double * weight)
 
 ISPResult ISPParameter::GetWBParam(double* rGain, double* gGain, double* bGain)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 
 	*rGain = WBPARAM.WB1stGAMMA2rd ? WBPARAM.gainType1.rGain : WBPARAM.gainType2.rGain;
 	*gGain = WBPARAM.WB1stGAMMA2rd ? WBPARAM.gainType1.gGain : WBPARAM.gainType2.gGain;
@@ -297,7 +297,7 @@ ISPResult ISPParameter::GetWBParam(double* rGain, double* gGain, double* bGain)
 
 ISPResult ISPParameter::GetCCParam(float* gain, int32_t row, int32_t col)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 	*gain = CCPARAM.CCM[row][col];
 
 	return result;
@@ -305,20 +305,20 @@ ISPResult ISPParameter::GetCCParam(float* gain, int32_t row, int32_t col)
 
 ISPResult ISPParameter::GetGAMMAPARAM(uint16_t* plut)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 	if (plut) {
 		memcpy(plut, &GAMMAPARAM.lut, 1024 * sizeof(uint16_t));
 	}
 	else {
-		cout << __FUNCTION__ << " null ptr" << endl;
-		result = ISPFailed;
+		ISPLoge("null ptr");
+		result = ISP_INVALID_PARAM;
 	}
 	return result;
 }
 
 ISPResult ISPParameter::GetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, int32_t* l3Threshold)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 
 	*l1Threshold = WNRPARAM.L1_threshold;
 	*l2Threshold = WNRPARAM.L2_threshold;
@@ -329,7 +329,7 @@ ISPResult ISPParameter::GetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, 
 
 ISPResult ISPParameter::GetEERPARAM(double* alpha, int32_t* coreSize, int32_t* delta)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 
 	*alpha = EEPARAM.alpha;
 	*coreSize = EEPARAM.coreSize;
@@ -340,28 +340,29 @@ ISPResult ISPParameter::GetEERPARAM(double* alpha, int32_t* coreSize, int32_t* d
 
 ISPResult SetIMGDimension(int32_t* width, int32_t* height)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 
-	IMGINFO.width = width;
-	IMGINFO.height = height;
+	IMGINFO.width = *width;
+	IMGINFO.height = *height;
 
 	return result;
 }
 
 ISPResult SetIMGWidth(int32_t* width)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 
-	IMGINFO.width = width;
+	IMGINFO.width = *width;
 
 	return result;
 }
 
 ISPResult SetIMGHeight(int32_t* height)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 
-	IMGINFO.height = height;
+	IMGINFO.height = *height;
 
 	return result;
 }
+

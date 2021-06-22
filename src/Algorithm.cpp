@@ -11,13 +11,11 @@
 #include "Algorithm.h"
 #include "Param.h"
 
-using namespace std;
-
 ISPParameter gParam;
 
 //EdgePreservedNR not used, it should be redeveloped
 ISPResult EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable) {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 
 	if (enable == true) {
 		int32_t WIDTH;
@@ -96,31 +94,31 @@ void BF(unsigned char* b, unsigned char* g, unsigned char* r, int dec, int Color
 			g[i] = ABFg.data[i];
 			r[i] = ABFr.data[i];
 		}
-		cout << __FUNCTION__ << " finished" << endl;
+		ISPLogi("finished");
 	}
 }
 
 ISPResult BlackLevelCorrection(void* data, int32_t argNum, ...) {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 
 	uint16_t offset;
 	int32_t WIDTH, HEIGHT;
 	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		result = gParam.GetBLCParam(&offset);
-		if (result != ISPSuccess) {
-			cout << __FUNCTION__ << " get BLC offset failed. result:" << result << endl;
+		if (!SUCCESS(result)) {
+			ISPLoge("get BLC offset failed. result:%d", result);
 		}
 	}
 	else {
-		cout << __FUNCTION__ << " get IMG Dimension failed. result:" << result << endl;
+		ISPLoge("get IMG Dimension failed. result:%d", result);
 	}
 
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		for (int32_t i = 0; i < WIDTH * HEIGHT; i++) {
 			static_cast<uint16_t*>(data)[i] -= offset;
 		}
-		cout << __FUNCTION__ << " finished" << endl;
+		ISPLogi("finished");
 	}
 
 	return result;
@@ -139,7 +137,7 @@ float LSCinterpolation(int32_t WIDTH, int32_t HEIGHT,
 
 ISPResult LensShadingCorrection(void* data, int32_t argNum, ...)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 
 	int32_t WIDTH, HEIGHT;
 	int32_t i, j;
@@ -162,17 +160,17 @@ ISPResult LensShadingCorrection(void* data, int32_t argNum, ...)
 	}
 
 	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		result = gParam.GetLSCParam(ppR, ppGr, ppGb, ppB);
-		if (result != ISPSuccess) {
-			cout << __FUNCTION__ << " get LSC lut failed. result:" << result << endl;
+		if (!SUCCESS(result)) {
+			ISPLoge("get LSC lut failed. result:%d", result);
 		}
 	}
 	else {
-		cout << __FUNCTION__ << " get IMG Dimension failed. result:" << result << endl;
+		ISPLoge("get IMG Dimension failed. result:%d", result);
 	}
 	
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		for (i = 0; i < HEIGHT; i++) {
 			for (j = 0; j < WIDTH; j++) {
 				if (i % 2 == 0 && j % 2 == 0) {
@@ -209,7 +207,7 @@ ISPResult LensShadingCorrection(void* data, int32_t argNum, ...)
 				}
 			}
 		}
-		cout << __FUNCTION__ << " finished" << endl;
+		ISPLogi("finished");
 	}
 	free(ppR);
 	free(ppGr);
@@ -222,23 +220,23 @@ ISPResult LensShadingCorrection(void* data, int32_t argNum, ...)
 //GCC now is too simple, it should be considered more
 ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 
 	int32_t WIDTH, HEIGHT;
 	double GCCWeight;
 
 	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		result = gParam.GetGCCParam(&GCCWeight);
-		if(result != ISPSuccess) {
-			cout << __FUNCTION__ << " get GCCWeight failed. result:" << result << endl;
+		if(!SUCCESS(result)) {
+			ISPLoge("get GCCWeight failed. result:%d", result);
 		}
 	}
 	else {
-		cout << __FUNCTION__ << " get IMG Dimension failed. result:" << result << endl;
+		ISPLoge("get IMG Dimension failed. result:%d", result);
 	}
 
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		float temp = 1.0;
 		for (int32_t i = 0; i < HEIGHT; i++) {
 			for (int32_t j = 1; j < WIDTH; j++) {
@@ -282,7 +280,7 @@ ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...)
 				}
 			}
 		}*/
-		cout << __FUNCTION__ << " finished" << endl;
+		ISPLogi("finished");
 	}
 
 	return result;
@@ -290,34 +288,34 @@ ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...)
 
 ISPResult WhiteBalance(void* data, int32_t argNum, ...)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 
 	int32_t WIDTH, HEIGHT;
 	double bGain, gGain, rGain;
 
 	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		result = gParam.GetWBParam(&rGain, &gGain, &bGain);
-		if (result != ISPSuccess) {
-			cout << __FUNCTION__ << " get WB gain failed. result:" << result << endl;
+		if (!SUCCESS(result)) {
+			ISPLoge("get WB gain failed. result:%d", result);
 		}
 	}
 	else {
-		cout << __FUNCTION__ << " get IMG Dimension failed. result:" << result << endl;
+		ISPLoge("get IMG Dimension failed. result:%d", result);
 	}
 
 	uint16_t* B = static_cast<uint16_t*>(data);
 	uint16_t* G = B + WIDTH * HEIGHT;
 	uint16_t* R = G + WIDTH * HEIGHT;
 
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		for (int i = 0; i < WIDTH * HEIGHT; i++)
 		{
 			B[i] = B[i] * bGain;
 			G[i] = G[i] * gGain;
 			R[i] = R[i] * rGain;
 		}
-		cout << __FUNCTION__ << " finished" << endl;
+		ISPLogi("finished");
 	}
 
 	return result;
@@ -325,30 +323,30 @@ ISPResult WhiteBalance(void* data, int32_t argNum, ...)
 
 ISPResult ColorCorrection(void* data, int32_t argNum, ...) {
 
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 	int32_t WIDTH, HEIGHT;
 
 	Mat A_cc = Mat::zeros(3, 3, CV_32FC1);
 	int32_t i, j;
 	float temp;
 	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		for (i = 0; i < 3; i++) {
 			for (j = 0; j < 3; j++) {
 				result = gParam.GetCCParam(&temp, i, j);
 				A_cc.at<float>(i, j) = temp;
 			}
-			if (result != ISPSuccess) {
-				cout << __FUNCTION__ << " get Color Correction Matrix failed. result:" << result << endl;
+			if (!SUCCESS(result)) {
+				ISPLoge("get Color Correction Matrix failed. result:%d", result);
 				break;
 			}
 		}
 	}
 	else {
-		cout << __FUNCTION__ << " get IMG Dimension failed. result:" << result << endl;
+		ISPLoge("get IMG Dimension failed. result:%d", result);
 	}
 
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		uint16_t* B = static_cast<uint16_t*>(data);
 		uint16_t* G = B + WIDTH * HEIGHT;
 		uint16_t* R = G + WIDTH * HEIGHT;
@@ -398,31 +396,31 @@ ISPResult ColorCorrection(void* data, int32_t argNum, ...) {
 		//OutFile5 <<income;
 		//OutFile5.close();
 		//CharDataSaveAsText(dst.data, "C:\\Users\\penghao6\\Desktop\\output2.txt");
-		cout << __FUNCTION__ << " finished" << endl;
+		ISPLogi("finished");
 	}
 	return result;
 }
 
 ISPResult GammaCorrection(void* data, int32_t argNum, ...)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 
 	int32_t WIDTH, HEIGHT;
 	uint16_t lut[1024];
 	uint16_t* plut = nullptr;
 	plut = lut;
 	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		result = gParam.GetGAMMAPARAM(plut);
-		if (result != ISPSuccess) {
-			cout << __FUNCTION__ << " get Gamma lut failed. result:" << result << endl;
+		if (!SUCCESS(result)) {
+			ISPLoge("get Gamma lut failed. result:%d", result);
 		}
 	}
 	else {
-		cout << __FUNCTION__ << " get IMG Dimension failed. result:" << result << endl;
+		ISPLoge("get IMG Dimension failed. result:%d", result);
 	}
 
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		uint16_t* B = static_cast<uint16_t*>(data);
 		uint16_t* G = B + WIDTH * HEIGHT;
 		uint16_t* R = G + WIDTH * HEIGHT;
@@ -433,7 +431,7 @@ ISPResult GammaCorrection(void* data, int32_t argNum, ...)
 			G[i] = plut[G[i]];
 			R[i] = plut[R[i]];
 		}
-		cout << __FUNCTION__ << " finished" << endl;
+		ISPLogi("finished");
 	}
 	return result;
 }
@@ -905,7 +903,7 @@ Mat getim(Mat src, int32_t WIDTH, int32_t HEIGHT,
 
 ISPResult SmallWaveNR(void* data, int32_t argNum, ...)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 	int32_t WIDTH, HEIGHT;
 
 	int32_t strength1;
@@ -913,14 +911,14 @@ ISPResult SmallWaveNR(void* data, int32_t argNum, ...)
 	int32_t strength3;
 
 	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		result = gParam.GetWNRPARAM(&strength1, &strength2, &strength3);
-		if (result != ISPSuccess) {
-			cout << __FUNCTION__ << " get SWNR param failed. result:" << result << endl;
+		if (!SUCCESS(result)) {
+			ISPLoge("get SWNR param failed. result:%d", result);
 		}
 	}
 	else {
-		cout << __FUNCTION__ << " get IMG Dimension failed. result:" << result << endl;
+		ISPLoge("get IMG Dimension failed. result:%d", result);
 	}
 
 	va_list(va);
@@ -933,7 +931,7 @@ ISPResult SmallWaveNR(void* data, int32_t argNum, ...)
 	Mat onechannel(HEIGHT, WIDTH, CV_8U);
 	Mat onechannel2(HEIGHT, WIDTH, CV_8U);
 
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		//会产生严重格子现象
 		//Y通道小波
 		/*for (i = 0; i < HEIGHT; i++) {
@@ -983,7 +981,7 @@ ISPResult SmallWaveNR(void* data, int32_t argNum, ...)
 				static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j + 2] = onechannel2.data[i * WIDTH + j];
 			}
 		}
-		cout << __FUNCTION__ << " finished" << endl;
+		ISPLogi(" finished");
 	}
 	return result;
 }
@@ -991,24 +989,24 @@ ISPResult SmallWaveNR(void* data, int32_t argNum, ...)
 
 ISPResult Sharpness(void* data, int32_t argNum, ...)
 {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 	int32_t WIDTH, HEIGHT;
 
 	double alpha;
 	int32_t coreSzie;
 	int32_t delta;
 	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		result = gParam.GetEERPARAM(&alpha, &coreSzie, &delta);
-		if (result != ISPSuccess) {
-			cout << __FUNCTION__ << " get SWNR param failed. result:" << result << endl;
+		if (!SUCCESS(result)) {
+			ISPLoge("get SWNR param failed. result:%d", result);
 		}
 	}
 	else {
-		cout << __FUNCTION__ << " get IMG Dimension failed. result:" << result << endl;
+		ISPLoge("get IMG Dimension failed. result:%d", result);
 	}
 
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		Mat blurred;
 		Mat Y(HEIGHT, WIDTH, CV_8UC1, Scalar(0));
 		int32_t i, j;
@@ -1034,7 +1032,7 @@ ISPResult Sharpness(void* data, int32_t argNum, ...)
 				static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j] = mask & 255;
 			}
 		}
-		cout << __FUNCTION__ << " finished" << endl;
+		ISPLogi("finished");
 	}
 
 	/*if (result == ISPSuccess) {
@@ -1077,3 +1075,4 @@ ISPResult Sharpness(void* data, int32_t argNum, ...)
 
 	return result;
 }
+

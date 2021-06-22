@@ -14,7 +14,6 @@
 #include "Param.h"
 
 using namespace cv;
-using namespace std;
 
 #define DUMP_NEEDED false
 
@@ -22,15 +21,15 @@ using namespace std;
 #define RESNAME "Result"
 #define TEMP "Temp"
 
-#define INPUTPATH "C:\\Users\\penghao6\\Desktop\\1MCC_IMG_20181229_001526_1.RAW"   
-#define OUTPUTPATH "C:\\Users\\penghao6\\Desktop\\output.BMP"
-#define LOGPATH "C:\\Users\\penghao6\\Desktop\\output.txt"
+#define INPUTPATH "D:\\test_project\\ISP\\local\\ISP-Local\\ISP-Local\\1MCC_IMG_20181229_001526_1.RAW"   
+#define OUTPUTPATH "D:\\test_project\\ISP\local\\output\\output.BMP"
+#define LOGPATH "D:\\test_project\\ISP\\local\\output\\output.txt"
 #define WIDTH 1920
 #define HEIGHT 1080
 
 
 int main() {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 
 	ISPParameter param;
 	InputImgInfo inputInfo;
@@ -66,7 +65,7 @@ int main() {
 	int32_t i, j;
 
 	result = pImgFileManager->ReadRawData(mipiRawData, numPixel * 5 / 4, Mipi10Bit);
-	if (result == ISPSuccess) {
+	if (SUCCESS(result)) {
 		int32_t Imgsizex, Imgsizey;
 		int32_t Winsizex, Winsizey;
 		Winsizex = GetSystemMetrics(SM_CXSCREEN);
@@ -149,23 +148,23 @@ int main() {
 		imshow(RESNAME, output);
 		waitKey(0);
 	}
-	cin >> i;
+	scanf_s("%d", &i);
 
 	return 0;
 }
 
 ISPResult Demosaic(uint16_t* data, uint16_t* B, uint16_t* G, uint16_t* R) {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 	FirstPixelInsertProcess(data, B);
 	TwoGPixelInsertProcess(data, G);
 	LastPixelInsertProcess(data, R);
-	cout << __FUNCTION__<< " finished" << endl;
+	ISPLogi("finished");
 	return result;
 }
 
 
 ISPResult Mipi10decode(void* src, void* dst, int32_t rawSize) {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 
 	for (int32_t i = 0; i < rawSize; i += 5) {
 		static_cast<uint16_t*>(dst)[i * 4 / 5] =
@@ -181,12 +180,12 @@ ISPResult Mipi10decode(void* src, void* dst, int32_t rawSize) {
 			((static_cast<uint8_t*>(src)[i + 3] & 0xffff) << 2) |
 			((static_cast<uint8_t*>(src)[i + 4] >> 6) & 0x3) & 0x3ff;
 	}
-	cout << __FUNCTION__ << " finished" << endl;
+	ISPLogi("finished");
 	return result;
 }
 
 ISPResult ReadChannels(uint16_t* data, uint16_t* B, uint16_t* G, uint16_t* R) {
-	ISPResult result = ISPSuccess;
+	ISPResult result = ISP_SUCCESS;
 	int32_t i, j;
 	for (i = 0; i < HEIGHT; i++) {
 		for (j = 0; j < WIDTH; j++) {
@@ -207,7 +206,7 @@ ISPResult ReadChannels(uint16_t* data, uint16_t* B, uint16_t* G, uint16_t* R) {
 			}
 		}
 	}
-	cout << __FUNCTION__ << " finished" << endl;
+	ISPLogi("finished");
 	return result;
 }
 
@@ -379,3 +378,5 @@ void Compress10to8(uint16_t* src, unsigned char* dst, int32_t size, bool need_42
 		}
 	}
 }
+
+

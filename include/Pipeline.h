@@ -73,3 +73,4 @@ private:
 	bool mInited;
 	int32_t mNodeNum;
 };
+
