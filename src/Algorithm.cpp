@@ -9,9 +9,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "Algorithm.h"
-#include "Param.h"
+#include "ParamManager.h"
 
-ISPParameter gParam;
+ISPParameter gParamManager;
 
 //EdgePreservedNR not used, it should be redeveloped
 ISPResult EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable) {
@@ -20,7 +20,7 @@ ISPResult EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable) {
 	if (enable == true) {
 		int32_t WIDTH;
 		int32_t HEIGHT;
-		result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
+		result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
 
 		int i, j;
 		Mat Edge, YUVEdge, NoEdgeNR, AYUV, BYUV;
@@ -78,7 +78,7 @@ void BF(unsigned char* b, unsigned char* g, unsigned char* r, int dec, int Color
 	if (enable == true) {
 		int32_t WIDTH;
 		int32_t HEIGHT;
-		gParam.GetIMGDimension(&WIDTH, &HEIGHT);
+		gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
 		Mat ABFsrc(HEIGHT, WIDTH, CV_8UC1);
 		Mat ABFb(HEIGHT, WIDTH, CV_8UC1);
 		Mat ABFg(HEIGHT, WIDTH, CV_8UC1);
@@ -103,9 +103,9 @@ ISPResult BlackLevelCorrection(void* data, int32_t argNum, ...) {
 
 	uint16_t offset;
 	int32_t WIDTH, HEIGHT;
-	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
+	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
 	if (SUCCESS(result)) {
-		result = gParam.GetBLCParam(&offset);
+		result = gParamManager.GetBLCParam(&offset);
 		if (!SUCCESS(result)) {
 			ISPLoge("get BLC offset failed. result:%d", result);
 		}
@@ -159,9 +159,9 @@ ISPResult LensShadingCorrection(void* data, int32_t argNum, ...)
 		ppB[i] = B_lsc[i];
 	}
 
-	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
+	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
 	if (SUCCESS(result)) {
-		result = gParam.GetLSCParam(ppR, ppGr, ppGb, ppB);
+		result = gParamManager.GetLSCParam(ppR, ppGr, ppGb, ppB);
 		if (!SUCCESS(result)) {
 			ISPLoge("get LSC lut failed. result:%d", result);
 		}
@@ -225,9 +225,9 @@ ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...)
 	int32_t WIDTH, HEIGHT;
 	double GCCWeight;
 
-	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
+	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
 	if (SUCCESS(result)) {
-		result = gParam.GetGCCParam(&GCCWeight);
+		result = gParamManager.GetGCCParam(&GCCWeight);
 		if(!SUCCESS(result)) {
 			ISPLoge("get GCCWeight failed. result:%d", result);
 		}
@@ -293,9 +293,9 @@ ISPResult WhiteBalance(void* data, int32_t argNum, ...)
 	int32_t WIDTH, HEIGHT;
 	double bGain, gGain, rGain;
 
-	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
+	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
 	if (SUCCESS(result)) {
-		result = gParam.GetWBParam(&rGain, &gGain, &bGain);
+		result = gParamManager.GetWBParam(&rGain, &gGain, &bGain);
 		if (!SUCCESS(result)) {
 			ISPLoge("get WB gain failed. result:%d", result);
 		}
@@ -329,11 +329,11 @@ ISPResult ColorCorrection(void* data, int32_t argNum, ...) {
 	Mat A_cc = Mat::zeros(3, 3, CV_32FC1);
 	int32_t i, j;
 	float temp;
-	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
+	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
 	if (SUCCESS(result)) {
 		for (i = 0; i < 3; i++) {
 			for (j = 0; j < 3; j++) {
-				result = gParam.GetCCParam(&temp, i, j);
+				result = gParamManager.GetCCParam(&temp, i, j);
 				A_cc.at<float>(i, j) = temp;
 			}
 			if (!SUCCESS(result)) {
@@ -409,9 +409,9 @@ ISPResult GammaCorrection(void* data, int32_t argNum, ...)
 	uint16_t lut[1024];
 	uint16_t* plut = nullptr;
 	plut = lut;
-	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
+	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
 	if (SUCCESS(result)) {
-		result = gParam.GetGAMMAPARAM(plut);
+		result = gParamManager.GetGAMMAPARAM(plut);
 		if (!SUCCESS(result)) {
 			ISPLoge("get Gamma lut failed. result:%d", result);
 		}
@@ -910,9 +910,9 @@ ISPResult SmallWaveNR(void* data, int32_t argNum, ...)
 	int32_t strength2;
 	int32_t strength3;
 
-	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
+	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
 	if (SUCCESS(result)) {
-		result = gParam.GetWNRPARAM(&strength1, &strength2, &strength3);
+		result = gParamManager.GetWNRPARAM(&strength1, &strength2, &strength3);
 		if (!SUCCESS(result)) {
 			ISPLoge("get SWNR param failed. result:%d", result);
 		}
@@ -995,9 +995,9 @@ ISPResult Sharpness(void* data, int32_t argNum, ...)
 	double alpha;
 	int32_t coreSzie;
 	int32_t delta;
-	result = gParam.GetIMGDimension(&WIDTH, &HEIGHT);
+	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
 	if (SUCCESS(result)) {
-		result = gParam.GetEERPARAM(&alpha, &coreSzie, &delta);
+		result = gParamManager.GetEERPARAM(&alpha, &coreSzie, &delta);
 		if (!SUCCESS(result)) {
 			ISPLoge("get SWNR param failed. result:%d", result);
 		}

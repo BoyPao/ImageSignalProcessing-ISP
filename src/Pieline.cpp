@@ -12,8 +12,6 @@
 #include "Pipeline.h"
 #include "Algorithm.h"
 
-using namespace std;
-
 ISPResult ISPNode::Init(PROCESS_TYPE type)//, Args&&... args) {
 {
 	ISPResult result = ISP_SUCCESS;

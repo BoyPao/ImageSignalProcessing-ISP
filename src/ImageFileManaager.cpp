@@ -10,8 +10,6 @@
 
 #include "ImageFileManager.h"
 
-using namespace std;
-
 ISPState ImageFileManager::Init()
 {
 	this->mInputImg.pInputPath = nullptr;
@@ -114,7 +112,7 @@ ISPResult ImageFileManager::ReadRawData(uint8_t* buffer, size_t bufferSize, ISPR
 			OpenFile.seekg(0, ios::end);
 			streampos fileSize = OpenFile.tellg();
 			this->mInputImg.rawSize = (int32_t)fileSize;
-			ISPLogi("Raw size:%d", fileSize);
+			ISPLogi("Raw size:%d", (int32_t)fileSize);
 			OpenFile.seekg(0, ios::beg);
 
 			if (bufferSize >= mInputImg.rawSize) {

@@ -11,7 +11,7 @@
 #include "ImageFileManager.h"
 #include "ImageSignalProcess.h"
 #include "Pipeline.h"
-#include "Param.h"
+#include "ParamManager.h"
 
 using namespace cv;
 
