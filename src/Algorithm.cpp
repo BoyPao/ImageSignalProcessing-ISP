@@ -901,7 +901,7 @@ Mat getim(Mat src, int32_t WIDTH, int32_t HEIGHT,
 	return imr;
 }
 
-ISPResult SmallWaveNR(void* data, int32_t argNum, ...)
+ISPResult WaveletNR(void* data, int32_t argNum, ...)
 {
 	ISPResult result = ISP_SUCCESS;
 	int32_t WIDTH, HEIGHT;

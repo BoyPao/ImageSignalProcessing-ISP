@@ -9,7 +9,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include "ImageSignalProcess.h"
+#include "ISPCore.h"
 
 const string PROCESSNAME[] = {
 	"Black Level Correction",

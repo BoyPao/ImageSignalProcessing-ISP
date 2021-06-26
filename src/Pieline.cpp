@@ -61,8 +61,8 @@ ISPResult ISPNode::Process(void* data, int32_t argNum, ...)
 			pProcess = &GammaCorrection;
 			rt = pProcess(data, argNum);
 			break;
-		case SWNR:
-			pProcess = &SmallWaveNR;
+		case WNR:
+			pProcess = &WaveletNR;
 			int32_t Imgsizey, Imgsizex;
 			__crt_va_start(va, argNum);
 			Imgsizey = static_cast<int32_t>(__crt_va_arg(va, int32_t));

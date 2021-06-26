@@ -52,4 +52,3 @@ void getTimeWithDateInt(int32_t* years, int32_t* months, int32_t* days, int32_t*
 void getTimeWithDateInt(int32_t* years, int32_t* months, int32_t* days, int32_t* hours, int32_t* minutes, int32_t* seconds, int32_t* milliseconds);
 
 void DumpImgDataAsText(void* data, int32_t height, int32_t width, size_t bitWidth, string TextPath);
-

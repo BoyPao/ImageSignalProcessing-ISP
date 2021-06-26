@@ -8,8 +8,8 @@
 // @brief: ISP main function implementation
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "ImageFileManager.h"
-#include "ImageSignalProcess.h"
+#include "FileManager.h"
+#include "ISPCore.h"
 #include "Pipeline.h"
 #include "ParamManager.h"
 
@@ -127,7 +127,7 @@ int main() {
 		YUV = dst.clone();
 		cvtColor(YUV, YUV, COLOR_BGR2YCrCb, 0);
 		//YUV Space Process
-		result = node->Init(SWNR);
+		result = node->Init(WNR);
 		result = node->Process((void*)YUV.data, /*argNum*/2, Imgsizey, Imgsizex);
 		result = node->Init(SHARPNESS);
 		result = node->Process((void*)YUV.data, /*argNum*/0);

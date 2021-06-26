@@ -10,7 +10,7 @@
 
 #pragma once
 #include "Utils.h"
-#include "ImageSignalProcess.h"
+#include "ISPCore.h"
 
 void BF(unsigned char* b, unsigned char* g, unsigned char* r, int dec, int Colorsigma, int Spacesigma, bool enable);// wait for rewrite alg
 ISPResult EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable);// wait for rewrite alg
@@ -26,7 +26,7 @@ ISPResult ColorCorrection(void* data, int32_t argNum, ...);
 ISPResult GammaCorrection(void* data, int32_t argNum, ...);
 
 //YUVProcess
-ISPResult SmallWaveNR(void* data, int32_t argNum, ...);
+ISPResult WaveletNR(void* data, int32_t argNum, ...);
 ISPResult Sharpness(void* data, int32_t argNum, ...);
 
 Mat getim(Mat src, int32_t WIDTH, int32_t HEIGHT,

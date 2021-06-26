@@ -10,7 +10,7 @@
 
 #pragma once
 #include "Utils.h"
-#include "ImageSignalProcess.h"
+#include "ISPCore.h"
 
 //#define PATH_MAX_LENGTH 40
 

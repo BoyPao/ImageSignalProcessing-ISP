@@ -28,7 +28,7 @@ enum PROCESS_TYPE {
 	WB,
 	CC,
 	GAMMA,
-	SWNR,
+	WNR,
 	SHARPNESS,
 	CST,
 	NONE,

@@ -8,7 +8,7 @@
 // @brief: A file manager to manage image file, provoid file operations
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "ImageFileManager.h"
+#include "FileManager.h"
 
 ISPState ImageFileManager::Init()
 {
