@@ -10,15 +10,15 @@
 
 #pragma once
 #include "Utils.h"
-#include "ISPCore.h"
+#include "AlgorithmInterface.h"
 
 void BF(unsigned char* b, unsigned char* g, unsigned char* r, int dec, int Colorsigma, int Spacesigma, bool enable);// wait for rewrite alg
 ISPResult EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable);// wait for rewrite alg
+ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...); // wait for rewrite alg
 
 //Bayer Process
 ISPResult BlackLevelCorrection(void* data, int32_t argNum, ...);
 ISPResult LensShadingCorrection(void* data, int32_t argNum, ...);
-ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...); // wait for rewrite alg
 
 //RGB Process
 ISPResult WhiteBalance(void* data, int32_t argNum, ...);
@@ -36,3 +36,20 @@ Mat WDT(const Mat& _src, const string _wname, const int _level);
 Mat waveletDecompose(Mat _src, Mat _lowFilter, Mat _highFilter);
 void wavelet(const string _wname, Mat& _lowFilter, Mat& _highFilter);
 
+
+void BF(unsigned char* b, unsigned char* g, unsigned char* r, int dec, int Colorsigma, int Spacesigma, bool enable);// wait for rewrite alg
+ISPResult EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable);// wait for rewrite alg
+ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...); // wait for rewrite alg
+
+//Bayer Process
+ISPResult ISP_BlackLevelCorrection(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...);
+ISPResult ISP_LensShadingCorrection(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...);
+
+//RGB Process
+ISPResult ISP_WhiteBalance(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...);
+ISPResult ISP_ColorCorrection(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...);
+ISPResult ISP_GammaCorrection(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...);
+
+//YUVProcess
+ISPResult ISP_WaveletNR(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...);
+ISPResult ISP_EdgeEnhancement(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...);

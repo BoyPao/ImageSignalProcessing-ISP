@@ -238,5 +238,3 @@ void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 }
 
 
-
-

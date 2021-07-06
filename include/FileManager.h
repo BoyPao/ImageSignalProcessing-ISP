@@ -52,5 +52,3 @@ public:
 	void WriteBMP(BYTE* data, int32_t channels);
 	ISPResult SaveBMP(uint8_t* srcData, int32_t channels);
 };
-
-

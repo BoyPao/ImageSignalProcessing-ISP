@@ -31,14 +31,17 @@ using namespace cv;
 int main() {
 	ISPResult result = ISP_SUCCESS;
 
-	ISPParameter param;
+	ISPParamManager paramManager;
+	int32_t W = 1920;
+	int32_t H = 1080;
+	paramManager.SetIMGDimension(&W, &H);
 	InputImgInfo inputInfo;
 	OutputImgInfo outputInfo;
 	string inputPath = INPUTPATH;
 	string outputPath = OUTPUTPATH;
 	inputInfo.pInputPath = const_cast<char*>(inputPath.c_str());
 	outputInfo.pOutputPath = const_cast<char*>(outputPath.c_str());
-	param.GetIMGDimension(&outputInfo.width, &outputInfo.hight);
+	paramManager.GetIMGDimension(&outputInfo.width, &outputInfo.hight);
 	
 	ImageFileManager* pImgFileManager = nullptr;
 	if (pImgFileManager == nullptr) {
@@ -86,13 +89,15 @@ int main() {
 		SWNRen = true;
 		Sharpen = true;
 		ISPNode* node = new ISPNode;
+		result = node->Init(NONE, &paramManager);
+
 		//Bayer Space Process
-		result = node->Init(BLC);
+		result = node->Init(BLC, nullptr);
 		result = node->Process((void*)rawData, /*argNum*/0);
-		result = node->Init(LSC);
+		result = node->Init(LSC, nullptr);
 		result = node->Process((void*)rawData, /*argNum*/0);
-		result = node->Init(GCC);
-		result = node->Process((void*)rawData, /*argNum*/0);
+		//result = node->Init(GCC);
+		//result = node->Process((void*)rawData, /*argNum*/0);
 		result = ReadChannels(rawData, bData, gData, rData);//pick up RGB  channels from Raw
 
 #if  DUMP_NEEDED
@@ -103,11 +108,11 @@ int main() {
 		result = Demosaic(rawData, bData, gData, rData);
 
 		//RGB Space Process
-		result = node->Init(WB);
+		result = node->Init(WB, nullptr);
 		result = node->Process((void*)bgrData, /*argNum*/0);
-		result = node->Init(CC);
+		result = node->Init(CC, nullptr);
 		result = node->Process((void*)bgrData, /*argNum*/0);
-		result = node->Init(GAMMA);
+		result = node->Init(GAMMA, nullptr);
 		result = node->Process((void*)bgrData, /*argNum*/0);
 
 		Compress10to8(bData, b8bit, numPixel, true);
@@ -127,9 +132,9 @@ int main() {
 		YUV = dst.clone();
 		cvtColor(YUV, YUV, COLOR_BGR2YCrCb, 0);
 		//YUV Space Process
-		result = node->Init(WNR);
+		result = node->Init(WNR, nullptr);
 		result = node->Process((void*)YUV.data, /*argNum*/2, Imgsizey, Imgsizex);
-		result = node->Init(SHARPNESS);
+		result = node->Init(SHARPNESS, nullptr);
 		result = node->Process((void*)YUV.data, /*argNum*/0);
 
 		cvtColor(YUV, dst, COLOR_YCrCb2BGR, 0);
@@ -378,5 +383,3 @@ void Compress10to8(uint16_t* src, unsigned char* dst, int32_t size, bool need_42
 		}
 	}
 }
-
-

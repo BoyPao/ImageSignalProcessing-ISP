@@ -104,5 +104,3 @@ void DumpImgDataAsText(void* data, int32_t height, int32_t width, size_t bitWidt
 		ISPLoge("Dump failed. data is nullptr");
 	}
 }
-
-

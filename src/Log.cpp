@@ -41,4 +41,3 @@ void LogPrint(const char* str, va_list va)
 	strBuffer[255] = '\n';
 	printf("%s\n", strBuffer);
 }
-

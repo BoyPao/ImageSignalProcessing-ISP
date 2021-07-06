@@ -11,10 +11,10 @@
 #include "Algorithm.h"
 #include "ParamManager.h"
 
-ISPParameter gParamManager;
+//ISPParamManager gParamManager;
 
 //EdgePreservedNR not used, it should be redeveloped
-ISPResult EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable) {
+/*ISPResult EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable) {
 	ISPResult result = ISP_SUCCESS;
 
 	if (enable == true) {
@@ -70,10 +70,10 @@ ISPResult EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable) {
 	}
 
 	return result;
-}
+}*/
 
 //BF not used, it use opencvlib. it should be develop with self alg
-void BF(unsigned char* b, unsigned char* g, unsigned char* r, int dec, int Colorsigma, int Spacesigma, bool enable)
+/*void BF(unsigned char* b, unsigned char* g, unsigned char* r, int dec, int Colorsigma, int Spacesigma, bool enable)
 {
 	if (enable == true) {
 		int32_t WIDTH;
@@ -96,26 +96,29 @@ void BF(unsigned char* b, unsigned char* g, unsigned char* r, int dec, int Color
 		}
 		ISPLogi("finished");
 	}
-}
+}*/
 
-ISPResult BlackLevelCorrection(void* data, int32_t argNum, ...) {
+ISPResult ISP_BlackLevelCorrection(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...)
+{
 	ISPResult result = ISP_SUCCESS;
+	(void)input_va;
+	(void)CBs;
 
-	uint16_t offset;
-	int32_t WIDTH, HEIGHT;
-	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (SUCCESS(result)) {
-		result = gParamManager.GetBLCParam(&offset);
-		if (!SUCCESS(result)) {
-			ISPLoge("get BLC offset failed. result:%d", result);
-		}
-	}
-	else {
-		ISPLoge("get IMG Dimension failed. result:%d", result);
+	if (!data) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("data is null! result:%d", result);
 	}
 
 	if (SUCCESS(result)) {
-		for (int32_t i = 0; i < WIDTH * HEIGHT; i++) {
+		int32_t width, height;
+		int32_t offset;
+		va_list va_param;
+		__crt_va_start(va_param, CBs);
+		width = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		height = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		offset = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		__crt_va_end(va_param);
+		for (int32_t i = 0; i < width * height; i++) {
 			static_cast<uint16_t*>(data)[i] -= offset;
 		}
 		ISPLogi("finished");
@@ -135,90 +138,86 @@ float LSCinterpolation(int32_t WIDTH, int32_t HEIGHT,
 	return result;
 }
 
-ISPResult LensShadingCorrection(void* data, int32_t argNum, ...)
+ISPResult ISP_LensShadingCorrection(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...)
 {
 	ISPResult result = ISP_SUCCESS;
-
-	int32_t WIDTH, HEIGHT;
-	int32_t i, j;
-	float R_lsc[13][17], Gr_lsc[13][17], Gb_lsc[13][17], B_lsc[13][17];
-	float** ppR = NULL;
-	float** ppGr = NULL;
-	float** ppGb = NULL;
-	float** ppB = NULL;
-
-	ppR = (float**)malloc(sizeof(float*) * 13);
-	ppGr = (float**)malloc(sizeof(float*) * 13);
-	ppGb = (float**)malloc(sizeof(float*) * 13);
-	ppB = (float**)malloc(sizeof(float*) * 13);
-
-	for (i = 0; i < 13; i++) {
-		ppR[i] = R_lsc[i];
-		ppGr[i] = Gr_lsc[i];
-		ppGb[i] = Gb_lsc[i];
-		ppB[i] = B_lsc[i];
+	(void)input_va;
+	(void)CBs;
+	
+	if (!data) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("data is null! result:%d", result);
 	}
 
-	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (SUCCESS(result)) {
-		result = gParamManager.GetLSCParam(ppR, ppGr, ppGb, ppB);
-		if (!SUCCESS(result)) {
-			ISPLoge("get LSC lut failed. result:%d", result);
-		}
-	}
-	else {
-		ISPLoge("get IMG Dimension failed. result:%d", result);
-	}
+	float* pR;
+	float* pGr;
+	float* pGb;
+	float* pB;
 	
 	if (SUCCESS(result)) {
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
+		int32_t width, height;
+		int32_t i, j;
+		va_list va_param;
+		__crt_va_start(va_param, CBs);
+		width = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		height = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		pR = static_cast<float*>(__crt_va_arg(va_param, float*));
+		pGr = static_cast<float*>(__crt_va_arg(va_param, float*));
+		pGb = static_cast<float*>(__crt_va_arg(va_param, float*));
+		pB = static_cast<float*>(__crt_va_arg(va_param, float*));
+		__crt_va_end(va_param);
+		for (i = 0; i < height; i++) {
+			for (j = 0; j < width; j++) {
 				if (i % 2 == 0 && j % 2 == 0) {
-					static_cast<uint16_t*>(data)[i * WIDTH + j] = static_cast<uint16_t*>(data)[i * WIDTH + j] *
-						LSCinterpolation(WIDTH, HEIGHT,
-							B_lsc[i * 12 / HEIGHT][j * 16 / WIDTH],
-							B_lsc[i * 12 / HEIGHT][j * 16 / WIDTH + 1],
-							B_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH],
-							B_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH + 1], i, j);
+					static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
+						LSCinterpolation(width, height,
+							*(pB + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
+							*(pB + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
+							*(pB + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
+							*(pB + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
+							i,
+							j);
 				}
 				if (i % 2 == 0 && j % 2 == 1) {
-					static_cast<uint16_t*>(data)[i * WIDTH + j] = static_cast<uint16_t*>(data)[i * WIDTH + j] *
-						LSCinterpolation(WIDTH, HEIGHT,
-							Gb_lsc[i * 12 / HEIGHT][j * 16 / WIDTH],
-							Gb_lsc[i * 12 / HEIGHT][j * 16 / WIDTH + 1],
-							Gb_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH],
-							Gb_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH + 1], i, j);
+					static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
+						LSCinterpolation(width, height,
+							*(pGb + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
+							*(pGb + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
+							*(pGb + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
+							*(pGb + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
+							i,
+							j);
 				}
 				if (i % 2 == 1 && j % 2 == 0) {
-					static_cast<uint16_t*>(data)[i * WIDTH + j] = static_cast<uint16_t*>(data)[i * WIDTH + j] *
-						LSCinterpolation(WIDTH, HEIGHT,
-							Gr_lsc[i * 12 / HEIGHT][j * 16 / WIDTH],
-							Gr_lsc[i * 12 / HEIGHT][j * 16 / WIDTH + 1],
-							Gr_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH],
-							Gr_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH + 1], i, j);
+					static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
+						LSCinterpolation(width, height,
+							*(pGr + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
+							*(pGr + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
+							*(pGr + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
+							*(pGr + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
+							i,
+							j);
 				}
 				if (i % 2 == 1 && j % 2 == 1) {
-					static_cast<uint16_t*>(data)[i * WIDTH + j] = static_cast<uint16_t*>(data)[i * WIDTH + j] *
-						LSCinterpolation(WIDTH, HEIGHT,
-							R_lsc[i * 12 / HEIGHT][j * 16 / WIDTH],
-							R_lsc[i * 12 / HEIGHT][j * 16 / WIDTH + 1],
-							R_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH],
-							R_lsc[i * 12 / HEIGHT + 1][j * 16 / WIDTH + 1], i, j);
+					static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
+						LSCinterpolation(width, height,
+							*(pR + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
+							*(pR + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
+							*(pR + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
+							*(pR + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
+							i,
+							j);
 				}
 			}
 		}
 		ISPLogi("finished");
 	}
-	free(ppR);
-	free(ppGr);
-	free(ppGb);
-	free(ppB);
 
 	return result;
 }
 
 //GCC now is too simple, it should be considered more
-ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...)
+/*ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -259,102 +258,90 @@ ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...)
 				}
 			}
 		}
-		/*for (int32_t i = 0; i < HEIGHT; i++) {
-			for (int32_t j = 1; j < WIDTH; j++) {
-				if (i % 2 == 1 && j % 2 == 0 && i > 0 &&
-					i < HEIGHT - 1 && j > 0 && j < WIDTH - 1) {
-					temp = (static_cast<uint16_t*>(gdata)[(i - 1) * WIDTH + j - 1] +
-						static_cast<uint16_t*>(gdata)[(i - 1) * WIDTH + j + 1] +
-						static_cast<uint16_t*>(gdata)[(i + 1) * WIDTH + j - 1] +
-						static_cast<uint16_t*>(gdata)[(i + 1) * WIDTH + j + 1]) << 2;
-					temp = (static_cast<uint16_t*>(gdata)[i * WIDTH + j] << 2) - temp / 4.0;
-					if (temp >= 0) {
-						static_cast<uint16_t*>(gdata)[i * WIDTH + j] =
-							((static_cast<uint16_t*>(gdata)[i * WIDTH + j] << 2) - (uint16_t)(temp * GCCWeight)) >> 2 & 0xffff;
-					}
-					else {
-						temp = -temp;
-						static_cast<uint16_t*>(gdata)[i * WIDTH + j] =
-							((static_cast<uint16_t*>(gdata)[i * WIDTH + j] << 2) + (uint16_t)(temp * GCCWeight)) >> 2 & 0xffff;
-					}
-				}
-			}
-		}*/
 		ISPLogi("finished");
 	}
 
 	return result;
-}
+}*/
 
-ISPResult WhiteBalance(void* data, int32_t argNum, ...)
+ISPResult ISP_WhiteBalance(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...)
 {
 	ISPResult result = ISP_SUCCESS;
+	(void)input_va;
+	(void)CBs;
 
-	int32_t WIDTH, HEIGHT;
-	double bGain, gGain, rGain;
-
-	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (SUCCESS(result)) {
-		result = gParamManager.GetWBParam(&rGain, &gGain, &bGain);
-		if (!SUCCESS(result)) {
-			ISPLoge("get WB gain failed. result:%d", result);
-		}
-	}
-	else {
-		ISPLoge("get IMG Dimension failed. result:%d", result);
+	if (!data) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("data is null! result:%d", result);
 	}
 
-	uint16_t* B = static_cast<uint16_t*>(data);
-	uint16_t* G = B + WIDTH * HEIGHT;
-	uint16_t* R = G + WIDTH * HEIGHT;
-
 	if (SUCCESS(result)) {
-		for (int i = 0; i < WIDTH * HEIGHT; i++)
-		{
-			B[i] = B[i] * bGain;
-			G[i] = G[i] * gGain;
-			R[i] = R[i] * rGain;
+		int32_t width, height;
+		double rGain, gGain, bGain;
+		va_list va_param;
+		__crt_va_start(va_param, CBs);
+		width = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		height = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		rGain = static_cast<double>(__crt_va_arg(va_param, double));
+		gGain = static_cast<double>(__crt_va_arg(va_param, double));
+		bGain = static_cast<double>(__crt_va_arg(va_param, double));
+		__crt_va_end(va_param);
+
+		uint16_t* B = static_cast<uint16_t*>(data);
+		uint16_t* G = B + width * height;
+		uint16_t* R = G + width * height;
+
+		if (SUCCESS(result)) {
+			for (int i = 0; i < width * height; i++)
+			{
+				B[i] = B[i] * bGain;
+				G[i] = G[i] * gGain;
+				R[i] = R[i] * rGain;
+			}
+			ISPLogi("finished");
 		}
-		ISPLogi("finished");
 	}
 
 	return result;
 }
 
-ISPResult ColorCorrection(void* data, int32_t argNum, ...) {
-
+ISPResult ISP_ColorCorrection(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...)
+{
 	ISPResult result = ISP_SUCCESS;
-	int32_t WIDTH, HEIGHT;
+	(void)input_va;
+	(void)CBs;
 
-	Mat A_cc = Mat::zeros(3, 3, CV_32FC1);
-	int32_t i, j;
-	float temp;
-	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
+	if (!data) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("data is null! result:%d", result);
+	}
+
 	if (SUCCESS(result)) {
+		int32_t width, height;
+		float* pCcm;
+		va_list va_param;
+		__crt_va_start(va_param, CBs);
+		width = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		height = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		pCcm = static_cast<float*>(__crt_va_arg(va_param, float*));
+		__crt_va_end(va_param);
+
+		Mat A_cc = Mat::zeros(3, 3, CV_32FC1);
+		int32_t i, j;
 		for (i = 0; i < 3; i++) {
 			for (j = 0; j < 3; j++) {
-				result = gParamManager.GetCCParam(&temp, i, j);
-				A_cc.at<float>(i, j) = temp;
-			}
-			if (!SUCCESS(result)) {
-				ISPLoge("get Color Correction Matrix failed. result:%d", result);
-				break;
+				A_cc.at<float>(i, j) = *(pCcm + i * CCM_WIDTH + j);
 			}
 		}
-	}
-	else {
-		ISPLoge("get IMG Dimension failed. result:%d", result);
-	}
 
-	if (SUCCESS(result)) {
 		uint16_t* B = static_cast<uint16_t*>(data);
-		uint16_t* G = B + WIDTH * HEIGHT;
-		uint16_t* R = G + WIDTH * HEIGHT;
+		uint16_t* G = B + width * height;
+		uint16_t* R = G + width * height;
 
 		Mat Pmatric;
-		Mat Oritransform(WIDTH * HEIGHT, 3, CV_32FC1);
+		Mat Oritransform(width * height, 3, CV_32FC1);
 
-		for (i = 0; i < HEIGHT * WIDTH; i++) {
+		for (i = 0; i < height * width; i++) {
 			Oritransform.at<float>(i, 0) = (float)B[i];
 			Oritransform.at<float>(i, 1) = (float)G[i];
 			Oritransform.at<float>(i, 2) = (float)R[i];
@@ -370,7 +357,7 @@ ISPResult ColorCorrection(void* data, int32_t argNum, ...) {
 		//OutFile3 << Pmatric;
 		//OutFile3.close();
 
-		for (i = 0; i < HEIGHT * WIDTH; i++) {
+		for (i = 0; i < height * width; i++) {
 			if (Pmatric.at<float>(i, 0) > 1023)
 				Pmatric.at<float>(i, 0) = 1023;
 			if (Pmatric.at<float>(i, 0) < 0)
@@ -401,31 +388,32 @@ ISPResult ColorCorrection(void* data, int32_t argNum, ...) {
 	return result;
 }
 
-ISPResult GammaCorrection(void* data, int32_t argNum, ...)
+ISPResult ISP_GammaCorrection(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...)
 {
 	ISPResult result = ISP_SUCCESS;
+	(void)input_va;
+	(void)CBs;
 
-	int32_t WIDTH, HEIGHT;
-	uint16_t lut[1024];
-	uint16_t* plut = nullptr;
-	plut = lut;
-	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (SUCCESS(result)) {
-		result = gParamManager.GetGAMMAPARAM(plut);
-		if (!SUCCESS(result)) {
-			ISPLoge("get Gamma lut failed. result:%d", result);
-		}
-	}
-	else {
-		ISPLoge("get IMG Dimension failed. result:%d", result);
+	if (!data) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("data is null! result:%d", result);
 	}
 
 	if (SUCCESS(result)) {
+		int32_t width, height;
+		uint16_t* plut = nullptr;
+		va_list va_param;
+		__crt_va_start(va_param, CBs);
+		width = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		height = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		plut = static_cast<uint16_t*>(__crt_va_arg(va_param, uint16_t*));
+		__crt_va_end(va_param);
+
 		uint16_t* B = static_cast<uint16_t*>(data);
-		uint16_t* G = B + WIDTH * HEIGHT;
-		uint16_t* R = G + WIDTH * HEIGHT;
+		uint16_t* G = B + width * height;
+		uint16_t* R = G + width * height;
 
-		for (int32_t i = 0; i < WIDTH * HEIGHT; i++)
+		for (int32_t i = 0; i < width * height; i++)
 		{
 			B[i] = plut[B[i]];
 			G[i] = plut[G[i]];
@@ -901,178 +889,148 @@ Mat getim(Mat src, int32_t WIDTH, int32_t HEIGHT,
 	return imr;
 }
 
-ISPResult WaveletNR(void* data, int32_t argNum, ...)
+ISPResult ISP_WaveletNR(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...)
 {
 	ISPResult result = ISP_SUCCESS;
-	int32_t WIDTH, HEIGHT;
+	(void)CBs;
 
-	int32_t strength1;
-	int32_t strength2;
-	int32_t strength3;
-
-	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (SUCCESS(result)) {
-		result = gParamManager.GetWNRPARAM(&strength1, &strength2, &strength3);
-		if (!SUCCESS(result)) {
-			ISPLoge("get SWNR param failed. result:%d", result);
-		}
-	}
-	else {
-		ISPLoge("get IMG Dimension failed. result:%d", result);
+	if (!data) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("data is null! result:%d", result);
 	}
 
-	va_list(va);
-	__crt_va_start(va, argNum);
-	int32_t Imgsizey = static_cast<int32_t>(__crt_va_arg(va, int32_t));
-	int32_t Imgsizex = static_cast<int32_t>(__crt_va_arg(va, int32_t));
-	__crt_va_end(va);
-
-	int32_t i, j;
-	Mat onechannel(HEIGHT, WIDTH, CV_8U);
-	Mat onechannel2(HEIGHT, WIDTH, CV_8U);
-
 	if (SUCCESS(result)) {
-		//会产生严重格子现象
-		//Y通道小波
-		/*for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				onechannel.data[i*WIDTH + j] = static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j];
-			}
-		}
-		onechannel2 = getim(onechannel, WIDTH, HEIGHT, 3, Imgsizey, Imgsizex, 1, 50, 30, 20);
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j ]= onechannel2.data[i*WIDTH + j];
-				//YUV.data[i * 3 * WIDTH + 3 * j + 1] = onechannel2.data[i*WIDTH + j];
-				//YUV.data[i * 3 * WIDTH + 3 * j + 2] = onechannel2.data[i*WIDTH + j];
-			}
-		}*/
+		__crt_va_start(input_va, data);
+		int32_t Imgsizey = static_cast<int32_t>(__crt_va_arg(input_va, int32_t));
+		int32_t Imgsizex = static_cast<int32_t>(__crt_va_arg(input_va, int32_t));
+		__crt_va_end(input_va);
 
-		//U通道小波
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				onechannel.data[i * WIDTH + j] = static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j + 1];
-			}
-		}
-		onechannel2 = getim(onechannel, WIDTH, HEIGHT, 3, Imgsizey, Imgsizex, 1, strength1, strength2, strength3);
-		//onechannel2 = onechannel.clone();
-		onechannel = onechannel2.clone();
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				//YUV.data[i * 3 * WIDTH + 3 * j ]= onechannel2.data[i*WIDTH + j];
-				static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j + 1] = onechannel2.data[i * WIDTH + j];
-				//YUV.data[i * 3 * WIDTH + 3 * j + 2] = onechannel2.data[i*WIDTH + j];
-			}
-		}
+		int32_t width, height;
+		int32_t strength1;
+		int32_t strength2;
+		int32_t strength3;
+		va_list va_param;
+		__crt_va_start(va_param, CBs);
+		width = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		height = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		strength1 = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		strength2 = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		strength3 = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		__crt_va_end(va_param);
 
-		//V通道小波
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				onechannel.data[i * WIDTH + j] = static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j + 2];
+		int32_t i, j;
+		Mat onechannel(height, width, CV_8U);
+		Mat onechannel2(height, width, CV_8U);
+
+		if (SUCCESS(result)) {
+			//会产生严重格子现象
+			//Y通道小波
+			/*for (i = 0; i < height; i++) {
+				for (j = 0; j < width; j++) {
+					onechannel.data[i*width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j];
+				}
 			}
-		}
-		onechannel2 = getim(onechannel, WIDTH, HEIGHT, 3, Imgsizey, Imgsizex, 2, strength1, strength2, strength3);
-		//onechannel2 = onechannel.clone();
-		onechannel = onechannel2.clone();
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				//YUV.data[i * 3 * WIDTH + 3 * j ]= onechannel2.data[i*WIDTH + j];
-				//YUV.data[i * 3 * WIDTH + 3 * j + 1] = onechannel2.data[i*WIDTH + j];
-				static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j + 2] = onechannel2.data[i * WIDTH + j];
+			onechannel2 = getim(onechannel, width, height, 3, Imgsizey, Imgsizex, 1, 50, 30, 20);
+			for (i = 0; i < height; i++) {
+				for (j = 0; j < width; j++) {
+					static_cast<uchar*>(data)[i * 3 * width + 3 * j ]= onechannel2.data[i*width + j];
+					//YUV.data[i * 3 * width + 3 * j + 1] = onechannel2.data[i*width + j];
+					//YUV.data[i * 3 * width + 3 * j + 2] = onechannel2.data[i*width + j];
+				}
+			}*/
+
+			//U通道小波
+			for (i = 0; i < height; i++) {
+				for (j = 0; j < width; j++) {
+					onechannel.data[i * width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j + 1];
+				}
 			}
+			onechannel2 = getim(onechannel, width, height, 3, Imgsizey, Imgsizex, 1, strength1, strength2, strength3);
+			//onechannel2 = onechannel.clone();
+			onechannel = onechannel2.clone();
+			for (i = 0; i < height; i++) {
+				for (j = 0; j < width; j++) {
+					//YUV.data[i * 3 * width + 3 * j ]= onechannel2.data[i*width + j];
+					static_cast<uchar*>(data)[i * 3 * width + 3 * j + 1] = onechannel2.data[i * width + j];
+					//YUV.data[i * 3 * width + 3 * j + 2] = onechannel2.data[i*width + j];
+				}
+			}
+
+			//V通道小波
+			for (i = 0; i < height; i++) {
+				for (j = 0; j < width; j++) {
+					onechannel.data[i * width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j + 2];
+				}
+			}
+			onechannel2 = getim(onechannel, width, height, 3, Imgsizey, Imgsizex, 2, strength1, strength2, strength3);
+			//onechannel2 = onechannel.clone();
+			onechannel = onechannel2.clone();
+			for (i = 0; i < height; i++) {
+				for (j = 0; j < width; j++) {
+					//YUV.data[i * 3 * width + 3 * j ]= onechannel2.data[i*width + j];
+					//YUV.data[i * 3 * width + 3 * j + 1] = onechannel2.data[i*width + j];
+					static_cast<uchar*>(data)[i * 3 * width + 3 * j + 2] = onechannel2.data[i * width + j];
+				}
+			}
+			ISPLogi(" finished");
 		}
-		ISPLogi(" finished");
 	}
 	return result;
 }
 
 
-ISPResult Sharpness(void* data, int32_t argNum, ...)
+ISPResult ISP_EdgeEnhancement(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...)
 {
 	ISPResult result = ISP_SUCCESS;
-	int32_t WIDTH, HEIGHT;
+	(void)input_va;
+	(void)CBs;
 
-	double alpha;
-	int32_t coreSzie;
-	int32_t delta;
-	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (SUCCESS(result)) {
-		result = gParamManager.GetEERPARAM(&alpha, &coreSzie, &delta);
-		if (!SUCCESS(result)) {
-			ISPLoge("get SWNR param failed. result:%d", result);
-		}
-	}
-	else {
-		ISPLoge("get IMG Dimension failed. result:%d", result);
+	if (!data) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("data is null! result:%d", result);
 	}
 
 	if (SUCCESS(result)) {
+		int32_t width, height;
+		double alpha;
+		int32_t coreSzie;
+		int32_t delta;
+		va_list va_param;
+		__crt_va_start(va_param, CBs);
+		width = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		height = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		alpha = static_cast<double>(__crt_va_arg(va_param, double));
+		coreSzie = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		delta = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		__crt_va_end(va_param);
+
 		Mat blurred;
-		Mat Y(HEIGHT, WIDTH, CV_8UC1, Scalar(0));
+		Mat Y(height, width, CV_8UC1, Scalar(0));
 		int32_t i, j;
 		int32_t mask;
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				Y.data[i * WIDTH + j] = static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j];
+		for (i = 0; i < height; i++) {
+			for (j = 0; j < width; j++) {
+				Y.data[i * width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j];
 			}
 		}
 
 		GaussianBlur(Y, blurred, Size(coreSzie, coreSzie), delta, delta);
 
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				mask = Y.data[i * WIDTH + j] - blurred.data[i * WIDTH + j];
-				mask = (int)(static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j] + (int)(alpha * mask));
+		for (i = 0; i < height; i++) {
+			for (j = 0; j < width; j++) {
+				mask = Y.data[i * width + j] - blurred.data[i * width + j];
+				mask = (int)(static_cast<uchar*>(data)[i * 3 * width + 3 * j] + (int)(alpha * mask));
 				if (mask > 255) {
 					mask = 255;
 				}
 				else if (mask < 0) {
 					mask = 0;
 				}
-				static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j] = mask & 255;
+				static_cast<uchar*>(data)[i * 3 * width + 3 * j] = mask & 255;
 			}
 		}
 		ISPLogi("finished");
 	}
 
-	/*if (result == ISPSuccess) {
-		int32_t i, j;
-		Mat onechannel(HEIGHT, WIDTH, CV_8U);
-
-		//NRYUV = YUV.clone();
-		//EdgePreservedNR(YUV, NRYUV, 0.7, true);
-		//YUV = NRYUV.clone();
-
-		Mat kernel(3, 3, CV_32F, cv::Scalar(0));
-		kernel.at<float>(1, 1) = 5.0;
-		kernel.at<float>(0, 1) = -1.0;
-		kernel.at<float>(1, 0) = -1.0;
-		kernel.at<float>(1, 2) = -1.0;
-		kernel.at<float>(2, 1) = -1.0;
-
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				onechannel.data[i * WIDTH + j] = static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j];
-			}
-		}
-
-		Mat blurried, sharped;
-		blurried = onechannel.clone();
-		sharped = onechannel.clone();
-		bilateralFilter(onechannel, blurried, 5, 11, 15, BORDER_DEFAULT);
-		filter2D(blurried, sharped, blurried.depth(), kernel);
-
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				static_cast<uchar*>(data)[i * 3 * WIDTH + 3 * j] = sharped.data[i * WIDTH + j];
-				//YUV.data[i * 3 * WIDTH + 3 * j + 1] = onechannel2.data[i*WIDTH + j];
-				//YUV.data[i * 3 * WIDTH + 3 * j + 2] = onechannel2.data[i*WIDTH + j];
-			}
-		}
-
-		cout << __FUNCTION__ << " finished" << endl;
-	}*/
-
 	return result;
 }
-

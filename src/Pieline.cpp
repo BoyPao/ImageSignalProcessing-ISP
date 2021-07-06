@@ -10,9 +10,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "Pipeline.h"
-#include "Algorithm.h"
 
-ISPResult ISPNode::Init(PROCESS_TYPE type)//, Args&&... args) {
+
+ISPResult ISPNode::Init(PROCESS_TYPE type, ISPParamManager* pPM)//, Args&&... args) {
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -22,7 +22,14 @@ ISPResult ISPNode::Init(PROCESS_TYPE type)//, Args&&... args) {
 	pProcess = nullptr;
 	//isNecessary = true;  //Wait to do. Distinwish necessary process.	
 	next = nullptr;
+
+	result = RegisterISPLibFuncs();
+	if (pPM) {
+		pParamManager = pPM;
+	}
+
 	mInited = true;
+
 	return result;
 }
 
@@ -38,46 +45,34 @@ ISPResult ISPNode::Process(void* data, int32_t argNum, ...)
 		bool enable;
 		switch (mType) {
 		case BLC:
-			pProcess = &BlackLevelCorrection;
-			rt = pProcess(data, argNum);
+			rt = BlackLevelCorrection(pParamManager, data);
 			break;
 		case LSC:
-			pProcess = &LensShadingCorrection;
-			rt = pProcess(data, argNum);
-			break;
-		case GCC:
-			pProcess = &GreenChannelsCorrection;
-			rt = pProcess(data, argNum);
+			rt = LensShadingCorrection(pParamManager, data);
 			break;
 		case WB:
-			pProcess = &WhiteBalance;
-			rt = pProcess(data, argNum);
+			rt = WhiteBalance(pParamManager, data);
 			break;
 		case CC:
-			pProcess = &ColorCorrection;
-			rt = pProcess(data, argNum);
+			rt = ColorCorrection(pParamManager, data);
 			break;
 		case GAMMA:
-			pProcess = &GammaCorrection;
-			rt = pProcess(data, argNum);
+			rt = GammaCorrection(pParamManager, data);
 			break;
 		case WNR:
-			pProcess = &WaveletNR;
 			int32_t Imgsizey, Imgsizex;
 			__crt_va_start(va, argNum);
 			Imgsizey = static_cast<int32_t>(__crt_va_arg(va, int32_t));
 			Imgsizex = static_cast<int32_t>(__crt_va_arg(va, int32_t));
 			__crt_va_end(va);
-			rt = pProcess(data, argNum, Imgsizey, Imgsizex);
+			rt = WaveletNR(pParamManager, data, Imgsizey, Imgsizex);
 			break;
 		case SHARPNESS:
-			pProcess = &Sharpness;
-			rt = pProcess(data, argNum);
+			rt = Sharpness(pParamManager, data);
 			break;
 		case NONE:
 		case PROCESS_TYPE_MAX:
 		default:
-			pProcess = nullptr;
 			rt = ISP_FAILED;
 		}
 	}
@@ -101,4 +96,3 @@ ISPResult ISPNode::getNodeName(string* name)
 	Pipeline* pPipeline = new Pipeline;
 	pPipeline->AddNode(CST);
 }*/
-

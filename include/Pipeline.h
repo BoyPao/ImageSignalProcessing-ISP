@@ -10,6 +10,7 @@
 
 #pragma once
 #include "ISPCore.h"
+#include "AlgorithmInterface.h"
 
 const string PROCESSNAME[] = {
 	"Black Level Correction",
@@ -36,10 +37,11 @@ class ISPNode {
 public:
 	ISPResult getNodeName(string* name);
 	ISPResult Init(PROCESS_TYPE type);
+	ISPResult Init(PROCESS_TYPE type, ISPParamManager* pPM);
 	ISPResult Process(void* data, int32_t argNum, ...);
 	
 private:
-	
+	ISPParamManager* pParamManager;
 	FUNCTPRT pProcess;
 	//bool mEnable;
 	bool mInited;
@@ -67,10 +69,10 @@ public:
 	Pipeline* CreateDefaultPipeline();
 	ISPResult AddNode(PROCESS_TYPE type);
 	int32_t GetNodeNum();
+	ISPResult Init();
 
 private:
 	ISPNode mHead;
 	bool mInited;
 	int32_t mNodeNum;
 };
-
