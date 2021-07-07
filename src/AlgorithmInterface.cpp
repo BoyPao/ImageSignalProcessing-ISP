@@ -15,6 +15,8 @@ ISPResult RegisterISPLibFuncs()
 	gISP_Lib_funcs.ISP_Gamma = &ISP_GammaCorrection;
 	gISP_Lib_funcs.ISP_WNR = &ISP_WaveletNR;
 	gISP_Lib_funcs.ISP_EE = &ISP_EdgeEnhancement;
+	gISP_Lib_funcs.ISP_Demosaic = &ISP_Demosaic;
+	gISP_Lib_funcs.ISP_CST_RGB2YUV = &ISP_CST_RGB2YUV;
 
 	return result;
 }
@@ -49,7 +51,7 @@ ISPResult BlackLevelCorrection(ISPParamManager* pPM, void* data, ...)
 		if (gISP_Lib_funcs.ISP_BLC) {
 			va_list(va);
 			__crt_va_start(va, data);
-			result = gISP_Lib_funcs.ISP_BLC(data, va, gISP_Process_cbs, width, height, offset);
+			result = gISP_Lib_funcs.ISP_BLC(data, gISP_Process_cbs, width, height, offset);
 			__crt_va_end(va);
 		}
 		else {
@@ -92,7 +94,7 @@ ISPResult LensShadingCorrection(ISPParamManager* pPM, void* data, ...)
 		if (gISP_Lib_funcs.ISP_LSC) {
 			va_list(va);
 			__crt_va_start(va, data);
-			result = gISP_Lib_funcs.ISP_LSC(data, va, gISP_Process_cbs, width, height, R_lsc, Gr_lsc, Gb_lsc, B_lsc);
+			result = gISP_Lib_funcs.ISP_LSC(data, gISP_Process_cbs, width, height, R_lsc, Gr_lsc, Gb_lsc, B_lsc);
 			__crt_va_end(va);
 		}
 		else {
@@ -134,7 +136,7 @@ ISPResult WhiteBalance(ISPParamManager* pPM, void* data, ...)
 		if (gISP_Lib_funcs.ISP_WB) {
 			va_list(va);
 			__crt_va_start(va, data);
-			result = gISP_Lib_funcs.ISP_WB(data, va, gISP_Process_cbs, width, height, rGain, gGain, bGain);
+			result = gISP_Lib_funcs.ISP_WB(data, gISP_Process_cbs, width, height, rGain, gGain, bGain);
 			__crt_va_end(va);
 		}
 		else {
@@ -174,7 +176,7 @@ ISPResult ColorCorrection(ISPParamManager* pPM, void* data, ...)
 		if (gISP_Lib_funcs.ISP_CC) {
 			va_list(va);
 			__crt_va_start(va, data);
-			result = gISP_Lib_funcs.ISP_CC(data, va, gISP_Process_cbs, width, height, ccm);
+			result = gISP_Lib_funcs.ISP_CC(data, gISP_Process_cbs, width, height, ccm);
 			__crt_va_end(va);
 		}
 		else {
@@ -214,7 +216,7 @@ ISPResult GammaCorrection(ISPParamManager* pPM, void* data, ...)
 		if (gISP_Lib_funcs.ISP_Gamma) {
 			va_list(va);
 			__crt_va_start(va, data);
-			result = gISP_Lib_funcs.ISP_Gamma(data, va, gISP_Process_cbs, width, height, lut);
+			result = gISP_Lib_funcs.ISP_Gamma(data, gISP_Process_cbs, width, height, lut);
 			__crt_va_end(va);
 		}
 		else {
@@ -257,7 +259,7 @@ ISPResult WaveletNR(ISPParamManager* pPM, void* data, ...)
 		if (gISP_Lib_funcs.ISP_WNR) {
 			va_list(va);
 			__crt_va_start(va, data);
-			result = gISP_Lib_funcs.ISP_WNR(data, va, gISP_Process_cbs, width, height, strength1, strength2, strength3);
+			result = gISP_Lib_funcs.ISP_WNR(data, gISP_Process_cbs, width, height, strength1, strength2, strength3);
 			__crt_va_end(va);
 		}
 		else {
@@ -299,8 +301,68 @@ ISPResult Sharpness(ISPParamManager* pPM, void* data, ...)
 		if (gISP_Lib_funcs.ISP_EE) {
 			va_list(va);
 			__crt_va_start(va, data);
-			result = gISP_Lib_funcs.ISP_EE(data, va, gISP_Process_cbs, width, height, alpha, coreSzie, delta);
+			result = gISP_Lib_funcs.ISP_EE(data, gISP_Process_cbs, width, height, alpha, coreSzie, delta);
 			__crt_va_end(va);
+		}
+		else {
+			result = ISP_STATE_ERROR;
+			ISPLoge("ISP lib function has not been registed! result:%d", result);
+		}
+	}
+
+	return result;
+}
+
+ISPResult Demosaic(ISPParamManager* pPM, void* src, void* dst)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	int32_t width, height;
+	if (!pPM) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("ParamManager is null! result%d", result);
+	}
+
+	if (SUCCESS(result)) {
+		result = pPM->GetIMGDimension(&width, &height);
+		if (!SUCCESS(result)) {
+			ISPLoge("get IMG Dimension failed. result:%d", result);
+		}
+	}
+
+	if (SUCCESS(result)) {
+		if (gISP_Lib_funcs.ISP_Demosaic) {
+			result = gISP_Lib_funcs.ISP_Demosaic(src, dst, gISP_Process_cbs, width, height);
+		}
+		else {
+			result = ISP_STATE_ERROR;
+			ISPLoge("ISP lib function has not been registed! result:%d", result);
+		}
+	}
+
+	return result;
+}
+
+ISPResult CST_RGB2YUV(ISPParamManager* pPM, void* src, void* dst)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	int32_t width, height;
+	if (!pPM) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("ParamManager is null! result%d", result);
+	}
+
+	if (SUCCESS(result)) {
+		result = pPM->GetIMGDimension(&width, &height);
+		if (!SUCCESS(result)) {
+			ISPLoge("get IMG Dimension failed. result:%d", result);
+		}
+	}
+
+	if (SUCCESS(result)) {
+		if (gISP_Lib_funcs.ISP_CST_RGB2YUV) {
+			result = gISP_Lib_funcs.ISP_CST_RGB2YUV(src, dst, gISP_Process_cbs, width, height);
 		}
 		else {
 			result = ISP_STATE_ERROR;

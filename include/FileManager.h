@@ -33,8 +33,8 @@ private:
 	ISPState mState = Uninited;
 
 public:
-	ImageFileManager() { mState = this->Init(); };
-	~ImageFileManager() { mState = this->Deinit(); };
+	ImageFileManager() { mState = Init(); };
+	~ImageFileManager() { mState = Deinit(); };
 	ISPState Init();
 	ISPState Deinit();
 	InputImgInfo GetInputImgInfo() { return mInputImg; };

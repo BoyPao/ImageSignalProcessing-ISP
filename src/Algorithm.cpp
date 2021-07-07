@@ -11,7 +11,8 @@
 #include "Algorithm.h"
 #include "ParamManager.h"
 
-//ISPParamManager gParamManager;
+#define DUMP_NEEDED false
+#define DUMP_PATH "D:\\test_project\\ISP\\local\\output\\output.txt"
 
 //EdgePreservedNR not used, it should be redeveloped
 /*ISPResult EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable) {
@@ -98,10 +99,9 @@
 	}
 }*/
 
-ISPResult ISP_BlackLevelCorrection(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...)
+ISPResult ISP_BlackLevelCorrection(void* data, ISP_PROCESS_CALLBACKS CBs, ...)
 {
 	ISPResult result = ISP_SUCCESS;
-	(void)input_va;
 	(void)CBs;
 
 	if (!data) {
@@ -121,7 +121,6 @@ ISPResult ISP_BlackLevelCorrection(void* data, va_list input_va, ISP_PROCESS_CAL
 		for (int32_t i = 0; i < width * height; i++) {
 			static_cast<uint16_t*>(data)[i] -= offset;
 		}
-		ISPLogi("finished");
 	}
 
 	return result;
@@ -138,10 +137,9 @@ float LSCinterpolation(int32_t WIDTH, int32_t HEIGHT,
 	return result;
 }
 
-ISPResult ISP_LensShadingCorrection(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...)
+ISPResult ISP_LensShadingCorrection(void* data, ISP_PROCESS_CALLBACKS CBs, ...)
 {
 	ISPResult result = ISP_SUCCESS;
-	(void)input_va;
 	(void)CBs;
 	
 	if (!data) {
@@ -210,7 +208,6 @@ ISPResult ISP_LensShadingCorrection(void* data, va_list input_va, ISP_PROCESS_CA
 				}
 			}
 		}
-		ISPLogi("finished");
 	}
 
 	return result;
@@ -264,10 +261,9 @@ ISPResult ISP_LensShadingCorrection(void* data, va_list input_va, ISP_PROCESS_CA
 	return result;
 }*/
 
-ISPResult ISP_WhiteBalance(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...)
+ISPResult ISP_WhiteBalance(void* data, ISP_PROCESS_CALLBACKS CBs, ...)
 {
 	ISPResult result = ISP_SUCCESS;
-	(void)input_va;
 	(void)CBs;
 
 	if (!data) {
@@ -298,17 +294,15 @@ ISPResult ISP_WhiteBalance(void* data, va_list input_va, ISP_PROCESS_CALLBACKS C
 				G[i] = G[i] * gGain;
 				R[i] = R[i] * rGain;
 			}
-			ISPLogi("finished");
 		}
 	}
 
 	return result;
 }
 
-ISPResult ISP_ColorCorrection(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...)
+ISPResult ISP_ColorCorrection(void* data, ISP_PROCESS_CALLBACKS CBs, ...)
 {
 	ISPResult result = ISP_SUCCESS;
-	(void)input_va;
 	(void)CBs;
 
 	if (!data) {
@@ -383,15 +377,13 @@ ISPResult ISP_ColorCorrection(void* data, va_list input_va, ISP_PROCESS_CALLBACK
 		//OutFile5 <<income;
 		//OutFile5.close();
 		//CharDataSaveAsText(dst.data, "C:\\Users\\penghao6\\Desktop\\output2.txt");
-		ISPLogi("finished");
 	}
 	return result;
 }
 
-ISPResult ISP_GammaCorrection(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...)
+ISPResult ISP_GammaCorrection(void* data, ISP_PROCESS_CALLBACKS CBs, ...)
 {
 	ISPResult result = ISP_SUCCESS;
-	(void)input_va;
 	(void)CBs;
 
 	if (!data) {
@@ -419,8 +411,8 @@ ISPResult ISP_GammaCorrection(void* data, va_list input_va, ISP_PROCESS_CALLBACK
 			G[i] = plut[G[i]];
 			R[i] = plut[R[i]];
 		}
-		ISPLogi("finished");
 	}
+
 	return result;
 }
 
@@ -568,7 +560,7 @@ Mat WDT(const Mat& _src, const string _wname, const int _level)
 
 
 Mat getim(Mat src, int32_t WIDTH, int32_t HEIGHT,
-	int depth, int Imgsizey, int Imgsizex, int channel, 
+	int depth, int channel, 
 	int strength1, int strength2, int strength3)
 {
 	int i, j;
@@ -889,7 +881,7 @@ Mat getim(Mat src, int32_t WIDTH, int32_t HEIGHT,
 	return imr;
 }
 
-ISPResult ISP_WaveletNR(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...)
+ISPResult ISP_WaveletNR(void* data, ISP_PROCESS_CALLBACKS CBs, ...)
 {
 	ISPResult result = ISP_SUCCESS;
 	(void)CBs;
@@ -900,11 +892,6 @@ ISPResult ISP_WaveletNR(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs,
 	}
 
 	if (SUCCESS(result)) {
-		__crt_va_start(input_va, data);
-		int32_t Imgsizey = static_cast<int32_t>(__crt_va_arg(input_va, int32_t));
-		int32_t Imgsizex = static_cast<int32_t>(__crt_va_arg(input_va, int32_t));
-		__crt_va_end(input_va);
-
 		int32_t width, height;
 		int32_t strength1;
 		int32_t strength2;
@@ -945,7 +932,7 @@ ISPResult ISP_WaveletNR(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs,
 					onechannel.data[i * width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j + 1];
 				}
 			}
-			onechannel2 = getim(onechannel, width, height, 3, Imgsizey, Imgsizex, 1, strength1, strength2, strength3);
+			onechannel2 = getim(onechannel, width, height, 3, 1, strength1, strength2, strength3);
 			//onechannel2 = onechannel.clone();
 			onechannel = onechannel2.clone();
 			for (i = 0; i < height; i++) {
@@ -962,7 +949,7 @@ ISPResult ISP_WaveletNR(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs,
 					onechannel.data[i * width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j + 2];
 				}
 			}
-			onechannel2 = getim(onechannel, width, height, 3, Imgsizey, Imgsizex, 2, strength1, strength2, strength3);
+			onechannel2 = getim(onechannel, width, height, 3, 2, strength1, strength2, strength3);
 			//onechannel2 = onechannel.clone();
 			onechannel = onechannel2.clone();
 			for (i = 0; i < height; i++) {
@@ -972,17 +959,15 @@ ISPResult ISP_WaveletNR(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs,
 					static_cast<uchar*>(data)[i * 3 * width + 3 * j + 2] = onechannel2.data[i * width + j];
 				}
 			}
-			ISPLogi(" finished");
 		}
 	}
 	return result;
 }
 
 
-ISPResult ISP_EdgeEnhancement(void* data, va_list input_va, ISP_PROCESS_CALLBACKS CBs, ...)
+ISPResult ISP_EdgeEnhancement(void* data, ISP_PROCESS_CALLBACKS CBs, ...)
 {
 	ISPResult result = ISP_SUCCESS;
-	(void)input_va;
 	(void)CBs;
 
 	if (!data) {
@@ -1029,7 +1014,317 @@ ISPResult ISP_EdgeEnhancement(void* data, va_list input_va, ISP_PROCESS_CALLBACK
 				static_cast<uchar*>(data)[i * 3 * width + 3 * j] = mask & 255;
 			}
 		}
-		ISPLogi("finished");
+	}
+
+	return result;
+}
+
+
+ISPResult ReadChannels(uint16_t* data, uint16_t* B, uint16_t* G, uint16_t* R, int32_t width, int32_t height) 
+{
+	ISPResult result = ISP_SUCCESS;
+	int32_t i, j;
+
+	if (!data || !B || !G || !R || width < 0 || height < 0) {
+		result = ISP_INVALID_PARAM;
+	}
+
+	if (SUCCESS(result)) {
+		for (i = 0; i < height; i++) {
+			for (j = 0; j < width; j++) {
+				if (i % 2 == 0 && j % 2 == 0) {
+					B[i * width + j] = data[i * width + j];
+					G[i * width + j] = 0;
+					R[i * width + j] = 0;
+				}
+				else if ((i % 2 == 0 && j % 2 == 1) || (i % 2 == 1 && j % 2 == 0)) {
+					B[i * width + j] = 0;
+					G[i * width + j] = data[i * width + j];
+					R[i * width + j] = 0;
+				}
+				else {
+					B[i * width + j] = 0;
+					G[i * width + j] = 0;
+					R[i * width + j] = data[i * width + j];
+				}
+			}
+		}
+	}
+
+	return result;
+}
+
+void FirstPixelInsertProcess(uint16_t* src, uint16_t* dst, int32_t width, int32_t height) 
+{
+	int32_t i, j;
+
+	for (i = 0; i < height; i++) {
+		for (j = 0; j < width; j++) {
+			if (i % 2 == 0 && j % 2 == 1) {
+				if (j == width - 1) {
+					dst[i * width + j] = src[i * width + j - 1];
+				}
+				else {
+					dst[i * width + j] = (src[i * width + j - 1] +
+						src[i * width + j + 1]) / 2;
+				}
+			}
+			if (i % 2 == 1 && j % 2 == 0) {
+				if (i == height - 1) {
+					dst[i * width + j] = src[(i - 1) * width + j];
+				}
+				else {
+					dst[i * width + j] = (src[(i - 1) * width + j] +
+						src[(i + 1) * width + j]) / 2;
+				}
+			}
+		}
+	}
+	for (i = 0; i < height; i++) {
+		for (j = 0; j < width; j++) {
+			if (i % 2 == 1 && j % 2 == 1) {
+				if (j < width - 1 && i < height - 1) {
+					dst[i * width + j] = (src[(i - 1) * width + j - 1] +
+						src[(i - 1) * width + j + 1] +
+						src[(i + 1) * width + j - 1] +
+						src[(i + 1) * width + j + 1]) / 4;
+				}
+				else if (i == height - 1 && j < width - 1) {
+					dst[i * width + j] = (src[(i - 1) * width + j - 1] +
+						src[(i - 1) * width + j + 1]) / 2;
+				}
+				else if (i < height - 1 && j == width - 1) {
+					dst[i * width + j] = (src[(i - 1) * width + j - 1] +
+						src[(i + 1) * width + j - 1]) / 2;
+				}
+				else {
+					dst[i * width + j] = src[(i - 1) * width + j - 1];
+				}
+
+			}
+		}
+	}
+	//cout << " First Pixel Insert Process finished " << endl;
+}
+
+void TwoGPixelInsertProcess(uint16_t* src, uint16_t* dst, int32_t width, int32_t height)
+{
+	int32_t i, j;
+	for (i = 0; i < height; i++) {
+		for (j = 0; j < width; j++) {
+			if (i == 0 && j == 0) {
+				dst[i * width + j] = (src[(i + 1) * width + j] +
+					src[i * width + j + 1]) / 2;
+			}
+			else if (i == 0 && j > 0 && j % 2 == 0) {
+				dst[i * width + j] = (src[i * width + j - 1] +
+					src[(i + 1) * width + j] +
+					src[i * width + j + 1]) / 3;
+			}
+			else if (i > 0 && j == 0 && i % 2 == 0) {
+				dst[i * width + j] = (src[(i - 1) * width + j] +
+					src[i * width + j + 1] +
+					src[(i + 1) * width + j]) / 3;
+			}
+			else if (i == height - 1 && j < width - 1 && j % 2 == 1) {
+				dst[i * width + j] = (src[i * width + j - 1] +
+					src[(i - 1) * width + j] +
+					src[i * width + j + 1]) / 3;
+			}
+			else if (i < height - 1 && j == width - 1 && i % 2 == 1) {
+				dst[i * width + j] = (src[(i - 1) * width + j] +
+					src[i * width + j - 1] +
+					src[(i + 1) * width + j]) / 3;
+			}
+			else if (i == height - 1 && j == width - 1) {
+				dst[i * width + j] = (src[(i - 1) * width + j] +
+					src[i * width + j - 1]) / 2;
+			}
+			else if ((i % 2 == 0 && j % 2 == 0) ||
+				(i % 2 == 1 && j % 2 == 1)) {
+				dst[i * width + j] = (src[i * width + j - 1] +
+					src[i * width + j + 1] +
+					src[(i - 1) * width + j] +
+					src[(i + 1) * width + j]) / 4;
+			}
+		}
+	}
+	//cout << " TWO Green Pixel Insert Process finished " << endl;
+}
+
+void LastPixelInsertProcess(uint16_t* src, uint16_t* dst , int32_t width, int32_t height) 
+{
+	int32_t i, j;
+	for (i = 0; i < height; i++) {
+		for (j = 0; j < width; j++) {
+			if (i % 2 == 1 && j % 2 == 0) {
+				if (j == 0) {
+					dst[i * width + j] = src[i * width + j + 1];
+				}
+				else {
+					dst[i * width + j] = (src[i * width + j - 1] +
+						src[i * width + j + 1]) / 2;
+				}
+			}
+			if (i % 2 == 0 && j % 2 == 1) {
+				if (i == 0) {
+					dst[i * width + j] = src[(i + 1) * width + j];
+				}
+				else {
+					dst[i * width + j] = (src[(i - 1) * width + j] +
+						src[(i + 1) * width + j]) / 2;
+				}
+			}
+		}
+	}
+	for (i = 0; i < height; i++) {
+		for (j = 0; j < width; j++) {
+			if (i % 2 == 0 && j % 2 == 0) {
+				if (i > 0 && j > 0) {
+					dst[i * width + j] = (src[(i - 1) * width + j - 1] +
+						src[(i - 1) * width + j + 1] +
+						src[(i + 1) * width + j - 1] +
+						src[(i + 1) * width + j + 1]) / 4;
+				}
+				else if (i == 0 && j > 0) {
+					dst[i * width + j] = (src[(i + 1) * width + j - 1] +
+						src[(i + 1) * width + j + 1]) / 2;
+				}
+				else if (i > 0 && j == 0) {
+					dst[i * width + j] = (src[(i - 1) * width + j + 1] +
+						src[(i + 1) * width + j + 1]) / 2;
+				}
+				else {
+					dst[i * width + j] = src[(i + 1) * width + j + 1];
+				}
+			}
+		}
+	}
+	//cout << " Last Pixel Insert Process finished " << endl;
+}
+
+ISPResult ISP_Demosaic(void* src, void* dst, ISP_PROCESS_CALLBACKS CBs, ...)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!src || !dst) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("data is null! result:%d", result);
+	}
+
+	int32_t width, height;
+	va_list va_param;
+	__crt_va_start(va_param, CBs);
+	width = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+	height = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+	__crt_va_end(va_param);
+	uint16_t* bDst = static_cast<uint16_t*>(dst);
+	uint16_t* gDst = static_cast<uint16_t*>(dst) + width * height;
+	uint16_t* rDst = static_cast<uint16_t*>(dst) + 2 * width * height;
+	if (SUCCESS(result)) {
+		result = ReadChannels(static_cast<uint16_t*>(src), bDst, gDst, rDst, width, height);
+	}
+
+#if  DUMP_NEEDED
+	if (SUCCESS(result)) {
+		DumpImgDataAsText((void*)gData, height, width, sizeof(uint16_t), DUMP_PATH);
+	}
+#endif
+
+	if (SUCCESS(result)) {
+		FirstPixelInsertProcess(static_cast<uint16_t*>(src), bDst, width, height);
+		TwoGPixelInsertProcess(static_cast<uint16_t*>(src), gDst, width, height);
+		LastPixelInsertProcess(static_cast<uint16_t*>(src), rDst, width, height);
+	}
+	else {
+		ISPLoge("Failed to channels read data!");
+	}
+
+	return result;
+}
+
+void Compress10to8(uint16_t* src, unsigned char* dst, int32_t size, bool need_420_521)
+{
+	if (need_420_521) {
+		double temp;
+		uint16_t tempInt;
+		for (int i = 0; i < size; i++) {
+			temp = src[i] / 1024.0 * 256.0;
+			tempInt = (uint16_t)(temp * 10);
+			tempInt = tempInt % 10;
+			if (tempInt < 5 || temp > 255) {
+				dst[i] = (uint8_t)temp & 0xff;
+			}
+			else {
+				dst[i] = ((uint8_t)temp + 1) & 0xff;
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < size; i++) {
+			dst[i] = (src[i] >> 2) & 0xff;
+		}
+	}
+}
+
+ISPResult ISP_CST_RGB2YUV(void* src, void* dst, ISP_PROCESS_CALLBACKS CBs, ...) 
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!src || !dst) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("data is null! result:%d", result);
+	}
+
+	int32_t width, height;
+	va_list va_param;
+	__crt_va_start(va_param, CBs);
+	width = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+	height = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+	__crt_va_end(va_param);
+	uint16_t* bSrc = static_cast<uint16_t*>(src);
+	uint16_t* gSrc = static_cast<uint16_t*>(src) + width * height;
+	uint16_t* rSrc = static_cast<uint16_t*>(src) + 2 * width * height;
+	uint8_t* data8bit = nullptr;
+	uint8_t* b8bit = nullptr;
+	uint8_t* g8bit = nullptr;
+	uint8_t* r8bit = nullptr;
+
+	if (SUCCESS(result)) {
+		data8bit = new uint8_t[3 * width * height];
+		if (data8bit) {
+			memset(data8bit, 0x0, 3 * width * height);
+			b8bit = data8bit;
+			g8bit = b8bit + width * height;
+			r8bit = g8bit + width * height;
+			Compress10to8(bSrc, b8bit, width * height, true);
+			Compress10to8(gSrc, g8bit, width * height, true);
+			Compress10to8(rSrc, r8bit, width * height, true);
+		}
+		else {
+			result = ISP_MEMORY_ERROR;
+			ISPLoge("cannot new buffer for 8 bits data! result:%d", result);
+		}
+	}
+
+	if (SUCCESS(result)) {
+		//Fill a BMP data use three channals data
+		int32_t i, j;
+		Mat YUVdst(height, width, CV_8UC3, Scalar(0, 0, 0));
+		for (i = 0; i < height; i++) {
+			for (j = 0; j < width; j++) {
+				YUVdst.data[i * width * 3 + 3 * j] = (unsigned int)b8bit[i * width + j];
+				YUVdst.data[i * width * 3 + 3 * j + 1] = (unsigned int)g8bit[i * width + j];
+				YUVdst.data[i * width * 3 + 3 * j + 2] = (unsigned int)r8bit[i * width + j];
+			}
+		}
+		cvtColor(YUVdst, YUVdst, COLOR_BGR2YCrCb, 0);
+		memcpy(dst, YUVdst.data, 3 * width * height);
+		YUVdst.release();
+	}
+
+	if (data8bit) {
+		delete data8bit;
 	}
 
 	return result;

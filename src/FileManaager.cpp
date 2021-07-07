@@ -12,84 +12,84 @@
 
 ISPState ImageFileManager::Init()
 {
-	this->mInputImg.pInputPath = nullptr;
-	this->mInputImg.rawSize = 640 * 480;
-	this->mOutputImg.pOutputPath = nullptr;
-	this->mOutputImg.width = 640;
-	this->mOutputImg.hight = 480;
+	mInputImg.pInputPath = nullptr;
+	mInputImg.rawSize = 640 * 480;
+	mOutputImg.pOutputPath = nullptr;
+	mOutputImg.width = 640;
+	mOutputImg.hight = 480;
 	return Inited;
 }
 
 ISPState ImageFileManager::Deinit()
 {
-	this->mInputImg.pInputPath = nullptr;
-	this->mInputImg.rawSize = 640 * 480; 
-	this->mOutputImg.pOutputPath = nullptr;
-	this->mOutputImg.width = 640;
-	this->mOutputImg.hight = 480;
+	mInputImg.pInputPath = nullptr;
+	mInputImg.rawSize = 640 * 480; 
+	mOutputImg.pOutputPath = nullptr;
+	mOutputImg.width = 640;
+	mOutputImg.hight = 480;
 	return Uninited;
 }
 
 ISPResult ImageFileManager::SetInputImgInfo(InputImgInfo info)
 {
 	ISPResult result = ISP_SUCCESS;
-	this->mInputImg.pInputPath = info.pInputPath;
-	this->mInputImg.rawSize = info.rawSize;
+	mInputImg.pInputPath = info.pInputPath;
+	mInputImg.rawSize = info.rawSize;
 	return result;
 }
 
 ISPResult ImageFileManager::SetInputImgInfo(char* path, int32_t rawSize)
 {
 	ISPResult result = ISP_SUCCESS;
-	this->mInputImg.pInputPath = path;
-	this->mInputImg.rawSize = rawSize;
+	mInputImg.pInputPath = path;
+	mInputImg.rawSize = rawSize;
 	return result;
 }
 
 ISPResult ImageFileManager::SetInputImgInfo(char* path)
 {
 	ISPResult result = ISP_SUCCESS;
-	this->mInputImg.pInputPath = path;
+	mInputImg.pInputPath = path;
 	return result;
 }
 
 ISPResult ImageFileManager::SetInputImgInfo(int32_t rawSize)
 {
 	ISPResult result = ISP_SUCCESS;
-	this->mInputImg.rawSize = rawSize;
+	mInputImg.rawSize = rawSize;
 	return result;
 }
 
 ISPResult ImageFileManager::SetOutputImgInfo(OutputImgInfo info)
 {
 	ISPResult result = ISP_SUCCESS;
-	this->mOutputImg.pOutputPath = info.pOutputPath;
-	this->mOutputImg.width = info.width;
-	this->mOutputImg.hight = info.hight;
+	mOutputImg.pOutputPath = info.pOutputPath;
+	mOutputImg.width = info.width;
+	mOutputImg.hight = info.hight;
 	return result;
 }
 
 ISPResult ImageFileManager::SetOutputImgInfo(char* path, int32_t width, int32_t hight)
 {
 	ISPResult result = ISP_SUCCESS;
-	this->mOutputImg.pOutputPath = path;
-	this->mOutputImg.width = width;
-	this->mOutputImg.hight = hight;
+	mOutputImg.pOutputPath = path;
+	mOutputImg.width = width;
+	mOutputImg.hight = hight;
 	return result;
 }
 
 ISPResult ImageFileManager::SetOutputImgInfo(char* path)
 {
 	ISPResult result = ISP_SUCCESS;
-	this->mOutputImg.pOutputPath = path;
+	mOutputImg.pOutputPath = path;
 	return result;
 }
 
 ISPResult ImageFileManager::SetOutputImgInfo(int32_t width, int32_t hight)
 {
 	ISPResult result = ISP_SUCCESS;
-	this->mOutputImg.width = width;
-	this->mOutputImg.hight = hight;
+	mOutputImg.width = width;
+	mOutputImg.hight = hight;
 	return result;
 }
 
@@ -97,12 +97,12 @@ ISPResult ImageFileManager::ReadRawData(uint8_t* buffer, size_t bufferSize, ISPR
 {
 	ISPResult result = ISP_SUCCESS;
 
-	if (this->mState == Uninited) {
+	if (mState == Uninited) {
 		result = ISP_STATE_ERROR;
 	}
 	
 	if (SUCCESS(result)) {
-		ifstream OpenFile(this->mInputImg.pInputPath, ios::in | ios::binary);
+		ifstream OpenFile(mInputImg.pInputPath, ios::in | ios::binary);
 		if (OpenFile.fail()) {
 			result = ISP_FAILED;
 			ISPLoge("Open RAW failed! result:%d", result);
@@ -111,13 +111,13 @@ ISPResult ImageFileManager::ReadRawData(uint8_t* buffer, size_t bufferSize, ISPR
 		if (SUCCESS(result)) {
 			OpenFile.seekg(0, ios::end);
 			streampos fileSize = OpenFile.tellg();
-			this->mInputImg.rawSize = (int32_t)fileSize;
+			mInputImg.rawSize = (int32_t)fileSize;
 			ISPLogi("Raw size:%d", (int32_t)fileSize);
 			OpenFile.seekg(0, ios::beg);
 
 			if (bufferSize >= mInputImg.rawSize) {
 				if (formate == Mipi10Bit) {
-					OpenFile.read((char*)buffer, this->mInputImg.rawSize);
+					OpenFile.read((char*)buffer, mInputImg.rawSize);
 				}
 			}
 			else {
@@ -135,13 +135,13 @@ ISPResult ImageFileManager::ReadRawData(uint8_t* buffer, size_t bufferSize, ISPR
 ISPResult ImageFileManager::SaveBMP(uint8_t* srcData, int32_t channels)
 {
 	ISPResult result = ISP_SUCCESS;
-	if (this->mState == Uninited) {
+	if (mState == Uninited) {
 		result = ISP_FAILED;
 		ISPLoge("ImageFile didnot init");
 	}
 
 	if(SUCCESS(result)) {
-		BYTE* BMPdata = new BYTE[this->mOutputImg.width * this->mOutputImg.hight * channels];
+		BYTE* BMPdata = new BYTE[mOutputImg.width * mOutputImg.hight * channels];
 		result = SetBMP(srcData, channels, BMPdata);
 		if (SUCCESS(result)) {
 			WriteBMP(BMPdata, channels);
@@ -157,7 +157,7 @@ ISPResult ImageFileManager::SaveBMP(uint8_t* srcData, int32_t channels)
 ISPResult ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
 {
 	ISPResult result = ISP_SUCCESS;
-	int32_t size = this->mOutputImg.width * this->mOutputImg.hight;
+	int32_t size = mOutputImg.width * mOutputImg.hight;
 	int32_t j = 0;
 	BYTE temp;
 
@@ -170,7 +170,7 @@ ISPResult ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dst
 	if (SUCCESS(result)) {
 		memcpy(dstData, srcData, channels * size);
 
-		//¾ØÕó·´×ª	
+		//Array head & tail convertion 	
 		while (j < channels * size - j) {
 			temp = dstData[channels * size - j - 1];
 			dstData[channels * size - j - 1] = dstData[j];
@@ -178,14 +178,14 @@ ISPResult ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dst
 			j++;
 		}
 
-		//Í¼Ïñ¾µÏñ·­×ª
-		for (int32_t row = 0; row < this->mOutputImg.hight; row++) {
+		//mirror flip
+		for (int32_t row = 0; row < mOutputImg.hight; row++) {
 			int32_t col = 0;
-			while (col < channels * this->mOutputImg.width - col) {
-				temp = dstData[row * channels * this->mOutputImg.width + channels * this->mOutputImg.width - col - 1];
-				dstData[channels * row * this->mOutputImg.width + channels * this->mOutputImg.width - col - 1] =
-					dstData[channels * row * this->mOutputImg.width + col];
-				dstData[channels * row * this->mOutputImg.width + col] = temp;
+			while (col < channels * mOutputImg.width - col) {
+				temp = dstData[row * channels * mOutputImg.width + channels * mOutputImg.width - col - 1];
+				dstData[channels * row * mOutputImg.width + channels * mOutputImg.width - col - 1] =
+					dstData[channels * row * mOutputImg.width + col];
+				dstData[channels * row * mOutputImg.width + col] = temp;
 				col++;
 			}
 		}
@@ -197,11 +197,11 @@ ISPResult ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dst
 void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 	BITMAPFILEHEADER header;
 	BITMAPINFOHEADER headerinfo;
-	int32_t BMPSize = this->mOutputImg.width * this->mOutputImg.hight * channels;
+	int32_t BMPSize = mOutputImg.width * mOutputImg.hight * channels;
 
 	headerinfo.biSize = sizeof(BITMAPINFOHEADER);
-	headerinfo.biHeight = this->mOutputImg.hight;
-	headerinfo.biWidth = this->mOutputImg.width;
+	headerinfo.biHeight = mOutputImg.hight;
+	headerinfo.biWidth = mOutputImg.width;
 	headerinfo.biPlanes = 1;
 	headerinfo.biBitCount = (channels == 1) ? 8 : 24;
 	headerinfo.biCompression = 0; //BI_RGB
@@ -217,24 +217,29 @@ void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 		(sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER));
 	header.bfSize = header.bfOffBits + headerinfo.biSizeImage;
 
-	ISPLogi("BMPPath:%s", this->mOutputImg.pOutputPath);
-	ofstream out(this->mOutputImg.pOutputPath, ios::binary);
+	ISPLogi("BMPPath:%s", mOutputImg.pOutputPath);
+	ofstream out(mOutputImg.pOutputPath, ios::binary);
 	out.write((char*)& header, sizeof(BITMAPFILEHEADER));
 	out.write((char*)& headerinfo, sizeof(BITMAPINFOHEADER));
-	if (channels == 1) {
-		static RGBQUAD palette[256];
-		for (unsigned int i = 0; i < 256; i++)
-		{
-			palette[i].rgbBlue = i;
-			palette[i].rgbGreen = i;
-			palette[i].rgbRed = i;
+	if (!out.fail()) {
+		if (channels == 1) {
+			static RGBQUAD palette[256];
+			for (unsigned int i = 0; i < 256; i++)
+			{
+				palette[i].rgbBlue = i;
+				palette[i].rgbGreen = i;
+				palette[i].rgbRed = i;
+			}
+			out.write((char*)palette, sizeof(RGBQUAD) * 256);
 		}
-		out.write((char*)palette, sizeof(RGBQUAD) * 256);
-	}
-	out.write((char*)data, BMPSize);
-	out.close();
+		out.write((char*)data, BMPSize);
+		out.close();
 
-	ISPLogi("BMP saved");
+		ISPLogi("BMP saved");
+	}
+	else {
+		ISPLoge("Cannot write file:%s", mOutputImg.pOutputPath);
+	}
 }
 
 
