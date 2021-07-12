@@ -4,13 +4,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////////////
-// @file: Pipeline.h
-// @brief: The head of Pipeline
+// @file: ISPList.h
+// @brief: The head of ISPList.
 //////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include "ISPCore.h"
 #include "AlgorithmInterface.h"
 
 #define NODE_NAME_MAX_SZIE 15
@@ -39,13 +38,6 @@ const char PROCESSNAME[PROCESS_TYPE_NUM][NODE_NAME_MAX_SZIE] = {
 	"EE",
 	"CST_Demisaic",
 	"CST_RGB2YUV",
-	"None",
-};
-
-const string COLOR_SPACE_NAME[] = {
-	"Bayer",
-	"RGB",
-	"YUV",
 	"None",
 };
 

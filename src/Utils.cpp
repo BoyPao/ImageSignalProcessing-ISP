@@ -77,30 +77,3 @@ void getTimeWithDateInt(int32_t* years, int32_t* months, int32_t* days, int32_t*
 	*years = pTime.tm_year + SYSTEM_YEAR_OFFSET;
 }
 
-
-void DumpImgDataAsText(void* data, int32_t height, int32_t width, size_t bitWidth, string TextPath) {
-	if (data != nullptr) {
-		ofstream OutFile(TextPath);
-		for (int32_t i = 0; i < height; i++) {
-			OutFile << i << ": ";
-			for (int32_t j = 0; j < width; j++) {
-				switch (bitWidth) {
-				case sizeof(uint16_t):
-					OutFile << (int)static_cast<uint16_t*>(data)[i * width + j] << ' ';
-					break;
-				case sizeof(uint8_t):
-					OutFile << (int)static_cast<uint8_t*>(data)[i * width + j] << ' ';
-					break;
-				default:
-					ISPLoge("Dump failed. Unsopported data type");
-				}
-			}
-			OutFile << endl;
-		}
-		OutFile.close();
-		ISPLoge("Data saved as TXT finished");
-	}
-	else {
-		ISPLoge("Dump failed. data is nullptr");
-	}
-}

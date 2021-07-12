@@ -4,14 +4,20 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////////////
-// @file: ImageSignalProcess.cpp
+// @file: ISPCore.cpp
 // @brief: ISP main function implementation
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "FileManager.h"
 #include "ISPCore.h"
 #include "ISPList.h"
+#include "FileManager.h"
 #include "ParamManager.h"
+
+#include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/photo.hpp"
 
 using namespace cv;
 
@@ -24,7 +30,6 @@ using namespace cv;
 #define WIDTH 1920
 #define HEIGHT 1080
 
-
 int main() {
 	ISPResult result = ISP_SUCCESS;
 
@@ -35,10 +40,12 @@ int main() {
 
 	InputImgInfo inputInfo;
 	OutputImgInfo outputInfo;
-	string inputPath = INPUTPATH;
-	string outputPath = OUTPUTPATH;
-	inputInfo.pInputPath = const_cast<char*>(inputPath.c_str());
-	outputInfo.pOutputPath = const_cast<char*>(outputPath.c_str());
+	char inputPath[FILE_PATH_MAX_SIZE] = { '\0' };
+	char outputPath[FILE_PATH_MAX_SIZE] = { '\0' };
+	strcpy_s(inputPath, INPUTPATH);
+	strcpy_s(outputPath, OUTPUTPATH);
+	inputInfo.pInputPath = inputPath;
+	outputInfo.pOutputPath = outputPath;
 	paramManager.GetIMGDimension(&outputInfo.width, &outputInfo.hight);
 	
 	ImageFileManager* pImgFileManager = nullptr;
@@ -94,7 +101,6 @@ int main() {
 
 	return 0;
 }
-
 
 ISPResult Mipi10decode(void* src, void* dst, int32_t rawSize) {
 	ISPResult result = ISP_SUCCESS;

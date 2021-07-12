@@ -9,10 +9,17 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "Algorithm.h"
-#include "ParamManager.h"
+
+#include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/photo.hpp"
 
 #define DUMP_NEEDED false
 #define DUMP_PATH "D:\\test_project\\ISP\\local\\output\\output.txt"
+
+using namespace cv;
 
 //EdgePreservedNR not used, it should be redeveloped
 /*ISPResult EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable) {
@@ -416,13 +423,16 @@ ISPResult ISP_GammaCorrection(void* data, ISP_PROCESS_CALLBACKS CBs, ...)
 	return result;
 }
 
-
+enum WAVELET_TYPE {
+	haar = 0,
+	dbl,
+	sym2
+};
 
 //生成不同类型的小波
-void wavelet(const string _wname, Mat& _lowFilter, Mat& _highFilter)
+void wavelet(WAVELET_TYPE type, Mat& _lowFilter, Mat& _highFilter)
 {
-
-	if (_wname == "haar" || _wname == "db1")
+	if (type == haar || type == dbl)
 	{
 		int N = 2;
 		_lowFilter = Mat::zeros(1, N, CV_32F);
@@ -434,7 +444,7 @@ void wavelet(const string _wname, Mat& _lowFilter, Mat& _highFilter)
 		_highFilter.at<float>(0, 0) = -1 / sqrtf(N);
 		_highFilter.at<float>(0, 1) = 1 / sqrtf(N);
 	}
-	if (_wname == "sym2")
+	if (type == sym2)
 	{
 		int N = 4;
 		float h[] = { -0.483, 0.836, -0.224, -0.129 };
@@ -487,7 +497,7 @@ Mat waveletDecompose(Mat _src, Mat _lowFilter, Mat _highFilter)
 	return src;
 }
 
-Mat WDT(const Mat& _src, const string _wname, const int _level)
+Mat WDT(const Mat& _src, WAVELET_TYPE type, const int _level)
 {
 	Mat src = Mat_<float>(_src);
 	Mat dst = Mat::zeros(src.rows, src.cols, src.type());
@@ -496,7 +506,7 @@ Mat WDT(const Mat& _src, const string _wname, const int _level)
 	//高通低通滤波器
 	Mat lowFilter;
 	Mat highFilter;
-	wavelet(_wname, lowFilter, highFilter);
+	wavelet(type, lowFilter, highFilter);
 	//小波变换
 	int t = 1;
 	int row = N;

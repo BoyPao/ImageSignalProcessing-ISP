@@ -4,15 +4,22 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////////////
-// @file: ImageFileManager.cpp
+// @file: FileManager.cpp
 // @brief: A file manager to manage image file, provoid file operations
 //////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <fstream> 
 #include "Utils.h"
-#include "ISPCore.h"
 
 //#define PATH_MAX_LENGTH 40
+
+typedef int32_t ISPState;
+static const ISPState Uninited = 0;
+static const ISPState Inited = 1;
+
+typedef int32_t ISPRawFormate;
+static const ISPRawFormate Mipi10Bit = 0;
 
 struct InputImgInfo
 {
@@ -52,3 +59,5 @@ public:
 	void WriteBMP(BYTE* data, int32_t channels);
 	ISPResult SaveBMP(uint8_t* srcData, int32_t channels);
 };
+
+void DumpImgDataAsText(void* data, int32_t height, int32_t width, size_t bitWidth, char* dumpPath);
