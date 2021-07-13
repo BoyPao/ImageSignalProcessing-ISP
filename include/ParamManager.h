@@ -17,7 +17,7 @@ enum PARAM_INDEX {
 	PARAM_INDEX_NUM
 };
 
-enum PARAM_MANAGER_STATE {
+typedef enum PARAM_MANAGER_STATE {
 	PM_EMPTY = 0,
 	PM_SELECTED
 };
@@ -26,6 +26,9 @@ struct IMG_INFO
 {
 	int32_t width;
 	int32_t height;
+	int32_t bitspp;
+	int32_t stride;
+	bool	packaged;
 };
 
 struct ISP_PARAMS {
@@ -58,6 +61,7 @@ public:
 	ISPResult GetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, int32_t* l3Threshold);
 	ISPResult GetEERPARAM(double* alph, int32_t* coreSize, int32_t* delta);
 
+	ISPResult SetIMGInfo(IMG_INFO* info);
 	ISPResult SetIMGDimension(int32_t* width, int32_t* height);
 	ISPResult SetIMGWidth(int32_t* width);
 	ISPResult SetIMGHeight(int32_t* height);

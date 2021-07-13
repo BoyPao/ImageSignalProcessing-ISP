@@ -27,7 +27,7 @@
 
 #define SUCCESS(rt)		((rt) >= 0) ? true : false
 
-enum ISPResult {
+typedef enum ISPResult {
 	ISP_INVALID_PARAM	= -4,
 	ISP_MEMORY_ERROR	= -3,
 	ISP_STATE_ERROR		= -2,

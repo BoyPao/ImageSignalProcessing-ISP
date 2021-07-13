@@ -11,7 +11,3 @@
 #pragma once
 
 #include "Utils.h"
-
-using namespace std;
-
-ISPResult Mipi10decode(void* src, void* dst, int32_t rawSize);

@@ -11,11 +11,6 @@
 #pragma once
 #include "Params.h"
 
-IMG_INFO IMGINFO_1920x1080_D65_1000Lux = {
-	1920,
-	1080
-};
-
 BLC_PARAM BLCPARAM_1920x1080_D65_1000Lux = {
 	10,
 	16

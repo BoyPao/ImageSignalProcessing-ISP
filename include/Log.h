@@ -20,12 +20,12 @@ int LogAddInfo(const char* str, ...);
 void LogAddTime(const char* str, va_list va);
 void LogPrint(const char* str, va_list va);
 
-enum SYSTEM_TYPES {
+typedef enum SYSTEM_TYPES {
 	WINDOWS_SYSTEM = 1,
 	LINUX_SYSTEM
 };
 
-enum LOG_MASK {
+typedef enum LOG_MASK {
 	LOG_ERROR_MASK = 0x1,
 	LOG_WARN_MASK = 0x2,
 	LOG_INFO_MASK = 0x4,

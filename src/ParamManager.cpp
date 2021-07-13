@@ -55,7 +55,6 @@ ISPResult ISPParamManager::SelectParams(int32_t paramIndex)
 	return result;
 }
 
-
 ISPResult ISPParamManager::GetIMGDimension(int32_t* width, int32_t* height)
 {
 	ISPResult result = ISP_SUCCESS;
@@ -268,6 +267,21 @@ ISPResult ISPParamManager::GetEERPARAM(double* alpha, int32_t* coreSize, int32_t
 			result = ISP_INVALID_PARAM;
 			ISPLoge("Input is null! %d", result);
 		}
+	}
+
+	return result;
+}
+
+ISPResult ISPParamManager::SetIMGInfo(IMG_INFO* info)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (info) {
+		memcpy(&mImg_Info, info, sizeof(IMG_INFO));
+	}
+	else {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("Input is null! %d", result);
 	}
 
 	return result;
