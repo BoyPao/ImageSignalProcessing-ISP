@@ -64,5 +64,5 @@ ISPResult WaveletNR(ISPParamManager* pPM, void* data, ...);
 ISPResult Sharpness(ISPParamManager* pPM, void* data, ...);
 
 //CST
-ISPResult Demosaic(ISPParamManager* pPM, void* src, void* dst);
-ISPResult CST_RGB2YUV(ISPParamManager* pPM, void* src, void* dst);
+ISPResult Demosaic(ISPParamManager* pPM, void* src, void* dst, ...);
+ISPResult CST_RGB2YUV(ISPParamManager* pPM, void* src, void* dst, ...);

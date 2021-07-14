@@ -22,6 +22,14 @@ typedef enum PARAM_MANAGER_STATE {
 	PM_SELECTED
 };
 
+typedef enum RAW_TYPE {
+	RAW10_MIPI_RGGB = 0,
+	RAW10_MIPI_BGGR,
+	RAW10_UNPACKAGED_RGGB,
+	RAW10_UNPACKAGED_BGGR,
+	RAW_TYPE_NUM
+};
+
 struct IMG_INFO
 {
 	int32_t width;
@@ -29,6 +37,7 @@ struct IMG_INFO
 	int32_t bitspp;
 	int32_t stride;
 	bool	packaged;
+	RAW_TYPE rawType;
 };
 
 struct ISP_PARAMS {
@@ -50,6 +59,8 @@ public:
 	ISPResult SelectParams(int32_t paramIndex);
 
 	ISPResult GetIMGDimension(int32_t* width, int32_t* height);
+	ISPResult GetIMGInfo(IMG_INFO* imgInfo);
+	ISPResult GetRawType(RAW_TYPE* pType);
 	ISPResult GetBLCParam(uint16_t* offset);
 	ISPResult GetLSCParam(float* pRGain, float* pGrGain, float* pGbGain, float* pBGain);
 	ISPResult GetGCCParam(double * weight);

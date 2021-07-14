@@ -76,8 +76,6 @@ public:
 	virtual ~ISPNode();
 	virtual ISPResult GetNodeName(char* name);
 	virtual ISPResult Init(PROCESS_TYPE type, T1* input, T2* output);
-	ISPResult Init(PROCESS_TYPE type, ISPParamManager* pPM);
-	ISPResult Process(void* data, int32_t argNum, ...);
 	virtual ISPResult Process(ISPParamManager* pPM);
 	virtual ISPResult Enable();
 	virtual ISPResult Disable();
@@ -303,10 +301,10 @@ ISPResult ISPNode<T1, T2>::Process(ISPParamManager* pPM)
 			result = ISP_SKIP;
 			break;
 		case PROCESS_CST_RAW2RGB:
-			result = Demosaic(pPM, pInputBuffer, pOutputBuffer);
+			result = Demosaic(pPM, pInputBuffer, pOutputBuffer, enable);
 			break;
 		case PROCESS_CST_RGB2YUV:
-			result = CST_RGB2YUV(pPM, pInputBuffer, pOutputBuffer);
+			result = CST_RGB2YUV(pPM, pInputBuffer, pOutputBuffer, enable);
 			break;
 		case PROCESS_TYPE_NUM:
 		default:
@@ -316,7 +314,12 @@ ISPResult ISPNode<T1, T2>::Process(ISPParamManager* pPM)
 
 	char name[NODE_NAME_MAX_SZIE];
 	GetNodeName(name);
-	ISPLogi("%s:Process finished.", name);
+	if (result == ISP_SUCCESS) {
+		ISPLogi("%s:Process finished.", name);
+	}
+	else if (result == ISP_SKIP) {
+		ISPLogi("%s:Skiped.", name);
+	}
 
 	return result;
 }
@@ -820,68 +823,4 @@ ISPResult ISPList<T1, T2, T3>::YuvProcess()
 	}
 
 	return result;
-}
-
-template<typename T1, typename T2>
-ISPResult ISPNode<T1, T2>::Init(PROCESS_TYPE type, ISPParamManager* pPM)//, Args&&... args) {
-{
-	ISPResult result = ISP_SUCCESS;
-
-	if (pPM) {
-		pParamManager = pPM;
-	}
-	mProperty.type = type;
-
-	pNext = nullptr;
-
-	result = RegisterISPLibFuncs();
-
-
-	mInited = true;
-
-	return result;
-}
-
-
-template<typename T1, typename T2>
-ISPResult ISPNode<T1, T2>::Process(void* data, int32_t argNum, ...)
-{
-	ISPResult rt = ISP_SUCCESS;
-	if (!mInited) {
-		rt = ISP_STATE_ERROR;
-	}
-
-	if (SUCCESS(rt)) {
-		va_list va;
-		bool enable;
-		switch (mProperty.type) {
-		case PROCESS_BLC:
-			rt = BlackLevelCorrection(pParamManager, data);
-			break;
-		case PROCESS_LSC:
-			rt = LensShadingCorrection(pParamManager, data);
-			break;
-		case PROCESS_WB:
-			rt = WhiteBalance(pParamManager, data);
-			break;
-		case PROCESS_CC:
-			rt = ColorCorrection(pParamManager, data);
-			break;
-		case PROCESS_GAMMA:
-			rt = GammaCorrection(pParamManager, data);
-			break;
-		case PROCESS_WNR:
-			rt = WaveletNR(pParamManager, data);
-			break;
-		case PROCESS_EE:
-			rt = Sharpness(pParamManager, data);
-			break;
-		case PROCESS_NONE:
-		case PROCESS_TYPE_NUM:
-		default:
-			rt = ISP_FAILED;
-		}
-	}
-
-	return rt;
 }

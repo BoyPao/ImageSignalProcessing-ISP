@@ -38,18 +38,24 @@ ISPResult BlackLevelCorrection(ISPParamManager* pPM, void* data, ...)
 
 	int32_t width, height;
 	uint16_t offset;
+	IMG_INFO imgInfo = { 0 };
 	if (!pPM) {
 		result = ISP_INVALID_PARAM;
 		ISPLoge("ParamManager is null! result%d", result);
 	}
 
 	if (SUCCESS(result)) {
-		
 		result = pPM->GetIMGDimension(&width, &height);
 		if (SUCCESS(result)) {
-			result = pPM->GetBLCParam(&offset);
-			if (!SUCCESS(result)) {
-				ISPLoge("get BLC offset failed. result:%d", result);
+			result = pPM->GetIMGInfo(&imgInfo);
+			if (SUCCESS(result)) {
+				result = pPM->GetBLCParam(&offset);
+				if (!SUCCESS(result)) {
+					ISPLoge("get BLC offset failed. result:%d", result);
+				}
+			}
+			else {
+				ISPLoge("get img info failed. result:%d", result);
 			}
 		}
 		else {
@@ -61,7 +67,7 @@ ISPResult BlackLevelCorrection(ISPParamManager* pPM, void* data, ...)
 		if (gISP_Lib_funcs.ISP_BLC) {
 			va_list(va);
 			__crt_va_start(va, data);
-			result = gISP_Lib_funcs.ISP_BLC(data, gISP_Process_cbs, width, height, offset);
+			result = gISP_Lib_funcs.ISP_BLC(data, gISP_Process_cbs, width, height, offset, imgInfo.bitspp);
 			__crt_va_end(va);
 		}
 		else {
@@ -79,8 +85,8 @@ ISPResult LensShadingCorrection(ISPParamManager* pPM, void* data, ...)
 	
 	int32_t width, height;
 	int32_t i, j;
-
-	float R_lsc[LSC_LUT_HEIGHT * LSC_LUT_WIDTH], Gr_lsc[LSC_LUT_HEIGHT * LSC_LUT_WIDTH], Gb_lsc[LSC_LUT_HEIGHT * LSC_LUT_WIDTH], B_lsc[LSC_LUT_HEIGHT * LSC_LUT_WIDTH];
+	RAW_TYPE rawType = RAW_TYPE_NUM;
+	float lscGainCh1[LSC_LUT_HEIGHT * LSC_LUT_WIDTH], lscGainCh2[LSC_LUT_HEIGHT * LSC_LUT_WIDTH], lscGainCh3[LSC_LUT_HEIGHT * LSC_LUT_WIDTH], lscGainCh4[LSC_LUT_HEIGHT * LSC_LUT_WIDTH];
 
 	if (!pPM) {
 		result = ISP_INVALID_PARAM;
@@ -90,9 +96,15 @@ ISPResult LensShadingCorrection(ISPParamManager* pPM, void* data, ...)
 	if (SUCCESS(result)) {
 		result = pPM->GetIMGDimension(&width, &height);
 		if (SUCCESS(result)) {
-			result = pPM->GetLSCParam(R_lsc, Gr_lsc, Gb_lsc, B_lsc);
-			if (!SUCCESS(result)) {
-				ISPLoge("get LSC lut failed. result:%d", result);
+			result = pPM->GetRawType(&rawType);
+			if (SUCCESS(result)) {
+				result = pPM->GetLSCParam(lscGainCh1, lscGainCh2, lscGainCh3, lscGainCh4);
+				if (!SUCCESS(result)) {
+					ISPLoge("get LSC lut failed. result:%d", result);
+				}
+			}
+			else {
+				ISPLoge("get IMG raw type failed. result:%d", result);
 			}
 		}
 		else {
@@ -104,7 +116,7 @@ ISPResult LensShadingCorrection(ISPParamManager* pPM, void* data, ...)
 		if (gISP_Lib_funcs.ISP_LSC) {
 			va_list(va);
 			__crt_va_start(va, data);
-			result = gISP_Lib_funcs.ISP_LSC(data, gISP_Process_cbs, width, height, R_lsc, Gr_lsc, Gb_lsc, B_lsc);
+			result = gISP_Lib_funcs.ISP_LSC(data, gISP_Process_cbs, width, height, rawType, lscGainCh1, lscGainCh2, lscGainCh3, lscGainCh4);
 			__crt_va_end(va);
 		}
 		else {
@@ -323,11 +335,12 @@ ISPResult Sharpness(ISPParamManager* pPM, void* data, ...)
 	return result;
 }
 
-ISPResult Demosaic(ISPParamManager* pPM, void* src, void* dst)
+ISPResult Demosaic(ISPParamManager* pPM, void* src, void* dst, ...)
 {
 	ISPResult result = ISP_SUCCESS;
 
 	int32_t width, height;
+	RAW_TYPE rawType = RAW_TYPE_NUM;
 	if (!pPM) {
 		result = ISP_INVALID_PARAM;
 		ISPLoge("ParamManager is null! result%d", result);
@@ -335,14 +348,25 @@ ISPResult Demosaic(ISPParamManager* pPM, void* src, void* dst)
 
 	if (SUCCESS(result)) {
 		result = pPM->GetIMGDimension(&width, &height);
-		if (!SUCCESS(result)) {
+		if (SUCCESS(result)) {
+			result = pPM->GetRawType(&rawType);
+			if (!SUCCESS(result)) {
+				ISPLoge("get IMG raw type failed. result:%d", result);
+			}
+		}
+		else {
 			ISPLoge("get IMG Dimension failed. result:%d", result);
 		}
 	}
 
 	if (SUCCESS(result)) {
+		bool enable = true;
+		va_list va;
+		__crt_va_start(va, dst);
+		enable = static_cast<bool>(__crt_va_arg(va, bool));
+		__crt_va_end(va);
 		if (gISP_Lib_funcs.ISP_Demosaic) {
-			result = gISP_Lib_funcs.ISP_Demosaic(src, dst, gISP_Process_cbs, width, height);
+			result = gISP_Lib_funcs.ISP_Demosaic(src, dst, gISP_Process_cbs, width, height, rawType, enable);
 		}
 		else {
 			result = ISP_STATE_ERROR;
@@ -353,7 +377,7 @@ ISPResult Demosaic(ISPParamManager* pPM, void* src, void* dst)
 	return result;
 }
 
-ISPResult CST_RGB2YUV(ISPParamManager* pPM, void* src, void* dst)
+ISPResult CST_RGB2YUV(ISPParamManager* pPM, void* src, void* dst, ...)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -370,7 +394,7 @@ ISPResult CST_RGB2YUV(ISPParamManager* pPM, void* src, void* dst)
 		}
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(result)) {;
 		if (gISP_Lib_funcs.ISP_CST_RGB2YUV) {
 			result = gISP_Lib_funcs.ISP_CST_RGB2YUV(src, dst, gISP_Process_cbs, width, height);
 		}

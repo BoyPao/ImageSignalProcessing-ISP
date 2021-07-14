@@ -74,6 +74,51 @@ ISPResult ISPParamManager::GetIMGDimension(int32_t* width, int32_t* height)
 			ISPLoge("Input is null! %d", result);
 		}
 	}
+
+	return result;
+}
+
+ISPResult ISPParamManager::GetIMGInfo(IMG_INFO* imgInfo)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (mState != PM_SELECTED) {
+		result = ISP_STATE_ERROR;
+		ISPLoge("Invalid param manager state:%d", mState);
+	}
+
+	if (SUCCESS(result)) {
+		if (imgInfo) {
+			memcpy(imgInfo, &mImg_Info, sizeof(IMG_INFO));
+		}
+		else {
+			result = ISP_INVALID_PARAM;
+			ISPLoge("Input is null! %d", result);
+		}
+	}
+
+	return result;
+}
+
+ISPResult ISPParamManager::GetRawType(RAW_TYPE* pType)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (mState != PM_SELECTED) {
+		result = ISP_STATE_ERROR;
+		ISPLoge("Invalid param manager state:%d", mState);
+	}
+
+	if (SUCCESS(result)) {
+		if (pType) {
+			*pType = mImg_Info.rawType;
+		}
+		else {
+			result = ISP_INVALID_PARAM;
+			ISPLoge("Input is null! %d", result);
+		}
+	}
+
 	return result;
 }
 
@@ -105,7 +150,7 @@ ISPResult ISPParamManager::GetBLCParam(uint16_t* offset)
 	return result;
 }
 
-ISPResult ISPParamManager::GetLSCParam(float *pRGain, float *pGrGain, float *pGbGain, float *pBGain)
+ISPResult ISPParamManager::GetLSCParam(float *pGainCh1, float *pGainCh2, float *pGainCh3, float *pGainCh4)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -115,12 +160,12 @@ ISPResult ISPParamManager::GetLSCParam(float *pRGain, float *pGrGain, float *pGb
 	}
 
 	if (SUCCESS(result)) {
-		if (pRGain && pGrGain && pGbGain && pBGain) {
+		if (pGainCh1 && pGainCh2 && pGainCh3 && pGainCh4) {
 			for (int32_t i = 0; i < LSC_LUT_HEIGHT; i++) {
-				memcpy(pRGain + i * LSC_LUT_WIDTH, mISP_Params.pLSC_param->rGain[i], LSC_LUT_WIDTH * sizeof(float));
-				memcpy(pGrGain + i * LSC_LUT_WIDTH, mISP_Params.pLSC_param->grGain[i], LSC_LUT_WIDTH * sizeof(float));
-				memcpy(pGbGain + i * LSC_LUT_WIDTH, mISP_Params.pLSC_param->gbGain[i], LSC_LUT_WIDTH * sizeof(float));
-				memcpy(pBGain + i * LSC_LUT_WIDTH, mISP_Params.pLSC_param->bGain[i], LSC_LUT_WIDTH * sizeof(float));
+				memcpy(pGainCh1 + i * LSC_LUT_WIDTH, mISP_Params.pLSC_param->GainCh1[i], LSC_LUT_WIDTH * sizeof(float));
+				memcpy(pGainCh2 + i * LSC_LUT_WIDTH, mISP_Params.pLSC_param->GainCh2[i], LSC_LUT_WIDTH * sizeof(float));
+				memcpy(pGainCh3 + i * LSC_LUT_WIDTH, mISP_Params.pLSC_param->GainCh3[i], LSC_LUT_WIDTH * sizeof(float));
+				memcpy(pGainCh4 + i * LSC_LUT_WIDTH, mISP_Params.pLSC_param->GainCh4[i], LSC_LUT_WIDTH * sizeof(float));
 			}
 		}
 		else {

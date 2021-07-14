@@ -12,10 +12,10 @@ struct BLC_PARAM {
 };
 
 struct LSC_PARAM {
-	float rGain[LSC_LUT_HEIGHT][LSC_LUT_WIDTH];
-	float grGain[LSC_LUT_HEIGHT][LSC_LUT_WIDTH];
-	float gbGain[LSC_LUT_HEIGHT][LSC_LUT_WIDTH];
-	float bGain[LSC_LUT_HEIGHT][LSC_LUT_WIDTH];
+	float GainCh1[LSC_LUT_HEIGHT][LSC_LUT_WIDTH];
+	float GainCh2[LSC_LUT_HEIGHT][LSC_LUT_WIDTH];
+	float GainCh3[LSC_LUT_HEIGHT][LSC_LUT_WIDTH];
+	float GainCh4[LSC_LUT_HEIGHT][LSC_LUT_WIDTH];
 };
 
 struct GCC_PARAM {

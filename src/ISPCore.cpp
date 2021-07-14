@@ -41,6 +41,7 @@ int main() {
 	imgInfo.bitspp		= 10;
 	imgInfo.stride		= 16;
 	imgInfo.packaged	= true;
+	imgInfo.rawType		= RAW10_MIPI_RGGB;
 	paramManager.SetIMGInfo(&imgInfo);
 
 	InputImgInfo inputInfo;

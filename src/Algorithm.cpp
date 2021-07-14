@@ -119,14 +119,21 @@ ISPResult ISP_BlackLevelCorrection(void* data, ISP_PROCESS_CALLBACKS CBs, ...)
 	if (SUCCESS(result)) {
 		int32_t width, height;
 		int32_t offset;
+		int32_t bitspp;
+		int32_t temp;
 		va_list va_param;
 		__crt_va_start(va_param, CBs);
 		width = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
 		height = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
 		offset = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+		bitspp = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
 		__crt_va_end(va_param);
 		for (int32_t i = 0; i < width * height; i++) {
-			static_cast<uint16_t*>(data)[i] -= offset;
+			temp = static_cast<uint16_t*>(data)[i];
+			temp -= offset;
+			temp = (temp < 0) ? 0 : temp;
+			temp = (temp > pow(2, bitspp)) ? pow(2, bitspp) - 1 : temp;
+			static_cast<uint16_t*>(data)[i] = (uint16_t)temp;
 		}
 	}
 
@@ -153,65 +160,86 @@ ISPResult ISP_LensShadingCorrection(void* data, ISP_PROCESS_CALLBACKS CBs, ...)
 		result = ISP_INVALID_PARAM;
 		ISPLoge("data is null! result:%d", result);
 	}
-
-	float* pR;
-	float* pGr;
-	float* pGb;
-	float* pB;
 	
 	if (SUCCESS(result)) {
 		int32_t width, height;
+		RAW_TYPE rawType = RAW_TYPE_NUM;
 		int32_t i, j;
+		float* pR = nullptr;
+		float* pGr = nullptr;
+		float* pGb = nullptr;
+		float* pB = nullptr;
 		va_list va_param;
 		__crt_va_start(va_param, CBs);
 		width = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
 		height = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
-		pR = static_cast<float*>(__crt_va_arg(va_param, float*));
-		pGr = static_cast<float*>(__crt_va_arg(va_param, float*));
-		pGb = static_cast<float*>(__crt_va_arg(va_param, float*));
-		pB = static_cast<float*>(__crt_va_arg(va_param, float*));
+		rawType = static_cast<RAW_TYPE>(__crt_va_arg(va_param, RAW_TYPE));
+		switch (rawType)
+		{
+		case RAW10_MIPI_RGGB:
+		case RAW10_UNPACKAGED_RGGB:
+			pR = static_cast<float*>(__crt_va_arg(va_param, float*));
+			pGr = static_cast<float*>(__crt_va_arg(va_param, float*));
+			pGb = static_cast<float*>(__crt_va_arg(va_param, float*));
+			pB = static_cast<float*>(__crt_va_arg(va_param, float*));	
+			break;
+		case RAW10_MIPI_BGGR:
+		case RAW10_UNPACKAGED_BGGR:
+			pB = static_cast<float*>(__crt_va_arg(va_param, float*));
+			pGb = static_cast<float*>(__crt_va_arg(va_param, float*));
+			pGr = static_cast<float*>(__crt_va_arg(va_param, float*));
+			pR = static_cast<float*>(__crt_va_arg(va_param, float*));
+			break;
+		default:
+			result = ISP_INVALID_PARAM;
+			ISPLoge("Unsupported raw type:%d result:%d", rawType, result);
+			break;
+		}
 		__crt_va_end(va_param);
-		for (i = 0; i < height; i++) {
-			for (j = 0; j < width; j++) {
-				if (i % 2 == 0 && j % 2 == 0) {
-					static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
-						LSCinterpolation(width, height,
-							*(pB + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
-							*(pB + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
-							*(pB + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
-							*(pB + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
-							i,
-							j);
-				}
-				if (i % 2 == 0 && j % 2 == 1) {
-					static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
-						LSCinterpolation(width, height,
-							*(pGb + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
-							*(pGb + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
-							*(pGb + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
-							*(pGb + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
-							i,
-							j);
-				}
-				if (i % 2 == 1 && j % 2 == 0) {
-					static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
-						LSCinterpolation(width, height,
-							*(pGr + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
-							*(pGr + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
-							*(pGr + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
-							*(pGr + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
-							i,
-							j);
-				}
-				if (i % 2 == 1 && j % 2 == 1) {
-					static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
-						LSCinterpolation(width, height,
-							*(pR + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
-							*(pR + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
-							*(pR + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
-							*(pR + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
-							i,
-							j);
+		
+		if (SUCCESS(result)) {
+			for (i = 0; i < height; i++) {
+				for (j = 0; j < width; j++) {
+					if (i % 2 == 0 && j % 2 == 0) {
+						static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
+							LSCinterpolation(width, height,
+								*(pB + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
+								*(pB + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
+								*(pB + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
+								*(pB + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
+								i,
+								j);
+					}
+					if (i % 2 == 0 && j % 2 == 1) {
+						static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
+							LSCinterpolation(width, height,
+								*(pGb + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
+								*(pGb + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
+								*(pGb + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
+								*(pGb + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
+								i,
+								j);
+					}
+					if (i % 2 == 1 && j % 2 == 0) {
+						static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
+							LSCinterpolation(width, height,
+								*(pGr + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
+								*(pGr + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
+								*(pGr + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
+								*(pGr + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
+								i,
+								j);
+					}
+					if (i % 2 == 1 && j % 2 == 1) {
+						static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
+							LSCinterpolation(width, height,
+								*(pR + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
+								*(pR + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
+								*(pR + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
+								*(pR + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
+								i,
+								j);
+					}
 				}
 			}
 		}
@@ -1030,12 +1058,12 @@ ISPResult ISP_EdgeEnhancement(void* data, ISP_PROCESS_CALLBACKS CBs, ...)
 }
 
 
-ISPResult ReadChannels(uint16_t* data, uint16_t* B, uint16_t* G, uint16_t* R, int32_t width, int32_t height) 
+ISPResult ReadChannels(uint16_t* data, uint16_t* pChannel1, uint16_t* pChannel2, uint16_t* pChannel3, int32_t width, int32_t height)
 {
 	ISPResult result = ISP_SUCCESS;
 	int32_t i, j;
 
-	if (!data || !B || !G || !R || width < 0 || height < 0) {
+	if (!data || !pChannel1 || !pChannel2 || !pChannel3 || width < 0 || height < 0) {
 		result = ISP_INVALID_PARAM;
 	}
 
@@ -1043,19 +1071,19 @@ ISPResult ReadChannels(uint16_t* data, uint16_t* B, uint16_t* G, uint16_t* R, in
 		for (i = 0; i < height; i++) {
 			for (j = 0; j < width; j++) {
 				if (i % 2 == 0 && j % 2 == 0) {
-					B[i * width + j] = data[i * width + j];
-					G[i * width + j] = 0;
-					R[i * width + j] = 0;
+					pChannel1[i * width + j] = data[i * width + j];
+					pChannel2[i * width + j] = 0;
+					pChannel3[i * width + j] = 0;
 				}
 				else if ((i % 2 == 0 && j % 2 == 1) || (i % 2 == 1 && j % 2 == 0)) {
-					B[i * width + j] = 0;
-					G[i * width + j] = data[i * width + j];
-					R[i * width + j] = 0;
+					pChannel1[i * width + j] = 0;
+					pChannel2[i * width + j] = data[i * width + j];
+					pChannel3[i * width + j] = 0;
 				}
 				else {
-					B[i * width + j] = 0;
-					G[i * width + j] = 0;
-					R[i * width + j] = data[i * width + j];
+					pChannel1[i * width + j] = 0;
+					pChannel2[i * width + j] = 0;
+					pChannel3[i * width + j] = data[i * width + j];
 				}
 			}
 		}
@@ -1223,16 +1251,39 @@ ISPResult ISP_Demosaic(void* src, void* dst, ISP_PROCESS_CALLBACKS CBs, ...)
 	}
 
 	int32_t width, height;
+	RAW_TYPE rawType = RAW_TYPE_NUM;
+	bool enable = true;
 	va_list va_param;
 	__crt_va_start(va_param, CBs);
 	width = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
 	height = static_cast<int32_t>(__crt_va_arg(va_param, int32_t));
+	rawType = static_cast<RAW_TYPE>(__crt_va_arg(va_param, RAW_TYPE));
+	enable = static_cast<bool>(__crt_va_arg(va_param, bool));
 	__crt_va_end(va_param);
-	uint16_t* bDst = static_cast<uint16_t*>(dst);
-	uint16_t* gDst = static_cast<uint16_t*>(dst) + width * height;
-	uint16_t* rDst = static_cast<uint16_t*>(dst) + 2 * width * height;
+	uint16_t* pChannel1 = nullptr;
+	uint16_t* pChannel2 = nullptr;
+	uint16_t* pChannel3 = nullptr;
+	switch (rawType) {
+	case RAW10_MIPI_RGGB:
+	case RAW10_UNPACKAGED_RGGB:
+		pChannel3 = static_cast<uint16_t*>(dst);
+		pChannel2 = static_cast<uint16_t*>(dst) + width * height;
+		pChannel1 = static_cast<uint16_t*>(dst) + 2 * width * height;
+		break;
+	case RAW10_MIPI_BGGR:
+	case RAW10_UNPACKAGED_BGGR:
+		pChannel1 = static_cast<uint16_t*>(dst);
+		pChannel2 = static_cast<uint16_t*>(dst) + width * height;
+		pChannel3 = static_cast<uint16_t*>(dst) + 2 * width * height;
+		break;
+	default:
+		result = ISP_INVALID_PARAM;
+		ISPLoge("Unsupported raw type:%d result:%d", rawType, result);
+		break;
+	}
+
 	if (SUCCESS(result)) {
-		result = ReadChannels(static_cast<uint16_t*>(src), bDst, gDst, rDst, width, height);
+		result = ReadChannels(static_cast<uint16_t*>(src), pChannel1, pChannel2, pChannel3, width, height);
 	}
 
 #if  DUMP_NEEDED
@@ -1242,9 +1293,11 @@ ISPResult ISP_Demosaic(void* src, void* dst, ISP_PROCESS_CALLBACKS CBs, ...)
 #endif
 
 	if (SUCCESS(result)) {
-		FirstPixelInsertProcess(static_cast<uint16_t*>(src), bDst, width, height);
-		TwoGPixelInsertProcess(static_cast<uint16_t*>(src), gDst, width, height);
-		LastPixelInsertProcess(static_cast<uint16_t*>(src), rDst, width, height);
+		if (enable) {
+			FirstPixelInsertProcess(static_cast<uint16_t*>(src), pChannel1, width, height);
+			TwoGPixelInsertProcess(static_cast<uint16_t*>(src), pChannel2, width, height);
+			LastPixelInsertProcess(static_cast<uint16_t*>(src), pChannel3, width, height);
+		}
 	}
 	else {
 		ISPLoge("Failed to channels read data!");
