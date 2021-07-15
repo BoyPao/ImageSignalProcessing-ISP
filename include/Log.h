@@ -14,7 +14,10 @@
 #define LOG_ON 1
 #define LOG_LEVEL 0x1 + 0x2 + 0x4 + 0x8
 
-#define AddTime_BufferSize 256 -  sizeof(long long int) - 17 //2 preserve and 15 char [xx:xx:xx:xxx]:
+#define LOG_BUFFER_SIZE				256
+#define LOG_BUFFER_PERSERVE_SIZE	2		//2 preserve for \0 and \n
+#define LOG_BUFFER_TIME_SIZE		24		//24 char "xxxx-xx-xx xx:xx:xx:xxx "
+#define LOG_BUFFER_LEFT_SIZE		LOG_BUFFER_SIZE -  LOG_BUFFER_PERSERVE_SIZE - LOG_BUFFER_TIME_SIZE - sizeof(long long int)
 
 int LogAddInfo(const char* str, ...);
 void LogAddTime(const char* str, va_list va);
@@ -34,10 +37,10 @@ typedef enum LOG_MASK {
 
 #define ISP_LOG_INFO_FORMAT "%d:%s: "
 
-#define LogErroSwitch(on, str, ...)		((on) ? (LogAddInfo("[ISP][Erro] " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
-#define LogWarnSwitch(on, str, ...)		((on) ? (LogAddInfo("[ISP][Warn] " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
-#define LogInfoSwitch(on, str, ...)		((on) ? (LogAddInfo("[ISP][Info] " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
-#define LogDebugSwitch(on, str, ...)	((on) ? (LogAddInfo("[ISP][Debug] " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
+#define LogErroSwitch(on, str, ...)		((on) ? (LogAddInfo("ISP E " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
+#define LogWarnSwitch(on, str, ...)		((on) ? (LogAddInfo("ISP W " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
+#define LogInfoSwitch(on, str, ...)		((on) ? (LogAddInfo("ISP I " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
+#define LogDebugSwitch(on, str, ...)	((on) ? (LogAddInfo("ISP D " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
 
 #define ISPLoge(str, ...)	LogErroSwitch((LOG_LEVEL & LOG_ERROR_MASK), str, ##__VA_ARGS__)
 #define ISPLogw(str, ...)	LogWarnSwitch((LOG_LEVEL & LOG_WARN_MASK), str, ##__VA_ARGS__)

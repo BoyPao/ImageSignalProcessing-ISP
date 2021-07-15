@@ -25,8 +25,8 @@ using namespace cv;
 #define RESNAME "Result"
 #define TEMP "Temp"
 
-//#define INPUTPATH "D:\\test_project\\ISP\\local\\ISP-Local\\ISP-Local\\1MCC_IMG_20181229_001526_1.RAW"   
-#define INPUTPATH "D:\\test_project\\ISP\\local\\ISP-Local\\ISP-Local\\20210103062220_input_4000x3000_0.raw"
+#define INPUTPATH "D:\\test_project\\ISP\\local\\ISP-Local\\ISP-Local\\1MCC_IMG_20181229_001526_1.RAW"   
+//#define INPUTPATH "D:\\test_project\\ISP\\local\\ISP-Local\\ISP-Local\\20210103062220_input_4000x3000_0.raw"
 #define OUTPUTPATH "D:\\test_project\\ISP\\local\\output\\output.BMP"
 
 ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info);
@@ -34,34 +34,20 @@ ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info);
 int main() {
 	ISPResult result = ISP_SUCCESS;
 
-	ISPParamManager paramManager;
-	IMG_INFO imgInfo = { 0 };
-	imgInfo.width		= 4000;
-	imgInfo.height		= 3000;
-	imgInfo.bitspp		= 10;
-	imgInfo.stride		= 16;
-	imgInfo.packaged	= true;
-	imgInfo.rawType		= RAW10_MIPI_RGGB;
-	paramManager.SetIMGInfo(&imgInfo);
-
-	InputImgInfo inputInfo;
-	OutputImgInfo outputInfo;
-	char inputPath[FILE_PATH_MAX_SIZE] = { '\0' };
-	char outputPath[FILE_PATH_MAX_SIZE] = { '\0' };
-	strcpy_s(inputPath, INPUTPATH);
-	strcpy_s(outputPath, OUTPUTPATH);
-	inputInfo.pInputPath = inputPath;
-	outputInfo.pOutputPath = outputPath;
-	paramManager.GetIMGDimension(&outputInfo.width, &outputInfo.hight);
-	
-	ImageFileManager* pImgFileManager = nullptr;
-	if (pImgFileManager == nullptr) {
-		pImgFileManager = new ImageFileManager;
+	ISPParamManager* pParamManager = nullptr;
+	if (!pParamManager) {
+		pParamManager = new ISPParamManager;
 	}
-	pImgFileManager->Init();
-	pImgFileManager->SetInputImgInfo(inputInfo);
-	pImgFileManager->SetOutputImgInfo(outputInfo);
+	IMG_INFO imgInfo = { 0 };
+	imgInfo.width		= 1920;
+	imgInfo.height		= 1080;
+	imgInfo.bitspp		= 10;
+	imgInfo.stride		= 0;
+	imgInfo.packaged	= true;
+	imgInfo.rawType		= RAW10_MIPI_BGGR;
+	pParamManager->SetIMGInfo(&imgInfo);
 
+	int32_t i, j;
 	int32_t numPixel = imgInfo.width * imgInfo.height;
 	int32_t alignedW = ALIGNx(imgInfo.width, imgInfo.bitspp, imgInfo.packaged, imgInfo.stride);
 	int32_t bufferSize = alignedW * imgInfo.height;
@@ -76,30 +62,55 @@ int main() {
 	uint16_t* rData = gData + numPixel;
 	memset(bgrData, 0x0, numPixel * 3);
 	Mat dst(imgInfo.height, imgInfo.width, CV_8UC3, Scalar(0, 0, 0));
-	int32_t i, j;
+
+	ImageFileManager* pImgFileManager = nullptr;
+	InputImgInfo inputInfo;
+	OutputImgInfo outputInfo;
+	char inputPath[FILE_PATH_MAX_SIZE] = { '\0' };
+	char outputPath[FILE_PATH_MAX_SIZE] = { '\0' };
+	strcpy_s(inputPath, INPUTPATH);
+	strcpy_s(outputPath, OUTPUTPATH);
+	inputInfo.pInputPath = inputPath;
+	outputInfo.pOutputPath = outputPath;
+	pParamManager->GetIMGDimension(&outputInfo.width, &outputInfo.hight);
+	
+	if (!pImgFileManager) {
+		pImgFileManager = new ImageFileManager;
+	}
+	pImgFileManager->Init();
+	pImgFileManager->SetInputImgInfo(inputInfo);
+	pImgFileManager->SetOutputImgInfo(outputInfo);
+
 	result = pImgFileManager->ReadRawData(mipiRawData, bufferSize, Mipi10Bit);
 	if (SUCCESS(result)) {
 		//Mipi10 decode
-		//result = Mipi10decode((void*)mipiRawData, (void*)rawData, pImgFileManager->GetInputImgInfo().rawSize);
 		result = Mipi10decode((void*)mipiRawData, (void*)rawData, &imgInfo);
 
 		if (SUCCESS(result)) {
 			ISPList<uint16_t, uint16_t, uint8_t>* pIspList = new ISPList<uint16_t, uint16_t, uint8_t>;
-			pIspList->Init(rawData, bgrData, dst.data, &paramManager);
+			pIspList->Init(rawData, bgrData, dst.data, pParamManager);
 			pIspList->CreatISPList();
 			pIspList->Process();
 
-			//Save the result
+			//Convert result from YUV to RGB
 			cvtColor(dst, dst, COLOR_YCrCb2BGR, 0);
 			delete pIspList;
 		}
 
+		//Save the result
 		result = pImgFileManager->SaveBMP(dst.data, dst.channels());
-		delete pImgFileManager;
+
+		if (pParamManager) {
+			delete pParamManager;
+		}
+		if (pImgFileManager) {
+			delete pImgFileManager;
+		}
 		delete[] mipiRawData;
 		delete[] rawData;
 		delete[] bgrData;
 
+		//Show the result
 		int32_t Imgsizex, Imgsizey;
 		int32_t Winsizex, Winsizey;
 		Winsizex = GetSystemMetrics(SM_CXSCREEN);

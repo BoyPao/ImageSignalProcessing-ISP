@@ -145,9 +145,9 @@ float LSCinterpolation(int32_t WIDTH, int32_t HEIGHT,
 	int32_t row, int32_t col) 
 {
 	float TempT, TempB, result;
-	TempT = LT - (LT - RT) * (col % (WIDTH / 16)) * 16 / WIDTH;
-	TempB = LB - (LB - RB) * (col % (WIDTH / 16)) * 16 / WIDTH;
-	result = TempT - (TempT - TempB) * (row % (HEIGHT / 12)) * 12 / HEIGHT;
+	TempT = LT - (LT - RT) * (col % (WIDTH / (LSC_LUT_WIDTH - 1))) * (LSC_LUT_WIDTH - 1) / WIDTH;
+	TempB = LB - (LB - RB) * (col % (WIDTH / (LSC_LUT_WIDTH - 1))) * (LSC_LUT_WIDTH - 1) / WIDTH;
+	result = TempT - (TempT - TempB) * (row % (HEIGHT / (LSC_LUT_HEIGHT - 1))) * (LSC_LUT_HEIGHT - 1) / HEIGHT;
 	return result;
 }
 
@@ -203,40 +203,40 @@ ISPResult ISP_LensShadingCorrection(void* data, ISP_PROCESS_CALLBACKS CBs, ...)
 					if (i % 2 == 0 && j % 2 == 0) {
 						static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
 							LSCinterpolation(width, height,
-								*(pB + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
-								*(pB + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
-								*(pB + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
-								*(pB + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
+								*(pB + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
+								*(pB + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
+								*(pB + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
+								*(pB + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
 								i,
 								j);
 					}
 					if (i % 2 == 0 && j % 2 == 1) {
 						static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
 							LSCinterpolation(width, height,
-								*(pGb + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
-								*(pGb + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
-								*(pGb + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
-								*(pGb + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
+								*(pGb + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
+								*(pGb + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
+								*(pGb + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
+								*(pGb + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
 								i,
 								j);
 					}
 					if (i % 2 == 1 && j % 2 == 0) {
 						static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
 							LSCinterpolation(width, height,
-								*(pGr + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
-								*(pGr + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
-								*(pGr + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
-								*(pGr + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
+								*(pGr + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
+								*(pGr + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
+								*(pGr + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
+								*(pGr + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
 								i,
 								j);
 					}
 					if (i % 2 == 1 && j % 2 == 1) {
 						static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
 							LSCinterpolation(width, height,
-								*(pR + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width),
-								*(pR + 12 * i / height * LSC_LUT_WIDTH + 16 * j / width + 1),
-								*(pR + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width),
-								*(pR + (12 * i / height + 1) * LSC_LUT_WIDTH + 16 * j / width + 1),
+								*(pR + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
+								*(pR + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
+								*(pR + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
+								*(pR + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
 								i,
 								j);
 					}

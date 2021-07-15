@@ -41,5 +41,6 @@ using namespace std;
 char TimeInt2Char(int32_t i);
 void getTimeChar(char* hours, char* minutes, char* seconds, char* milliseconds);
 void getTimeInt(int32_t* hours, int32_t* minutes, int32_t* seconds, int32_t* milliseconds);
-void getTimeWithDateInt(int32_t* years, int32_t* months, int32_t* days, int32_t* hours, int32_t* minutes, int32_t* seconds);
+void getDateInt(int32_t* years, int32_t* months, int32_t* days);
 void getTimeWithDateInt(int32_t* years, int32_t* months, int32_t* days, int32_t* hours, int32_t* minutes, int32_t* seconds, int32_t* milliseconds);
+void getTimeWithDateChar(char* years, char* months, char* days, char* hours, char* minutes, char* seconds, char* milliseconds);

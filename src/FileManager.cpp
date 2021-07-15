@@ -170,7 +170,7 @@ ISPResult ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dst
 	if (SUCCESS(result)) {
 		memcpy(dstData, srcData, channels * size);
 
-		//Array head & tail convertion 	
+		//Convertion for the head & tail of data array  	
 		while (j < channels * size - j) {
 			temp = dstData[channels * size - j - 1];
 			dstData[channels * size - j - 1] = dstData[j];

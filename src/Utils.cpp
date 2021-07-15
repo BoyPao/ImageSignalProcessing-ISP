@@ -53,10 +53,14 @@ void getTimeInt(int32_t* hours, int32_t* minutes, int32_t* seconds, int32_t* mil
 	*hours = c_time.count() / 1000 / 60 / 60 % 24 + LOCAL_TIME_ZOOM_OFFSET;
 }
 
-void getTimeWithDateInt(int32_t* years, int32_t* months, int32_t* days, int32_t* hours, int32_t* minutes, int32_t* seconds)
+
+void getDateInt(int32_t* years, int32_t* months, int32_t* days)
 {
+	int32_t hours = 0;
+	int32_t minutes = 0;
+	int32_t seconds = 0;
 	int32_t milliseconds = 0;
-	getTimeWithDateInt(years, months, days, hours, minutes, seconds, &milliseconds);
+	getTimeWithDateInt(years, months, days, &hours, &minutes, &seconds, &milliseconds);
 }
 
 void getTimeWithDateInt(int32_t* years, int32_t* months, int32_t* days, int32_t* hours, int32_t* minutes, int32_t* seconds, int32_t* milliseconds)
@@ -77,3 +81,33 @@ void getTimeWithDateInt(int32_t* years, int32_t* months, int32_t* days, int32_t*
 	*years = pTime.tm_year + SYSTEM_YEAR_OFFSET;
 }
 
+void getTimeWithDateChar(char* years, char* months, char* days, char* hours, char* minutes, char* seconds, char* milliseconds)
+{
+	int32_t dy = 0, dm = 0, dd = 0, tms = 0, ts = 0, tm = 0, th = 0;
+
+	getTimeWithDateInt(&dy, &dm, &dd, &th, &tm, &ts, &tms);
+
+	*years = TimeInt2Char(dy / 1000);
+	*(years + 1) = TimeInt2Char(dy / 100 % 10);
+	*(years + 2) = TimeInt2Char(dy / 10 % 10);
+	*(years + 3) = TimeInt2Char(dy % 10);
+
+	*months = TimeInt2Char(dm / 10);
+	*(months + 1) = TimeInt2Char(dm % 10);
+
+	*months = TimeInt2Char(dm / 10);
+	*(months + 1) = TimeInt2Char(dm % 10);
+
+	*days = TimeInt2Char(dd / 10);
+	*(days + 1) = TimeInt2Char(dd % 10);
+
+	*minutes = TimeInt2Char(tm / 10);
+	*(minutes + 1) = TimeInt2Char(tm % 10);
+
+	*seconds = TimeInt2Char(ts / 10);
+	*(seconds + 1) = TimeInt2Char(ts % 10);
+
+	*milliseconds = TimeInt2Char(tms / 100);
+	*(milliseconds + 1) = TimeInt2Char(tms / 10 % 10);
+	*(milliseconds + 2) = TimeInt2Char(tms % 10);
+}
