@@ -19,7 +19,7 @@ struct LSC_PARAM {
 };
 
 struct GCC_PARAM {
-	double weight;
+	float weight;
 };
 
 struct WB_GAIN {
@@ -49,7 +49,7 @@ struct WNR_PARAM {
 };
 
 struct EE_PARAM {
-	double alpha;
+	float alpha;
 	int32_t coreSize;
 	int32_t delta;
 };

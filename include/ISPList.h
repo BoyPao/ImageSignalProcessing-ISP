@@ -24,7 +24,7 @@ typedef enum PROCESS_TYPE {
 	PROCESS_EE,
 	PROCESS_CST_RAW2RGB,
 	PROCESS_CST_RGB2YUV,
-	PROCESS_NONE,
+	PROCESS_HEAD,
 	PROCESS_TYPE_NUM
 };
 
@@ -152,7 +152,7 @@ PROCESS_TYPE YuvNodeConfigure[] = {
 };
 
 ISP_NODE_PROPERTY gNodesConfigure[] = {
-	{"HEAD",			PROCESS_NONE,			NODE_ON,	PRIORITY_NECESSARY},
+	{"HEAD",			PROCESS_HEAD,			NODE_ON,	PRIORITY_NECESSARY},
 	{"BLC",				PROCESS_BLC,			NODE_ON,	PRIORITY_FREE},
 	{"LSC",				PROCESS_LSC,			NODE_ON,	PRIORITY_FREE},
 	{"CST_Demosaic",	PROCESS_CST_RAW2RGB,	NODE_ON,	PRIORITY_NECESSARY},
@@ -277,36 +277,38 @@ ISPResult ISPNode<T1, T2>::Process(ISPParamManager* pPM)
 		bool enable = mProperty.enable;
 		switch (mProperty.type) {
 		case PROCESS_BLC:
-			result = enable ? BlackLevelCorrection(pPM, pInputBuffer) : ISP_SKIP;
+			result = enable ? BlackLevelCorrection(pInputBuffer, pPM) : ISP_SKIP;
 			break;
 		case PROCESS_LSC:
-			result = enable ? LensShadingCorrection(pPM, pInputBuffer) : ISP_SKIP;
+			result = enable ? LensShadingCorrection(pInputBuffer, pPM) : ISP_SKIP;
 			break;
 		case PROCESS_WB:
-			result = enable ? WhiteBalance(pPM, pInputBuffer) : ISP_SKIP;
+			result = enable ? WhiteBalance(pInputBuffer, pPM) : ISP_SKIP;
 			break;
 		case PROCESS_CC:
-			result = enable ? ColorCorrection(pPM, pInputBuffer) : ISP_SKIP;
+			result = enable ? ColorCorrection(pInputBuffer, pPM) : ISP_SKIP;
 			break;
 		case PROCESS_GAMMA:
-			result = enable ? GammaCorrection(pPM, pInputBuffer) : ISP_SKIP;
+			result = enable ? GammaCorrection(pInputBuffer, pPM) : ISP_SKIP;
 			break;
 		case PROCESS_WNR:
-			result = enable ? WaveletNR(pPM, pInputBuffer) : ISP_SKIP;
+			result = enable ? WaveletNR(pInputBuffer, pPM) : ISP_SKIP;
 			break;
 		case PROCESS_EE:
-			result = enable ? Sharpness(pPM, pInputBuffer) : ISP_SKIP;
+			result = enable ? EdgeEnhancement(pInputBuffer, pPM) : ISP_SKIP;
 			break;
-		case PROCESS_NONE:
-			result = ISP_SKIP;
+		case PROCESS_HEAD:
+			result = ISPLibParamsInit(pPM);
 			break;
 		case PROCESS_CST_RAW2RGB:
-			result = Demosaic(pPM, pInputBuffer, pOutputBuffer, enable);
+			result = Demosaic(pInputBuffer, pOutputBuffer, pPM, enable);
 			break;
 		case PROCESS_CST_RGB2YUV:
-			result = CST_RGB2YUV(pPM, pInputBuffer, pOutputBuffer, enable);
+			result = CST_RGB2YUV(pInputBuffer, pOutputBuffer, pPM, enable);
 			break;
 		case PROCESS_TYPE_NUM:
+			result = ISP_SKIP;
+			break;
 		default:
 			result = ISP_FAILED;
 		}
@@ -419,7 +421,7 @@ ISPResult ISPList<T1, T2, T3>::Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, ISPPa
 	}
 
 	if (SUCCESS(result)) {
-		result = RegisterISPLibFuncs();
+		RegisterISPLibFuncs();
 	}
 
 	if (SUCCESS(result)) {
@@ -473,7 +475,7 @@ ISPResult ISPList<T1, T2, T3>::CreateNecList()
 	if (SUCCESS(result)) {
 		mRawHead = new ISPNecNode<T1, T1>;
 		if (mRawHead) {
-			mRawHead->Init(PROCESS_NONE, pRawBuffer, pRawBuffer);
+			mRawHead->Init(PROCESS_HEAD, pRawBuffer, pRawBuffer);
 			mNodeNum++;
 		}
 		else {
@@ -519,7 +521,7 @@ ISPResult ISPList<T1, T2, T3>::CreateRawList()
 	ISPResult result = ISP_SUCCESS;
 
 	ISPNode<T1, T1>* pNewNode = nullptr;
-	PROCESS_TYPE newNodeType = PROCESS_NONE;
+	PROCESS_TYPE newNodeType = PROCESS_TYPE_NUM;
 	for (int32_t i = 0; i < sizeof(RawNodeConfigure) / sizeof(PROCESS_TYPE); i++) {
 		newNodeType = RawNodeConfigure[i];
 		pNewNode = new ISPNode<T1, T1>;
@@ -583,7 +585,7 @@ ISPResult ISPList<T1, T2, T3>::CreateRgbList()
 	ISPResult result = ISP_SUCCESS;
 
 	ISPNode<T2, T2>* pNewNode = nullptr;
-	PROCESS_TYPE newNodeType = PROCESS_NONE;
+	PROCESS_TYPE newNodeType = PROCESS_TYPE_NUM;
 	for (int32_t i = 0; i < sizeof(RgbNodeConfigure) / sizeof(PROCESS_TYPE); i++) {
 		newNodeType = RgbNodeConfigure[i];
 		pNewNode = new ISPNode<T2, T2>;
@@ -653,7 +655,7 @@ ISPResult ISPList<T1, T2, T3>::CreateYuvList()
 	ISPResult result = ISP_SUCCESS;
 
 	ISPNode<T3, T3>* pNewNode = nullptr;
-	PROCESS_TYPE newNodeType = PROCESS_NONE;
+	PROCESS_TYPE newNodeType = PROCESS_TYPE_NUM;
 	for (int32_t i = 0; i < sizeof(YuvNodeConfigure) / sizeof(PROCESS_TYPE); i++) {
 		newNodeType = YuvNodeConfigure[i];
 		pNewNode = new ISPNode<T3, T3>;

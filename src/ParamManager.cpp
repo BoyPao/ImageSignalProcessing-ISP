@@ -12,7 +12,7 @@
 
 #include "Param_1920x1080_D65_1000Lux.h"
 
-ISP_PARAMS ISP_Params_Configue{
+ISP_Config_Params ISPConfigueParams{
 	/* 	BLC_PARAM  */	&BLCPARAM_1920x1080_D65_1000Lux,
 	/* 	LSC_PARAM  */	&LSCPARM_1920x1080_D65_1000Lux,
 	/* 	GCC_PARAM  */	&GCCPARAM_1920x1080_D65_1000Lux,
@@ -23,12 +23,10 @@ ISP_PARAMS ISP_Params_Configue{
 	/* 	EE_PARAM  */	&EEPARAM_1920x1080_D65_1000Lux,
 };
 
-
 ISPParamManager::ISPParamManager()
 {
 	mImg_Info = { 0 };
-
-	mISP_Params = { nullptr };
+	mISP_ConfigParams = { nullptr };
 	mState = PM_EMPTY;
 
 	SelectParams(PARAM_1920x1080_D65_1000Lux);
@@ -38,18 +36,16 @@ ISPParamManager::~ISPParamManager()
 {
 }
 
-ISPResult ISPParamManager::SelectParams(int32_t paramIndex)
+ISPResult ISPParamManager::SetIMGInfo(IMG_INFO* info)
 {
 	ISPResult result = ISP_SUCCESS;
 
-	switch (paramIndex) {
-	case PARAM_1920x1080_D65_1000Lux:
-		memcpy(&mISP_Params, &ISP_Params_Configue, sizeof(ISP_PARAMS));
-		mState = PM_SELECTED;
-		break;
-	default:
+	if (info) {
+		memcpy(&mImg_Info, info, sizeof(IMG_INFO));
+	}
+	else {
 		result = ISP_INVALID_PARAM;
-		ISPLoge("Failed to Select %d Params", paramIndex);
+		ISPLoge("Input is null! %d", result);
 	}
 
 	return result;
@@ -63,7 +59,7 @@ ISPResult ISPParamManager::GetIMGDimension(int32_t* width, int32_t* height)
 		result = ISP_STATE_ERROR;
 		ISPLoge("Invalid param manager state:%d", mState);
 	}
-	
+
 	if (SUCCESS(result)) {
 		if (width && height) {
 			*width = mImg_Info.width;
@@ -78,7 +74,179 @@ ISPResult ISPParamManager::GetIMGDimension(int32_t* width, int32_t* height)
 	return result;
 }
 
-ISPResult ISPParamManager::GetIMGInfo(IMG_INFO* imgInfo)
+ISPResult ISPParamManager::SelectParams(int32_t paramIndex)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	switch (paramIndex) {
+	case PARAM_1920x1080_D65_1000Lux:
+		memcpy(&mISP_ConfigParams, &ISPConfigueParams, sizeof(ISP_Config_Params));
+		mState = PM_SELECTED;
+		break;
+	default:
+		result = ISP_INVALID_PARAM;
+		ISPLoge("Failed to Select %d Params", paramIndex);
+	}
+
+	return result;
+}
+
+ISPResult ISPParamManager::GetImgInfo(ISP_LIB_PARAMS* pParams)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!pParams) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("Input is null!");
+	}
+
+	if (SUCCESS(result)) {
+		pParams->info.width = mImg_Info.width;
+		pParams->info.height = mImg_Info.height;
+		pParams->info.rawType = (ISP_RAW_TYPE)mImg_Info.rawType;
+		pParams->info.bitspp = mImg_Info.bitspp;
+		pParams->info.stride = mImg_Info.stride;
+		pParams->info.packaged = mImg_Info.packaged;
+	}
+
+	return result;
+}
+
+ISPResult ISPParamManager::GetBLCParam(ISP_LIB_PARAMS* pParams)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!pParams) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("Input is null!");
+	}
+
+	if (SUCCESS(result)) {
+		int difBitNum = mISP_ConfigParams.pBLC_param->bitNum - 8;
+		if (0 < difBitNum && difBitNum < 4) {
+			pParams->BLC_param.offset = (mISP_ConfigParams.pBLC_param->BLCDefaultValue << difBitNum);
+		}
+		else {
+			pParams->BLC_param.offset = mISP_ConfigParams.pBLC_param->BLCDefaultValue;
+		}
+	}
+
+	return result;
+}
+
+ISPResult ISPParamManager::GetLSCParam(ISP_LIB_PARAMS* pParams) 
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!pParams) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("Input is null!");
+	}
+
+	if (SUCCESS(result)) {
+		for (int32_t i = 0; i < LSC_LUT_HEIGHT; i++) {
+			memcpy(pParams->LSC_param.GainCh1 + i * LSC_LUT_WIDTH, mISP_ConfigParams.pLSC_param->GainCh1[i], LSC_LUT_WIDTH * sizeof(float));
+			memcpy(pParams->LSC_param.GainCh2 + i * LSC_LUT_WIDTH, mISP_ConfigParams.pLSC_param->GainCh2[i], LSC_LUT_WIDTH * sizeof(float));
+			memcpy(pParams->LSC_param.GainCh3 + i * LSC_LUT_WIDTH, mISP_ConfigParams.pLSC_param->GainCh3[i], LSC_LUT_WIDTH * sizeof(float));
+			memcpy(pParams->LSC_param.GainCh4 + i * LSC_LUT_WIDTH, mISP_ConfigParams.pLSC_param->GainCh4[i], LSC_LUT_WIDTH * sizeof(float));
+		}
+	}
+	return result;
+}
+
+ISPResult ISPParamManager::GetWBParam(ISP_LIB_PARAMS* pParams)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!pParams) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("Input is null!");
+	}
+
+	if (SUCCESS(result)) {
+		pParams->WB_param.rGain = mISP_ConfigParams.pWB_param->WB1stGAMMA2rd ? mISP_ConfigParams.pWB_param->gainType1.rGain : mISP_ConfigParams.pWB_param->gainType2.rGain;
+		pParams->WB_param.gGain = mISP_ConfigParams.pWB_param->WB1stGAMMA2rd ? mISP_ConfigParams.pWB_param->gainType1.gGain : mISP_ConfigParams.pWB_param->gainType2.gGain;
+		pParams->WB_param.bGain = mISP_ConfigParams.pWB_param->WB1stGAMMA2rd ? mISP_ConfigParams.pWB_param->gainType1.bGain : mISP_ConfigParams.pWB_param->gainType2.bGain;
+	}
+
+	return result;
+}
+
+ISPResult ISPParamManager::GetCCParam(ISP_LIB_PARAMS* pParams)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!pParams) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("Input is null!");
+	}
+
+	if (SUCCESS(result)) {
+
+		for (int32_t row = 0; row < CCM_HEIGHT; row++) {
+			memcpy(pParams->CC_param.CCM + row * CCM_WIDTH, mISP_ConfigParams.pCC_param->CCM[row], CCM_WIDTH * sizeof(float));
+		}
+	}
+
+	return result;
+}
+
+ISPResult ISPParamManager::GetGAMMAParam(ISP_LIB_PARAMS* pParams)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!pParams) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("Input is null!");
+	}
+
+	if (SUCCESS(result)) {
+		memcpy(pParams->Gamma_param.lut, &mISP_ConfigParams.pGamma_param->lut, 1024 * sizeof(uint16_t));
+	}
+
+	return result;
+}
+
+ISPResult ISPParamManager::GetWNRParam(ISP_LIB_PARAMS* pParams)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!pParams) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("Input is null!");
+	}
+
+	if (SUCCESS(result)) {
+		pParams->WNR_param.L1_threshold = mISP_ConfigParams.pWNR_param->L1_threshold;
+		pParams->WNR_param.L2_threshold = mISP_ConfigParams.pWNR_param->L2_threshold;
+		pParams->WNR_param.L3_threshold = mISP_ConfigParams.pWNR_param->L3_threshold;
+	}
+
+	return result;
+}
+
+ISPResult ISPParamManager::GetEEParam(ISP_LIB_PARAMS* pParams)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!pParams) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("Input is null!");
+	}
+
+	if (SUCCESS(result)) {
+		pParams->EE_param.alpha = mISP_ConfigParams.pEE_param->alpha;
+		pParams->EE_param.coreSize = mISP_ConfigParams.pEE_param->coreSize;
+		pParams->EE_param.delta = mISP_ConfigParams.pEE_param->delta;
+	}
+
+	return result;
+}
+
+
+/*
+
+ISPResult ISPParamManager::GetIMGInfo(void* imgInfo)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -89,7 +257,7 @@ ISPResult ISPParamManager::GetIMGInfo(IMG_INFO* imgInfo)
 
 	if (SUCCESS(result)) {
 		if (imgInfo) {
-			memcpy(imgInfo, &mImg_Info, sizeof(IMG_INFO));
+			memcpy((IMG_INFO*)imgInfo, &mImg_Info, sizeof(IMG_INFO));
 		}
 		else {
 			result = ISP_INVALID_PARAM;
@@ -133,12 +301,12 @@ ISPResult ISPParamManager::GetBLCParam(uint16_t* offset)
 
 	if (SUCCESS(result)) {
 		if (offset) {
-			int difBitNum = mISP_Params.pBLC_param->bitNum - 8;
+			int difBitNum = mISP_ConfigParams.pBLC_param->bitNum - 8;
 			if (0 < difBitNum && difBitNum < 4) {
-				*offset = (mISP_Params.pBLC_param->BLCDefaultValue << difBitNum);
+				*offset = (mISP_ConfigParams.pBLC_param->BLCDefaultValue << difBitNum);
 			}
 			else {
-				*offset = mISP_Params.pBLC_param->BLCDefaultValue;
+				*offset = mISP_ConfigParams.pBLC_param->BLCDefaultValue;
 			}
 		}
 		else {
@@ -162,10 +330,10 @@ ISPResult ISPParamManager::GetLSCParam(float *pGainCh1, float *pGainCh2, float *
 	if (SUCCESS(result)) {
 		if (pGainCh1 && pGainCh2 && pGainCh3 && pGainCh4) {
 			for (int32_t i = 0; i < LSC_LUT_HEIGHT; i++) {
-				memcpy(pGainCh1 + i * LSC_LUT_WIDTH, mISP_Params.pLSC_param->GainCh1[i], LSC_LUT_WIDTH * sizeof(float));
-				memcpy(pGainCh2 + i * LSC_LUT_WIDTH, mISP_Params.pLSC_param->GainCh2[i], LSC_LUT_WIDTH * sizeof(float));
-				memcpy(pGainCh3 + i * LSC_LUT_WIDTH, mISP_Params.pLSC_param->GainCh3[i], LSC_LUT_WIDTH * sizeof(float));
-				memcpy(pGainCh4 + i * LSC_LUT_WIDTH, mISP_Params.pLSC_param->GainCh4[i], LSC_LUT_WIDTH * sizeof(float));
+				memcpy(pGainCh1 + i * LSC_LUT_WIDTH, mISP_ConfigParams.pLSC_param->GainCh1[i], LSC_LUT_WIDTH * sizeof(float));
+				memcpy(pGainCh2 + i * LSC_LUT_WIDTH, mISP_ConfigParams.pLSC_param->GainCh2[i], LSC_LUT_WIDTH * sizeof(float));
+				memcpy(pGainCh3 + i * LSC_LUT_WIDTH, mISP_ConfigParams.pLSC_param->GainCh3[i], LSC_LUT_WIDTH * sizeof(float));
+				memcpy(pGainCh4 + i * LSC_LUT_WIDTH, mISP_ConfigParams.pLSC_param->GainCh4[i], LSC_LUT_WIDTH * sizeof(float));
 			}
 		}
 		else {
@@ -188,7 +356,7 @@ ISPResult ISPParamManager::GetGCCParam(double * weight)
 
 	if (SUCCESS(result)) {
 		if (weight) {
-			*weight = mISP_Params.pGCC_param->weight;
+			*weight = mISP_ConfigParams.pGCC_param->weight;
 		}
 		else {
 			result = ISP_INVALID_PARAM;
@@ -210,9 +378,9 @@ ISPResult ISPParamManager::GetWBParam(double* rGain, double* gGain, double* bGai
 
 	if (SUCCESS(result)) {
 		if (rGain && gGain && bGain) {
-			*rGain = mISP_Params.pWB_param->WB1stGAMMA2rd ? mISP_Params.pWB_param->gainType1.rGain : mISP_Params.pWB_param->gainType2.rGain;
-			*gGain = mISP_Params.pWB_param->WB1stGAMMA2rd ? mISP_Params.pWB_param->gainType1.gGain : mISP_Params.pWB_param->gainType2.gGain;
-			*bGain = mISP_Params.pWB_param->WB1stGAMMA2rd ? mISP_Params.pWB_param->gainType1.bGain : mISP_Params.pWB_param->gainType2.bGain;
+			*rGain = mISP_ConfigParams.pWB_param->WB1stGAMMA2rd ? mISP_ConfigParams.pWB_param->gainType1.rGain : mISP_ConfigParams.pWB_param->gainType2.rGain;
+			*gGain = mISP_ConfigParams.pWB_param->WB1stGAMMA2rd ? mISP_ConfigParams.pWB_param->gainType1.gGain : mISP_ConfigParams.pWB_param->gainType2.gGain;
+			*bGain = mISP_ConfigParams.pWB_param->WB1stGAMMA2rd ? mISP_ConfigParams.pWB_param->gainType1.bGain : mISP_ConfigParams.pWB_param->gainType2.bGain;
 		}
 		else {
 			result = ISP_INVALID_PARAM;
@@ -235,7 +403,7 @@ ISPResult ISPParamManager::GetCCParam(float* pCcm)
 	if (SUCCESS(result)) {
 		if (pCcm) {
 			for (int32_t row = 0; row < CCM_HEIGHT; row++) {
-				memcpy(pCcm + row * CCM_WIDTH, mISP_Params.pCC_param->CCM[row], CCM_WIDTH * sizeof(float));
+				memcpy(pCcm + row * CCM_WIDTH, mISP_ConfigParams.pCC_param->CCM[row], CCM_WIDTH * sizeof(float));
 			}
 		}
 		else {
@@ -258,7 +426,7 @@ ISPResult ISPParamManager::GetGAMMAPARAM(uint16_t* plut)
 
 	if (SUCCESS(result)) {
 		if (plut) {
-			memcpy(plut, &mISP_Params.pGamma_param->lut, 1024 * sizeof(uint16_t));
+			memcpy(plut, &mISP_ConfigParams.pGamma_param->lut, 1024 * sizeof(uint16_t));
 		}
 		else {
 			result = ISP_INVALID_PARAM;
@@ -280,9 +448,9 @@ ISPResult ISPParamManager::GetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshol
 
 	if (SUCCESS(result)) {
 		if (l1Threshold && l2Threshold && l3Threshold) {
-			*l1Threshold = mISP_Params.pWNR_param->L1_threshold;
-			*l2Threshold = mISP_Params.pWNR_param->L2_threshold;
-			*l3Threshold = mISP_Params.pWNR_param->L3_threshold;
+			*l1Threshold = mISP_ConfigParams.pWNR_param->L1_threshold;
+			*l2Threshold = mISP_ConfigParams.pWNR_param->L2_threshold;
+			*l3Threshold = mISP_ConfigParams.pWNR_param->L3_threshold;
 		}
 		else {
 			result = ISP_INVALID_PARAM;
@@ -304,9 +472,9 @@ ISPResult ISPParamManager::GetEERPARAM(double* alpha, int32_t* coreSize, int32_t
 
 	if (SUCCESS(result)) {
 		if (alpha && coreSize && delta) {
-			*alpha = mISP_Params.pEE_param->alpha;
-			*coreSize = mISP_Params.pEE_param->coreSize;
-			*delta = mISP_Params.pEE_param->delta;
+			*alpha = mISP_ConfigParams.pEE_param->alpha;
+			*coreSize = mISP_ConfigParams.pEE_param->coreSize;
+			*delta = mISP_ConfigParams.pEE_param->delta;
 		}
 		else {
 			result = ISP_INVALID_PARAM;
@@ -317,20 +485,6 @@ ISPResult ISPParamManager::GetEERPARAM(double* alpha, int32_t* coreSize, int32_t
 	return result;
 }
 
-ISPResult ISPParamManager::SetIMGInfo(IMG_INFO* info)
-{
-	ISPResult result = ISP_SUCCESS;
-
-	if (info) {
-		memcpy(&mImg_Info, info, sizeof(IMG_INFO));
-	}
-	else {
-		result = ISP_INVALID_PARAM;
-		ISPLoge("Input is null! %d", result);
-	}
-
-	return result;
-}
 
 ISPResult ISPParamManager::SetIMGDimension(int32_t* width, int32_t* height)
 {
@@ -426,3 +580,4 @@ ISPResult ISPParamManager::SetEERPARAM(double* alph, int32_t* coreSize, int32_t*
 	ISPResult result = ISP_SUCCESS;
 	return result;
 }
+*/

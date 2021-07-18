@@ -92,7 +92,7 @@ int main() {
 			pIspList->CreatISPList();
 			pIspList->Process();
 
-			//Convert result from YUV to RGB
+			//Convert result from YUV to RGB for display and save.
 			cvtColor(dst, dst, COLOR_YCrCb2BGR, 0);
 			delete pIspList;
 		}

@@ -32,37 +32,22 @@
 #define ALIGN(x, align)									(align) ? (((x) + (align) - 1) & (~((align) - 1))) : (x)
 #define ALIGNx(pixelNum, bitspp, packaged, align)		ALIGN(PIXELS2WORDS(pixelNum, bitspp, packaged), align)
 
-struct ISP_PROCESS_CALLBACKS {
-	ISPResult(*ISP_CBs)(int32_t argNum, ...);
-};
+ISPResult ISPLibParamsInit(ISPParamManager* pPM, ...);
 
-struct ISP_LIB_FUNCS
-{
-	ISPResult(*ISP_BLC)			(void* data, ISP_PROCESS_CALLBACKS CBs, ...);
-	ISPResult(*ISP_LSC)			(void* data, ISP_PROCESS_CALLBACKS CBs, ...);
-	ISPResult(*ISP_WB)			(void* data, ISP_PROCESS_CALLBACKS CBs, ...);
-	ISPResult(*ISP_CC)			(void* data, ISP_PROCESS_CALLBACKS CBs, ...);
-	ISPResult(*ISP_Gamma)		(void* data, ISP_PROCESS_CALLBACKS CBs, ...);
-	ISPResult(*ISP_WNR)			(void* data, ISP_PROCESS_CALLBACKS CBs, ...);
-	ISPResult(*ISP_EE)			(void* data, ISP_PROCESS_CALLBACKS CBs, ...);
-	ISPResult(*ISP_Demosaic)	(void* src, void* dst, ISP_PROCESS_CALLBACKS CBs, ...);
-	ISPResult(*ISP_CST_RGB2YUV) (void* src, void* dst, ISP_PROCESS_CALLBACKS CBs, ...);
-};
-
-ISPResult RegisterISPLibFuncs();
 //Bayer Process
-ISPResult BlackLevelCorrection(ISPParamManager* pPM, void* data, ...);
-ISPResult LensShadingCorrection(ISPParamManager* pPM, void* data, ...);
+ISPResult BlackLevelCorrection(void* data, ISPParamManager* pPM, ...);
+ISPResult LensShadingCorrection(void* data, ISPParamManager* pPM, ...);
 
 //RGB Process
-ISPResult WhiteBalance(ISPParamManager* pPM, void* data, ...);
-ISPResult ColorCorrection(ISPParamManager* pPM, void* data, ...);
-ISPResult GammaCorrection(ISPParamManager* pPM, void* data, ...);
+ISPResult WhiteBalance(void* data, ISPParamManager* pPM, ...);
+ISPResult WhiteBalance(void* data, ISPParamManager* pPM, ...);
+ISPResult ColorCorrection(void* data, ISPParamManager* pPM, ...);
+ISPResult GammaCorrection(void* data, ISPParamManager* pPM, ...);
 
 //YUVProcess
-ISPResult WaveletNR(ISPParamManager* pPM, void* data, ...);
-ISPResult Sharpness(ISPParamManager* pPM, void* data, ...);
+ISPResult WaveletNR(void* data, ISPParamManager* pPM, ...);
+ISPResult EdgeEnhancement(void* data, ISPParamManager* pPM, ...);
 
 //CST
-ISPResult Demosaic(ISPParamManager* pPM, void* src, void* dst, ...);
-ISPResult CST_RGB2YUV(ISPParamManager* pPM, void* src, void* dst, ...);
+ISPResult Demosaic(void* src, void* dst, ISPParamManager* pPM, ...);
+ISPResult CST_RGB2YUV(void* src, void* dst, ISPParamManager* pPM, ...);

@@ -11,6 +11,7 @@
 #pragma once
 #include "Utils.h"
 #include "Params.h"
+#include "BZAlgorithmInterface.h"
 
 enum PARAM_INDEX {
 	PARAM_1920x1080_D65_1000Lux = 0,
@@ -40,7 +41,7 @@ struct IMG_INFO
 	RAW_TYPE rawType;
 };
 
-struct ISP_PARAMS {
+struct ISP_Config_Params {
 	BLC_PARAM* pBLC_param;
 	LSC_PARAM* pLSC_param;
 	GCC_PARAM* pGCC_param;
@@ -57,9 +58,11 @@ public:
 	~ISPParamManager();
 
 	ISPResult SelectParams(int32_t paramIndex);
-
+	ISPResult SetIMGInfo(IMG_INFO* info);
 	ISPResult GetIMGDimension(int32_t* width, int32_t* height);
-	ISPResult GetIMGInfo(IMG_INFO* imgInfo);
+
+	/*
+	ISPResult GetIMGInfo(void* imgInfo);
 	ISPResult GetRawType(RAW_TYPE* pType);
 	ISPResult GetBLCParam(uint16_t* offset);
 	ISPResult GetLSCParam(float* pRGain, float* pGrGain, float* pGbGain, float* pBGain);
@@ -72,7 +75,6 @@ public:
 	ISPResult GetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, int32_t* l3Threshold);
 	ISPResult GetEERPARAM(double* alph, int32_t* coreSize, int32_t* delta);
 
-	ISPResult SetIMGInfo(IMG_INFO* info);
 	ISPResult SetIMGDimension(int32_t* width, int32_t* height);
 	ISPResult SetIMGWidth(int32_t* width);
 	ISPResult SetIMGHeight(int32_t* height);
@@ -85,10 +87,19 @@ public:
 	ISPResult SetGAMMAPARAM(uint16_t* plut);
 
 	ISPResult SetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, int32_t* l3Threshold);
-	ISPResult SetEERPARAM(double* alph, int32_t* coreSize, int32_t* delta);
+	ISPResult SetEERPARAM(double* alph, int32_t* coreSize, int32_t* delta);*/
+
+	ISPResult GetImgInfo(ISP_LIB_PARAMS* pParams);
+	ISPResult GetBLCParam(ISP_LIB_PARAMS* pParams);
+	ISPResult GetLSCParam(ISP_LIB_PARAMS* pParams);
+	ISPResult GetWBParam(ISP_LIB_PARAMS* pParams);
+	ISPResult GetCCParam(ISP_LIB_PARAMS* pParams);
+	ISPResult GetGAMMAParam(ISP_LIB_PARAMS* pParams);
+	ISPResult GetWNRParam(ISP_LIB_PARAMS* pParams);
+	ISPResult GetEEParam(ISP_LIB_PARAMS* pParams);
 
 private:
+	ISP_Config_Params mISP_ConfigParams;
 	IMG_INFO mImg_Info;
-	ISP_PARAMS mISP_Params;
 	PARAM_MANAGER_STATE mState;
 };
