@@ -14,7 +14,7 @@
 
 #define NODE_NAME_MAX_SZIE 15
 
-typedef enum PROCESS_TYPE {
+enum PROCESS_TYPE {
 	PROCESS_BLC = 0,
 	PROCESS_LSC,
 	PROCESS_WB,
@@ -41,12 +41,12 @@ const char PROCESSNAME[PROCESS_TYPE_NUM][NODE_NAME_MAX_SZIE] = {
 	"None",
 };
 
-typedef enum NODE_SWITCH {
+enum NODE_SWITCH {
 	NODE_OFF = 0,
 	NODE_ON
 };
 
-typedef enum NODE_PRIORITY {
+enum NODE_PRIORITY {
 	PRIORITY_NECESSARY,
 	PRIORITY_FREE,
 };
@@ -58,7 +58,7 @@ struct ISP_NODE_PROPERTY {
 	NODE_PRIORITY priority;
 };
 
-typedef enum LIST_TYPE {
+enum LIST_TYPE {
 	RAW_LIST,
 	RGB_LIST,
 	YUV_LIST

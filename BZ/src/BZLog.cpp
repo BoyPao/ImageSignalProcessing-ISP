@@ -8,7 +8,7 @@
 // @brief: ISP log source file
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "BZLog.h"
+#include "../include/BZLog.h"
 #include <stdio.h>
 
 //using namespace std;
@@ -16,9 +16,9 @@ int BZLogAddInfo(const char* str, ...)
 {
 #if LOG_ON
 	va_list(va);
-	__crt_va_start(va, str);
+	va_start(va, str);
 	BZLogAddTime(str, va);
-	__crt_va_end(va);
+	va_end(va);
 #endif
 	return 0;
 }
@@ -75,16 +75,16 @@ void GetTimeWithDateInt(int32_t* years, int32_t* months, int32_t* days, int32_t*
 	auto ms_time = std::chrono::duration_cast<std::chrono::milliseconds>(tp.time_since_epoch());
 
 	std::time_t systemTime = std::chrono::system_clock::to_time_t(tp);
-	tm pTime;
-	gmtime_s(&pTime, &systemTime);
+	tm* pTime;
+	pTime = gmtime(&systemTime);
 
 	*milliseconds = ms_time.count() % 1000;
-	*seconds = pTime.tm_sec;
-	*minutes = pTime.tm_min;
-	*hours = pTime.tm_hour + LOCAL_TIME_ZOOM_OFFSET;
-	*days = pTime.tm_mday;
-	*months = pTime.tm_mon + SYSTEM_MONTH_OFFSET;
-	*years = pTime.tm_year + SYSTEM_YEAR_OFFSET;
+	*seconds = pTime->tm_sec;
+	*minutes = pTime->tm_min;
+	*hours = pTime->tm_hour + LOCAL_TIME_ZOOM_OFFSET;
+	*days = pTime->tm_mday;
+	*months = pTime->tm_mon + SYSTEM_MONTH_OFFSET;
+	*years = pTime->tm_year + SYSTEM_YEAR_OFFSET;
 }
 
 void GetTimeWithDateChar(char* years, char* months, char* days, char* hours, char* minutes, char* seconds, char* milliseconds)

@@ -14,7 +14,8 @@
 #include <chrono>
 #include <stdint.h>
 #include <math.h>
-#include <windows.h>
+#include <cstdarg>
+#include <string.h>
 
 #define BITS_PER_WORD				8
 #define FILE_PATH_MAX_SIZE			255
@@ -23,7 +24,7 @@
 
 using namespace std;
 
-typedef enum BZResult {
+enum BZResult {
 	BZ_INVALID_PARAM = -4,
 	BZ_MEMORY_ERROR = -3,
 	BZ_STATE_ERROR = -2,

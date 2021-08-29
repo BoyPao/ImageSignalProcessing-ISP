@@ -105,7 +105,7 @@ ISPResult ImageFileManager::ReadRawData(uint8_t* buffer, size_t bufferSize, ISPR
 		ifstream OpenFile(mInputImg.pInputPath, ios::in | ios::binary);
 		if (OpenFile.fail()) {
 			result = ISP_FAILED;
-			ISPLoge("Open RAW failed! result:%d", result);
+			ISPLoge("Open RAW failed! path:%s result:%d", mInputImg.pInputPath, result);
 		}
 
 		if (SUCCESS(result)) {
@@ -198,7 +198,9 @@ void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 	BITMAPFILEHEADER header;
 	BITMAPINFOHEADER headerinfo;
 	int32_t BMPSize = mOutputImg.width * mOutputImg.hight * channels;
+	int32_t tempSize;
 
+	ISPLogd("BYTE:%d WORD:%d DWORD:%d LONG:%d", sizeof(BYTE), sizeof(WORD), sizeof(DWORD), sizeof(LONG));
 	headerinfo.biSize = sizeof(BITMAPINFOHEADER);
 	headerinfo.biHeight = mOutputImg.hight;
 	headerinfo.biWidth = mOutputImg.width;
@@ -212,10 +214,22 @@ void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 	header.bfType = ('M' << 8) + 'B'; // ÆäÖµÎª0x4D42;
 	header.bfReserved1 = 0;
 	header.bfReserved2 = 0;
-	header.bfOffBits = (channels == 1) ?
+
+	tempSize = (channels == 1) ?
 		(sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD)) :
 		(sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER));
-	header.bfSize = header.bfOffBits + headerinfo.biSizeImage;
+
+	header.bfOffBits[0] = (tempSize % 0x10000) & 0xffff;
+	header.bfOffBits[1] = (tempSize / 0x10000) & 0xffff;
+	ISPLogd("ch:%d head:%d headinfo:%d bfOffBits:%d(%x %x)",
+			channels, sizeof(BITMAPFILEHEADER), sizeof(BITMAPINFOHEADER),
+			tempSize, header.bfOffBits[1], header.bfOffBits[0]);
+
+	tempSize += headerinfo.biSizeImage;
+	header.bfSize[0] = (tempSize % 0x10000) & 0xffff;
+	header.bfSize[1] = (tempSize / 0x10000) & 0xffff;
+	ISPLogd("biSizeImage:%d bfSize:%d(%x %x)", headerinfo.biSizeImage,
+			tempSize, header.bfSize[1], header.bfSize[0]);
 
 	ISPLogi("BMPPath:%s", mOutputImg.pOutputPath);
 	ofstream out(mOutputImg.pOutputPath, ios::binary);

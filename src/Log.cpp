@@ -16,9 +16,9 @@ int LogAddInfo(const char* str, ...)
 {
 #if LOG_ON
 	va_list(va);
-	__crt_va_start(va, str);
+	va_start(va, str);
 	LogAddTime(str, va);
-	__crt_va_end(va);
+	va_end(va);
 #endif
 	return 0;
 }

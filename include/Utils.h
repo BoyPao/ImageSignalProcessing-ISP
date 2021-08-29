@@ -14,7 +14,8 @@
 #include <chrono>
 #include <stdint.h>
 #include <math.h>
-#include <windows.h>
+#include <stdarg.h>
+#include <string.h>
 
 #include "Log.h"
 
@@ -27,7 +28,7 @@
 
 #define SUCCESS(rt)		((rt) >= 0) ? true : false
 
-typedef enum ISPResult {
+enum ISPResult {
 	ISP_INVALID_PARAM	= -4,
 	ISP_MEMORY_ERROR	= -3,
 	ISP_STATE_ERROR		= -2,

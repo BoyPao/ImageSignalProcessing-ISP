@@ -12,7 +12,7 @@
 #include "Utils.h"
 
 #define LOG_ON 1
-#define LOG_LEVEL 0x1 + 0x2 + 0x4 + 0x8
+#define LOG_LEVEL 0x1 | 0x2 | 0x4 | 0x8
 
 #define LOG_BUFFER_SIZE				256
 #define LOG_BUFFER_PERSERVE_SIZE	2		//2 preserve for \0 and \n
@@ -23,12 +23,12 @@ int LogAddInfo(const char* str, ...);
 void LogAddTime(const char* str, va_list va);
 void LogPrint(const char* str, va_list va);
 
-typedef enum SYSTEM_TYPES {
+enum SYSTEM_TYPES {
 	WINDOWS_SYSTEM = 1,
 	LINUX_SYSTEM
 };
 
-typedef enum LOG_MASK {
+enum LOG_MASK {
 	LOG_ERROR_MASK = 0x1,
 	LOG_WARN_MASK = 0x2,
 	LOG_INFO_MASK = 0x4,

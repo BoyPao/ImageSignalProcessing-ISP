@@ -212,9 +212,9 @@ ISPResult Demosaic(void* src, void* dst, ISPParamManager* pPM, ...)
 	if (SUCCESS(result)) {
 		bool enable = true;
 		va_list va;
-		__crt_va_start(va, pPM);
-		enable = static_cast<bool>(__crt_va_arg(va, bool));
-		__crt_va_end(va);
+		va_start(va, pPM);
+		enable = static_cast<bool>(va_arg(va, int32_t));
+		va_end(va);
 		Lib_Demosaic(src, dst, &gISPLibParams);
 	}
 

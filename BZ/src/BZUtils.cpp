@@ -8,7 +8,7 @@
 // @brief: Common fuction source file.
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "BZUtils.h"
+#include "../include/BZUtils.h"
 
 using namespace std;
 

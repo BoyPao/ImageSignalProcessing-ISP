@@ -8,9 +8,9 @@
 // @brief: ISP algorithm interface source file.
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "BZAlgorithmInterface.h"
-#include "BZLog.h"
-#include "Algorithm.h"
+#include "../include/BZAlgorithmInterface.h"
+#include "../include/BZLog.h"
+#include "../include/Algorithm.h"
 
 static ISP_LIB_FUNCS gISP_Lib_funcs = {nullptr};
 static ISP_PROCESS_CALLBACKS gISP_Process_cbs = {nullptr};
@@ -106,9 +106,9 @@ void Lib_Demosaic(void* src, void* dst, ISP_LIB_PARAMS* pParams, ...)
 {
 	bool enable = true;
 	va_list va;
-	__crt_va_start(va, pParams);
-	enable = static_cast<bool>(__crt_va_arg(va, bool));
-	__crt_va_end(va);
+	va_start(va, pParams);
+	enable = static_cast<bool>(va_arg(va, int32_t));
+	va_end(va);
 	if (gISP_Lib_funcs.ISP_Demosaic) {
 		gISP_Lib_funcs.ISP_Demosaic(src, dst, pParams, gISP_Process_cbs, enable);
 	}

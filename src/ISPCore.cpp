@@ -25,15 +25,14 @@ using namespace cv;
 #define RESNAME "Result"
 #define TEMP "Temp"
 
-#define INPUTPATH "D:\\test_project\\ISP\\local\\ISP-Local\\ISP-Local\\1MCC_IMG_20181229_001526_1.RAW"   
+#define INPUTPATH "/home2/penghao/test_porject/ISP/res/1MCC_IMG_20181229_001526_1.raw"
 //#define INPUTPATH "D:\\test_project\\ISP\\local\\ISP-Local\\ISP-Local\\20210103062220_input_4000x3000_0.raw"
-#define OUTPUTPATH "D:\\test_project\\ISP\\local\\output\\output.BMP"
+#define OUTPUTPATH "/home2/penghao/test_porject/ISP/res/out/output.bmp"
 
 ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info);
 
 int main() {
 	ISPResult result = ISP_SUCCESS;
-
 	ISPParamManager* pParamManager = nullptr;
 	if (!pParamManager) {
 		pParamManager = new ISPParamManager;
@@ -68,8 +67,8 @@ int main() {
 	OutputImgInfo outputInfo;
 	char inputPath[FILE_PATH_MAX_SIZE] = { '\0' };
 	char outputPath[FILE_PATH_MAX_SIZE] = { '\0' };
-	strcpy_s(inputPath, INPUTPATH);
-	strcpy_s(outputPath, OUTPUTPATH);
+	strcpy(inputPath, INPUTPATH);
+	strcpy(outputPath, OUTPUTPATH);
 	inputInfo.pInputPath = inputPath;
 	outputInfo.pOutputPath = outputPath;
 	pParamManager->GetIMGDimension(&outputInfo.width, &outputInfo.hight);
@@ -110,6 +109,7 @@ int main() {
 		delete[] rawData;
 		delete[] bgrData;
 
+		/*
 		//Show the result
 		int32_t Imgsizex, Imgsizey;
 		int32_t Winsizex, Winsizey;
@@ -121,8 +121,9 @@ int main() {
 		resizeWindow(RESNAME, Imgsizex, Imgsizey);
 		imshow(RESNAME, dst);
 		waitKey(0);
+		*/
 	}
-	scanf_s("%d", &i);
+	scanf("%d", &i);
 
 	return 0;
 }

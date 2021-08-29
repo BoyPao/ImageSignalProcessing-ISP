@@ -8,7 +8,7 @@
 // @brief: ISP algorithm source file.
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "Algorithm.h"
+#include "../include/Algorithm.h"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -108,7 +108,6 @@ void ISP_GammaCorrection(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBA
 	}
 }
 
-
 //YUVProcess
 void ISP_WaveletNR(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...)
 {
@@ -144,7 +143,6 @@ void ISP_EdgeEnhancement(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBA
 	}
 }
 
-
 //CST
 void ISP_Demosaic(void* src, void* dst, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...)
 {
@@ -158,9 +156,9 @@ void ISP_Demosaic(void* src, void* dst, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CAL
 	if (SUCCESS(result)) {
 		bool enable = true;
 		va_list va;
-		__crt_va_start(va, CBs);
-		enable = static_cast<bool>(__crt_va_arg(va, bool));
-		__crt_va_end(va);
+		va_start(va, CBs);
+		enable = static_cast<bool>(va_arg(va, int32_t));
+		va_end(va);
 
 		result = BZ_Demosaic(src, dst, pParams, CBs, enable);
 		if (!SUCCESS(result)) {
@@ -185,8 +183,6 @@ void ISP_CST_RGB2YUV(void* src, void* dst, ISP_LIB_PARAMS* pParams, ISP_PROCESS_
 		}
 	}
 }
-
-
 
 //EdgePreservedNR not used, it should be redeveloped
 /*ISPResult EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable) {
@@ -287,7 +283,6 @@ BZResult BZ_BlackLevelCorrection(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCES
 		int32_t width, height;
 		int32_t offset;
 		int32_t temp;
-		va_list va_param;
 		width = pParams->info.width;
 		height = pParams->info.height;
 		offset = pParams->BLC_param.offset;
@@ -718,8 +713,8 @@ Mat WDT(const Mat& _src, WAVELET_TYPE type, const int _level)
 				dst.at<float>(i, j) = oneRow.at<float>(0, j);
 			}
 		}
-		char s[10];
-		_itoa_s(t, s, 10);
+		//char s[10];
+		//_itoa_s(t, s, 10);
 		//imshow(s, dst);
 		//waitKey();
 #if 0
@@ -1418,9 +1413,9 @@ BZResult BZ_Demosaic(void* src, void* dst, ISP_LIB_PARAMS* pParams, ISP_PROCESS_
 	rawType = pParams->info.rawType;
 	BZLogd("width:%d height:%d type:%d", width, height, rawType);
 	va_list va_param;
-	__crt_va_start(va_param, CBs);
-	enable = static_cast<bool>(__crt_va_arg(va_param, bool));
-	__crt_va_end(va_param);
+	va_start(va_param, CBs);
+	enable = static_cast<bool>(va_arg(va_param, int32_t));
+	va_end(va_param);
 	BZLogd("enable:%d", enable);
 	uint16_t* pChannel1 = nullptr;
 	uint16_t* pChannel2 = nullptr;

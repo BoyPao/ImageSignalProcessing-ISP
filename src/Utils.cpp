@@ -69,16 +69,16 @@ void getTimeWithDateInt(int32_t* years, int32_t* months, int32_t* days, int32_t*
 	auto ms_time = std::chrono::duration_cast<std::chrono::milliseconds>(tp.time_since_epoch());
 
 	std::time_t systemTime = std::chrono::system_clock::to_time_t(tp);
-	tm pTime;
-	gmtime_s(&pTime, &systemTime);
+	tm* pTime;
+	pTime = gmtime(&systemTime);
 
 	*milliseconds = ms_time.count() % 1000;
-	*seconds = pTime.tm_sec;
-	*minutes = pTime.tm_min;
-	*hours = pTime.tm_hour + LOCAL_TIME_ZOOM_OFFSET;
-	*days = pTime.tm_mday;
-	*months = pTime.tm_mon + SYSTEM_MONTH_OFFSET;
-	*years = pTime.tm_year + SYSTEM_YEAR_OFFSET;
+	*seconds = pTime->tm_sec;
+	*minutes = pTime->tm_min;
+	*hours = pTime->tm_hour + LOCAL_TIME_ZOOM_OFFSET;
+	*days = pTime->tm_mday;
+	*months = pTime->tm_mon + SYSTEM_MONTH_OFFSET;
+	*years = pTime->tm_year + SYSTEM_YEAR_OFFSET;
 }
 
 void getTimeWithDateChar(char* years, char* months, char* days, char* hours, char* minutes, char* seconds, char* milliseconds)

@@ -9,10 +9,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include <fstream> 
+#include <fstream>
+
+#include "BMP.h"
 #include "Utils.h"
 
-//#define PATH_MAX_LENGTH 40
+typedef unsigned char BYTE;
 
 typedef int32_t ISPState;
 static const ISPState Uninited = 0;
