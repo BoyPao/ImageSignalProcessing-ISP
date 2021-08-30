@@ -91,7 +91,7 @@ ISPResult ISPParamManager::SelectParams(int32_t paramIndex)
 	return result;
 }
 
-ISPResult ISPParamManager::GetImgInfo(ISP_LIB_PARAMS* pParams)
+ISPResult ISPParamManager::GetImgInfo(LIB_PARAMS* pParams)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -103,7 +103,7 @@ ISPResult ISPParamManager::GetImgInfo(ISP_LIB_PARAMS* pParams)
 	if (SUCCESS(result)) {
 		pParams->info.width = mImg_Info.width;
 		pParams->info.height = mImg_Info.height;
-		pParams->info.rawType = (ISP_RAW_TYPE)mImg_Info.rawType;
+		pParams->info.rawType = (LIB_RAW_TYPE)mImg_Info.rawType;
 		pParams->info.bitspp = mImg_Info.bitspp;
 		pParams->info.stride = mImg_Info.stride;
 		pParams->info.packaged = mImg_Info.packaged;
@@ -112,7 +112,7 @@ ISPResult ISPParamManager::GetImgInfo(ISP_LIB_PARAMS* pParams)
 	return result;
 }
 
-ISPResult ISPParamManager::GetBLCParam(ISP_LIB_PARAMS* pParams)
+ISPResult ISPParamManager::GetBLCParam(LIB_PARAMS* pParams)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -134,7 +134,7 @@ ISPResult ISPParamManager::GetBLCParam(ISP_LIB_PARAMS* pParams)
 	return result;
 }
 
-ISPResult ISPParamManager::GetLSCParam(ISP_LIB_PARAMS* pParams) 
+ISPResult ISPParamManager::GetLSCParam(LIB_PARAMS* pParams) 
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -154,7 +154,7 @@ ISPResult ISPParamManager::GetLSCParam(ISP_LIB_PARAMS* pParams)
 	return result;
 }
 
-ISPResult ISPParamManager::GetWBParam(ISP_LIB_PARAMS* pParams)
+ISPResult ISPParamManager::GetWBParam(LIB_PARAMS* pParams)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -172,7 +172,7 @@ ISPResult ISPParamManager::GetWBParam(ISP_LIB_PARAMS* pParams)
 	return result;
 }
 
-ISPResult ISPParamManager::GetCCParam(ISP_LIB_PARAMS* pParams)
+ISPResult ISPParamManager::GetCCParam(LIB_PARAMS* pParams)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -191,7 +191,7 @@ ISPResult ISPParamManager::GetCCParam(ISP_LIB_PARAMS* pParams)
 	return result;
 }
 
-ISPResult ISPParamManager::GetGAMMAParam(ISP_LIB_PARAMS* pParams)
+ISPResult ISPParamManager::GetGAMMAParam(LIB_PARAMS* pParams)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -207,7 +207,7 @@ ISPResult ISPParamManager::GetGAMMAParam(ISP_LIB_PARAMS* pParams)
 	return result;
 }
 
-ISPResult ISPParamManager::GetWNRParam(ISP_LIB_PARAMS* pParams)
+ISPResult ISPParamManager::GetWNRParam(LIB_PARAMS* pParams)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -225,7 +225,7 @@ ISPResult ISPParamManager::GetWNRParam(ISP_LIB_PARAMS* pParams)
 	return result;
 }
 
-ISPResult ISPParamManager::GetEEParam(ISP_LIB_PARAMS* pParams)
+ISPResult ISPParamManager::GetEEParam(LIB_PARAMS* pParams)
 {
 	ISPResult result = ISP_SUCCESS;
 

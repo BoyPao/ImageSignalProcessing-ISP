@@ -11,7 +11,7 @@
 #pragma once
 #include "Utils.h"
 #include "Params.h"
-#include "BZAlgorithmInterface.h"
+#include "LibInterface.h"
 
 enum PARAM_INDEX {
 	PARAM_1920x1080_D65_1000Lux = 0,
@@ -89,14 +89,14 @@ public:
 	ISPResult SetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, int32_t* l3Threshold);
 	ISPResult SetEERPARAM(double* alph, int32_t* coreSize, int32_t* delta);*/
 
-	ISPResult GetImgInfo(ISP_LIB_PARAMS* pParams);
-	ISPResult GetBLCParam(ISP_LIB_PARAMS* pParams);
-	ISPResult GetLSCParam(ISP_LIB_PARAMS* pParams);
-	ISPResult GetWBParam(ISP_LIB_PARAMS* pParams);
-	ISPResult GetCCParam(ISP_LIB_PARAMS* pParams);
-	ISPResult GetGAMMAParam(ISP_LIB_PARAMS* pParams);
-	ISPResult GetWNRParam(ISP_LIB_PARAMS* pParams);
-	ISPResult GetEEParam(ISP_LIB_PARAMS* pParams);
+	ISPResult GetImgInfo(LIB_PARAMS* pParams);
+	ISPResult GetBLCParam(LIB_PARAMS* pParams);
+	ISPResult GetLSCParam(LIB_PARAMS* pParams);
+	ISPResult GetWBParam(LIB_PARAMS* pParams);
+	ISPResult GetCCParam(LIB_PARAMS* pParams);
+	ISPResult GetGAMMAParam(LIB_PARAMS* pParams);
+	ISPResult GetWNRParam(LIB_PARAMS* pParams);
+	ISPResult GetEEParam(LIB_PARAMS* pParams);
 
 private:
 	ISP_Config_Params mISP_ConfigParams;

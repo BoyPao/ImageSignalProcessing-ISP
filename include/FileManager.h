@@ -14,8 +14,6 @@
 #include "BMP.h"
 #include "Utils.h"
 
-typedef unsigned char BYTE;
-
 typedef int32_t ISPState;
 static const ISPState Uninited = 0;
 static const ISPState Inited = 1;

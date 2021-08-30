@@ -9,9 +9,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "AlgorithmInterface.h"
-#include "BZAlgorithmInterface.h"
+#include "LibInterface.h"
 
-static ISP_LIB_PARAMS gISPLibParams;
+static LIB_PARAMS gISPLibParams;
 
 ISPResult ISPLibParamsInit(ISPParamManager* pPM, ...)
 {

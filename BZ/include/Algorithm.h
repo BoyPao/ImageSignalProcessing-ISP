@@ -12,7 +12,7 @@
 
 #include "BZUtils.h"
 #include "BZLog.h"
-#include "BZAlgorithmInterface.h"
+#include "LibInterface.h"
 
 
 #define PIXELS2WORDS_MIPI_PACKAGED(pixelNum, bitspp)	(((bitspp) < BITS_PER_WORD) ?										\
@@ -36,38 +36,38 @@
 #define ALIGNx(pixelNum, bitspp, packaged, align)		ALIGN(PIXELS2WORDS(pixelNum, bitspp, packaged), align)
 
 //Bayer Process
-void ISP_BlackLevelCorrection(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
-void ISP_LensShadingCorrection(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
+void LIB_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void LIB_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //RGB Process
-void ISP_WhiteBalance(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
-void ISP_ColorCorrection(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
-void ISP_GammaCorrection(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
+void LIB_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void LIB_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void LIB_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //YUVProcess
-void ISP_WaveletNR(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
-void ISP_EdgeEnhancement(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
+void LIB_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void LIB_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //CST
-void ISP_Demosaic	(void* src, void* dst, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
-void ISP_CST_RGB2YUV (void* src, void* dst, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
+void LIB_Demosaic	(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void LIB_CST_RGB2YUV (void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //Bayer Process
-BZResult BZ_BlackLevelCorrection(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
-BZResult BZ_LensShadingCorrection(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
+BZResult BZ_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //RGB Process
-BZResult BZ_WhiteBalance(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
-BZResult BZ_ColorCorrection(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
-BZResult BZ_GammaCorrection(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
+BZResult BZ_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+BZResult BZ_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+BZResult BZ_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //YUVProcess
-BZResult BZ_WaveletNR(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
-BZResult BZ_EdgeEnhancement(void* data, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
+BZResult BZ_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+BZResult BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //CST
-BZResult BZ_Demosaic(void* src, void* dst, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
-BZResult BZ_CST_RGB2YUV(void* src, void* dst, ISP_LIB_PARAMS* pParams, ISP_PROCESS_CALLBACKS CBs, ...);
+BZResult BZ_Demosaic(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 
 
