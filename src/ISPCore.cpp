@@ -12,6 +12,7 @@
 #include "ISPList.h"
 #include "FileManager.h"
 #include "ParamManager.h"
+#include "ISPListManager.h"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -84,20 +85,37 @@ int main() {
 	if (SUCCESS(result)) {
 		//Mipi10 decode
 		result = Mipi10decode((void*)mipiRawData, (void*)rawData, &imgInfo);
+		bool needISP = true;
 
-		if (SUCCESS(result)) {
-			ISPList<uint16_t, uint16_t, uint8_t>* pIspList = new ISPList<uint16_t, uint16_t, uint8_t>;
-			pIspList->Init(rawData, bgrData, dst.data, pParamManager);
-			pIspList->CreatISPList();
-			pIspList->Process();
+		if (SUCCESS(result) && needISP) {
+			ISPListManager ISPListMgr;
+			int32_t listId = 0;
+			result = ISPListMgr.Init(pParamManager);
+
+			if (SUCCESS(result)) {
+				result = ISPListMgr.CreateList(rawData, bgrData, dst.data, LIST_CFG_DEFAULT, &listId);
+			}
+
+			if (SUCCESS(result)) {
+				//Process steps can be switch on/off as you wish
+				//ISPListMgr.EnableNodebyType(listId, PROCESS_CC);
+				//ISPListMgr.DisableNodebyType(listId, PROCESS_CST_RAW2RGB);
+			}
+
+			if (SUCCESS(result)) {
+				result = ISPListMgr.StartById(listId);
+			}
+
+			result = ISPListMgr.DestoryAllList();
 
 			//Convert result from YUV to RGB for display and save.
 			cvtColor(dst, dst, COLOR_YCrCb2BGR, 0);
-			delete pIspList;
 		}
 
 		//Save the result
-		result = pImgFileManager->SaveBMP(dst.data, dst.channels());
+		if (SUCCESS(result)) {
+			result = pImgFileManager->SaveBMP(dst.data, dst.channels());
+		}
 
 		if (pParamManager) {
 			delete pParamManager;

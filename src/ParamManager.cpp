@@ -5,22 +5,24 @@
 
 //////////////////////////////////////////////////////////////////////////////////////
 // @file: ParamManager.cpp
-// @brief: ParamManager source file. Implement a parameter manager for ISP params.
+// @brief: ParamManager source file. ParamManager aims to manage multi params.
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "ParamManager.h"
 
 #include "Param_1920x1080_D65_1000Lux.h"
 
-ISP_Config_Params ISPConfigueParams{
-	/* 	BLC_PARAM  */	&BLCPARAM_1920x1080_D65_1000Lux,
-	/* 	LSC_PARAM  */	&LSCPARM_1920x1080_D65_1000Lux,
-	/* 	GCC_PARAM  */	&GCCPARAM_1920x1080_D65_1000Lux,
-	/* 	WB_PARM  */		&WBPARAM_1920x1080_D65_1000Lux,
-	/* 	CC_PARAM  */	&CCPARAM_1920x1080_D65_1000Lux,
-	/* 	GAMMA_PARAM  */	&GAMMAPARAM_1920x1080_D65_1000Lux,
-	/* 	WNR_PARAM  */	&WNRPARAM_1920x1080_D65_1000Lux,
-	/* 	EE_PARAM  */	&EEPARAM_1920x1080_D65_1000Lux,
+static ISP_Config_Params ISPConfigueParams[PARAM_INDEX_NUM] {
+	{
+		/* 	BLC_PARAM  */	&BLCPARAM_1920x1080_D65_1000Lux,
+		/* 	LSC_PARAM  */	&LSCPARM_1920x1080_D65_1000Lux,
+		/* 	GCC_PARAM  */	&GCCPARAM_1920x1080_D65_1000Lux,
+		/* 	WB_PARM  */		&WBPARAM_1920x1080_D65_1000Lux,
+		/* 	CC_PARAM  */	&CCPARAM_1920x1080_D65_1000Lux,
+		/* 	GAMMA_PARAM  */	&GAMMAPARAM_1920x1080_D65_1000Lux,
+		/* 	WNR_PARAM  */	&WNRPARAM_1920x1080_D65_1000Lux,
+		/* 	EE_PARAM  */	&EEPARAM_1920x1080_D65_1000Lux,
+	},
 };
 
 ISPParamManager::ISPParamManager()
@@ -78,14 +80,19 @@ ISPResult ISPParamManager::SelectParams(int32_t paramIndex)
 {
 	ISPResult result = ISP_SUCCESS;
 
-	switch (paramIndex) {
-	case PARAM_1920x1080_D65_1000Lux:
-		memcpy(&mISP_ConfigParams, &ISPConfigueParams, sizeof(ISP_Config_Params));
-		mState = PM_SELECTED;
-		break;
-	default:
+	if (paramIndex >= PARAM_INDEX_NUM) {
 		result = ISP_INVALID_PARAM;
-		ISPLoge("Failed to Select %d Params", paramIndex);
+		ISPLoge("Invaled param index:%d. %d", paramIndex, result);
+	}
+
+	if (SUCCESS(result)) {
+		memcpy(&mISP_ConfigParams,
+			&ISPConfigueParams[PARAM_1920x1080_D65_1000Lux + paramIndex],
+			sizeof(ISP_Config_Params));
+	}
+
+	if (SUCCESS(result)) {
+		mState = PM_SELECTED;
 	}
 
 	return result;

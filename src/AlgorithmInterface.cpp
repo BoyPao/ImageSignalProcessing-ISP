@@ -23,6 +23,7 @@ ISPResult ISPLibParamsInit(ISPParamManager* pPM, ...)
 	}
 
 	if (SUCCESS(result)) {
+		memset(&gISPLibParams, 0, sizeof(gISPLibParams));
 		result = pPM->GetImgInfo(&gISPLibParams);
 		if (!SUCCESS(result)) {
 			ISPLoge("Get image info failed. result:%d", result);
