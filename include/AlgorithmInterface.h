@@ -32,7 +32,8 @@
 #define ALIGN(x, align)									(align) ? (((x) + (align) - 1) & (~((align) - 1))) : (x)
 #define ALIGNx(pixelNum, bitspp, packaged, align)		ALIGN(PIXELS2WORDS(pixelNum, bitspp, packaged), align)
 
-ISPResult ISPLibParamsInit(ISPParamManager* pPM, ...);
+ISPResult ISPLibInit(ISPParamManager* pPM, ...);
+ISPResult InitISPCallbacks(ISP_CALLBACKS* pCbs);
 
 //Bayer Process
 ISPResult BlackLevelCorrection(void* data, ISPParamManager* pPM, ...);
@@ -51,3 +52,4 @@ ISPResult EdgeEnhancement(void* data, ISPParamManager* pPM, ...);
 //CST
 ISPResult Demosaic(void* src, void* dst, ISPParamManager* pPM, ...);
 ISPResult CST_RGB2YUV(void* src, void* dst, ISPParamManager* pPM, ...);
+ISPResult TailProcess(void* data, ISPParamManager* pPM, ...);

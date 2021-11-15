@@ -36,21 +36,22 @@
 #define ALIGNx(pixelNum, bitspp, packaged, align)		ALIGN(PIXELS2WORDS(pixelNum, bitspp, packaged), align)
 
 //Bayer Process
-void LIB_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-void LIB_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void Lib_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void Lib_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //RGB Process
-void LIB_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-void LIB_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-void LIB_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void Lib_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void Lib_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void Lib_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //YUVProcess
-void LIB_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-void LIB_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void Lib_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void Lib_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void Lib_TailProcess(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //CST
-void LIB_Demosaic	(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-void LIB_CST_RGB2YUV (void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void Lib_Demosaic	(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void Lib_CST_RGB2YUV (void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //Bayer Process
 BZResult BZ_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
@@ -64,6 +65,7 @@ BZResult BZ_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 //YUVProcess
 BZResult BZ_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 BZResult BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+BZResult BZ_TailProcess(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //CST
 BZResult BZ_Demosaic(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);

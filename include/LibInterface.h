@@ -89,31 +89,23 @@ struct ISP_CALLBACKS {
 
 struct LIB_FUNCS
 {
+	//Bayer Process
 	void (*LIB_BLC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_LSC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+
+	//RGB Process
 	void (*LIB_WB)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_CC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_Gamma)		(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+
+	//YUVProcess
 	void (*LIB_WNR)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_EE)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+	void (*LIB_TAIL)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+
+	//CST
 	void (*LIB_Demosaic)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_CST_RGB2YUV)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 };
 
-void RegisterISPLibFuncs();
-//Bayer Process
-void Lib_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ...);
-void Lib_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ...);
-
-//RGB Process
-void Lib_WhiteBalance(void* data, LIB_PARAMS* pParams, ...);
-void Lib_ColorCorrection(void* data, LIB_PARAMS* pParams, ...);
-void Lib_GammaCorrection(void* data, LIB_PARAMS* pParams, ...);
-
-//YUVProcess
-void Lib_WaveletNR(void* data, LIB_PARAMS* pParams, ...);
-void Lib_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ...);
-
-//CST
-void Lib_Demosaic(void* src, void* dst, LIB_PARAMS* pParams, ...);
-void Lib_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ...);
+void RegisterISPLibFuncs(LIB_FUNCS* pLibFuncs);

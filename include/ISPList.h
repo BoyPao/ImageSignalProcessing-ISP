@@ -28,6 +28,7 @@ const PROCESS_TYPE RgbNodeConfigure[] = {
 const PROCESS_TYPE YuvNodeConfigure[] = {
 	PROCESS_WNR,
 	PROCESS_EE,
+	PROCESS_TAIL,
 };
 
 template<typename T1, typename T2>
@@ -94,7 +95,7 @@ public:
 	ISPList(int32_t id);
 	~ISPList();
 	ISPResult Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, ISPParamManager* pPM);
-	ISPResult ConfigList(ISP_LIST_PROPERTY* pCfg);
+	ISPResult SetListConfig(ISP_LIST_PROPERTY* pCfg);
 	ISPResult FindNodePropertyIndex(PROCESS_TYPE type, int32_t* index);
 	ISPResult CreatISPList();
 	ISPResult AddNode(PROCESS_TYPE type);
@@ -260,8 +261,11 @@ ISPResult ISPNode<T1, T2>::Process(ISPParamManager* pPM)
 		case PROCESS_EE:
 			result = enable ? EdgeEnhancement(pInputBuffer, pPM) : ISP_SKIP;
 			break;
+		case PROCESS_TAIL:
+			//Convert result from YUV to RGB for display and save.
+			result = enable ? TailProcess(pInputBuffer, pPM) : ISP_SKIP;
+			break;
 		case PROCESS_HEAD:
-			result = ISPLibParamsInit(pPM);
 			break;
 		case PROCESS_CST_RAW2RGB:
 			result = Demosaic(pInputBuffer, pOutputBuffer, pPM, enable);
@@ -441,7 +445,7 @@ ISPResult ISPList<T1, T2, T3>::Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, ISPPa
 	}
 
 	if (SUCCESS(result)) {
-		RegisterISPLibFuncs();
+		result = ISPLibInit(pParamManager);
 	}
 
 	if (SUCCESS(result)) {
@@ -452,7 +456,7 @@ ISPResult ISPList<T1, T2, T3>::Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, ISPPa
 }
 
 template<typename T1, typename T2, typename T3>
-ISPResult ISPList<T1, T2, T3>::ConfigList(ISP_LIST_PROPERTY* pCfg)
+ISPResult ISPList<T1, T2, T3>::SetListConfig(ISP_LIST_PROPERTY* pCfg)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -550,7 +554,7 @@ ISPResult ISPList<T1, T2, T3>::CreateNecList()
 	if (mRawHead || mRgbHead || mYuvHead)
 	{
 		result = ISP_STATE_ERROR;
-		ISPLoge("List(%d) create new list failed! Old list exits! result:%d", mId, result);
+		ISPLoge("List(%d) create new list failed! Old head exits! result:%d", mId, result);
 	}
 
 	//Head node create
@@ -884,7 +888,7 @@ ISPResult ISPList<T1, T2, T3>::Process()
 
 	if (SUCCESS(result)) {
 		ISPLogd(">>>>> List(%d) Raw process finished! >>>>>", mId);
-		TriggerRgbProcess();
+		result = TriggerRgbProcess();
 	}
 
 	return result;
@@ -946,7 +950,7 @@ ISPResult ISPList<T1, T2, T3>::RgbProcess()
 
 	if (SUCCESS(result)) {
 		ISPLogd(">>>>> List(%d) Rgb process finished! >>>>>", mId);
-		TriggerYuvProcess();
+		result = TriggerYuvProcess();
 	}
 
 	return result;

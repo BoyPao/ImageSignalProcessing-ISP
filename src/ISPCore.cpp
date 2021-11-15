@@ -34,101 +34,140 @@ ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info);
 
 int main() {
 	ISPResult result = ISP_SUCCESS;
+
 	ISPParamManager* pParamManager = nullptr;
-	if (!pParamManager) {
-		pParamManager = new ISPParamManager;
-	}
-	IMG_INFO imgInfo = { 0 };
-	imgInfo.width		= 1920;
-	imgInfo.height		= 1080;
-	imgInfo.bitspp		= 10;
-	imgInfo.stride		= 0;
-	imgInfo.packaged	= true;
-	imgInfo.rawType		= RAW10_MIPI_BGGR;
-	pParamManager->SetIMGInfo(&imgInfo);
-
-	int32_t i, j;
-	int32_t numPixel = imgInfo.width * imgInfo.height;
-	int32_t alignedW = ALIGNx(imgInfo.width, imgInfo.bitspp, imgInfo.packaged, imgInfo.stride);
-	int32_t bufferSize = alignedW * imgInfo.height;
-	ISPLogi("(%d,%d) pixelNum:%d", imgInfo.width, imgInfo.height, numPixel);
-	ISPLogi("Align (%d,%d) bufferSize:%d", alignedW, imgInfo.height, bufferSize);
-
-	uint8_t* mipiRawData = new uint8_t[bufferSize];
-	uint16_t* rawData = new uint16_t[numPixel];
-	uint16_t* bgrData = new uint16_t[numPixel * 3];
-	uint16_t* bData = bgrData;
-	uint16_t* gData = bData + numPixel;
-	uint16_t* rData = gData + numPixel;
-	memset(bgrData, 0x0, numPixel * 3);
-	Mat dst(imgInfo.height, imgInfo.width, CV_8UC3, Scalar(0, 0, 0));
-
 	ImageFileManager* pImgFileManager = nullptr;
+	int32_t numPixel = 0;
+	int32_t alignedW = 0;
+	int32_t bufferSize = 0;
+	uint8_t* mipiRawData = nullptr;
+	uint16_t* rawData = nullptr;
+	uint16_t* bgrData = nullptr;
+	uint16_t* bData = nullptr;
+	uint16_t* gData = nullptr;
+	uint16_t* rData = nullptr;
+	Mat dst;
 	InputImgInfo inputInfo;
 	OutputImgInfo outputInfo;
 	char inputPath[FILE_PATH_MAX_SIZE] = { '\0' };
 	char outputPath[FILE_PATH_MAX_SIZE] = { '\0' };
-	strcpy(inputPath, INPUTPATH);
-	strcpy(outputPath, OUTPUTPATH);
-	inputInfo.pInputPath = inputPath;
-	outputInfo.pOutputPath = outputPath;
-	pParamManager->GetIMGDimension(&outputInfo.width, &outputInfo.hight);
-	
-	if (!pImgFileManager) {
-		pImgFileManager = new ImageFileManager;
+	IMG_INFO imgInfo = { 0 };
+
+	//Set raw info
+	imgInfo.width = 1920;
+	imgInfo.height = 1080;
+	imgInfo.bitspp = 10;
+	imgInfo.stride = 0;
+	imgInfo.packaged = true;
+	imgInfo.rawType = RAW10_MIPI_BGGR;
+
+	if (!pParamManager) {
+		pParamManager = new ISPParamManager;
 	}
-	pImgFileManager->Init();
-	pImgFileManager->SetInputImgInfo(inputInfo);
-	pImgFileManager->SetOutputImgInfo(outputInfo);
+	result = pParamManager->SetIMGInfo(&imgInfo);
 
-	result = pImgFileManager->ReadRawData(mipiRawData, bufferSize, Mipi10Bit);
 	if (SUCCESS(result)) {
-		//Mipi10 decode
+		strcpy(inputPath, INPUTPATH);
+		strcpy(outputPath, OUTPUTPATH);
+		inputInfo.pInputPath = inputPath;
+		outputInfo.pOutputPath = outputPath;
+		result = pParamManager->GetIMGDimension(&outputInfo.width, &outputInfo.hight);
+
+		if (!pImgFileManager) {
+			pImgFileManager = new ImageFileManager;
+		}
+		pImgFileManager->Init();
+		result = pImgFileManager->SetInputImgInfo(inputInfo);
+		result = pImgFileManager->SetOutputImgInfo(outputInfo);
+	}
+
+	if (SUCCESS(result)) {
+		numPixel = imgInfo.width * imgInfo.height;
+		alignedW = ALIGNx(imgInfo.width, imgInfo.bitspp, imgInfo.packaged, imgInfo.stride);
+		bufferSize = alignedW * imgInfo.height;
+		ISPLogi("(%d,%d) pixelNum:%d", imgInfo.width, imgInfo.height, numPixel);
+		ISPLogi("Align (%d,%d) bufferSize:%d", alignedW, imgInfo.height, bufferSize);
+
+		mipiRawData = new uint8_t[bufferSize];
+		rawData = new uint16_t[numPixel];
+		bgrData = new uint16_t[numPixel * 3];
+		bData = bgrData;
+		gData = bData + numPixel;
+		rData = gData + numPixel;
+		dst = Mat(imgInfo.height, imgInfo.width, CV_8UC3, Scalar(0, 0, 0));
+		if (mipiRawData && rawData && bgrData && !dst.empty()) {
+			memset(mipiRawData, 0x0, bufferSize);
+			memset(rawData, 0x0, numPixel);
+			memset(bgrData, 0x0, numPixel * 3);
+		}
+		else {
+			result = ISP_MEMORY_ERROR;
+			ISPLoge("Failed to alloc buffers!");
+		}
+	}
+
+	if (SUCCESS(result)) {
+		result = pImgFileManager->ReadRawData(mipiRawData, bufferSize, Mipi10Bit);
+	}
+
+	if (SUCCESS(result)) {
 		result = Mipi10decode((void*)mipiRawData, (void*)rawData, &imgInfo);
-		bool needISP = true;
+	}
 
-		if (SUCCESS(result) && needISP) {
-			ISPListManager ISPListMgr;
-			int32_t listId = 0;
-			result = ISPListMgr.Init(pParamManager);
+	if (SUCCESS(result)) {
+		ISPListManager ISPListMgr;
+		int32_t listId = 0;
+		result = ISPListMgr.Init(pParamManager);
 
-			if (SUCCESS(result)) {
-				result = ISPListMgr.CreateList(rawData, bgrData, dst.data, LIST_CFG_DEFAULT, &listId);
-			}
-
-			if (SUCCESS(result)) {
-				//Process steps can be switch on/off as you wish
-				//ISPListMgr.EnableNodebyType(listId, PROCESS_CC);
-				//ISPListMgr.DisableNodebyType(listId, PROCESS_CST_RAW2RGB);
-			}
-
-			if (SUCCESS(result)) {
-				result = ISPListMgr.StartById(listId);
-			}
-
-			result = ISPListMgr.DestoryAllList();
-
-			//Convert result from YUV to RGB for display and save.
-			cvtColor(dst, dst, COLOR_YCrCb2BGR, 0);
-		}
-
-		//Save the result
 		if (SUCCESS(result)) {
-			result = pImgFileManager->SaveBMP(dst.data, dst.channels());
+			result = ISPListMgr.CreateList(rawData, bgrData, dst.data, LIST_CFG_DEFAULT, &listId);
 		}
 
-		if (pParamManager) {
-			delete pParamManager;
+		if (SUCCESS(result)) {
+			//===================================================================
+			//|	Process steps can be switch on/off here as you wish				|
+			//|	eg: ISPListMgr.EnableNodebyType(listId, PROCESS_CC);			|
+			//|	eg: ISPListMgr.DisableNodebyType(listId, PROCESS_CST_RAW2RGB);	|
+			//===================================================================
 		}
-		if (pImgFileManager) {
-			delete pImgFileManager;
+
+		if (SUCCESS(result)) {
+			result = ISPListMgr.StartById(listId);
+			if (!SUCCESS(result)) {
+				ISPLoge("Failed to start list:%d %d", listId, result);
+			}
 		}
+
+		result = ISPListMgr.DestoryAllList();
+	}
+
+	if (SUCCESS(result)) {
+		result = pImgFileManager->SaveBMP(dst.data, dst.channels());
+	}
+
+	if (pParamManager) {
+		delete pParamManager;
+	}
+
+	if (pImgFileManager) {
+		delete pImgFileManager;
+	}
+
+	if (mipiRawData) {
 		delete[] mipiRawData;
-		delete[] rawData;
-		delete[] bgrData;
+	}
 
-		/*
+	if (rawData) {
+		delete[] rawData;
+	}
+
+	if (bgrData) {
+		delete[] bgrData;
+	}
+
+	if (SUCCESS(result)) {
 		//Show the result
+		/*
 		int32_t Imgsizex, Imgsizey;
 		int32_t Winsizex, Winsizey;
 		Winsizex = GetSystemMetrics(SM_CXSCREEN);
@@ -138,9 +177,15 @@ int main() {
 		namedWindow(RESNAME, 0);
 		resizeWindow(RESNAME, Imgsizex, Imgsizey);
 		imshow(RESNAME, dst);
-		waitKey(0);
+		waitKey(0); //for the possibility of interacting with window, keep the value as 0.
 		*/
 	}
+
+	if (!dst.empty()) {
+		dst.release();
+	}
+
+	int32_t i;
 	scanf("%d", &i);
 
 	return 0;

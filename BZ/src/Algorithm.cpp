@@ -22,7 +22,7 @@
 using namespace cv;
 
 //Bayer Process
-void LIB_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void Lib_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result= BZ_SUCCESS;
 
@@ -39,7 +39,7 @@ void LIB_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs
 	}
 }
 
-void LIB_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void Lib_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
 
@@ -57,7 +57,7 @@ void LIB_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 }
 
 //RGB Process
-void LIB_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void Lib_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
 
@@ -74,7 +74,7 @@ void LIB_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	}
 }
 
-void LIB_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void Lib_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
 
@@ -91,7 +91,7 @@ void LIB_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 	}
 }
 
-void LIB_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void Lib_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
 
@@ -109,7 +109,7 @@ void LIB_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 }
 
 //YUVProcess
-void LIB_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void Lib_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
 
@@ -126,7 +126,7 @@ void LIB_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	}
 }
 
-void LIB_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void Lib_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
 
@@ -144,7 +144,7 @@ void LIB_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 }
 
 //CST
-void LIB_Demosaic(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void Lib_Demosaic(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
 
@@ -167,7 +167,7 @@ void LIB_Demosaic(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 	}
 }
 
-void LIB_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void Lib_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
 
@@ -177,7 +177,29 @@ void LIB_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 	}
 
 	if (SUCCESS(result)) {
-		result = BZ_CST_RGB2YUV(src, dst, pParams, CBs);
+		bool enable = true;
+		va_list va;
+		va_start(va, CBs);
+		enable = static_cast<bool>(va_arg(va, int32_t));
+		va_end(va);
+		result = BZ_CST_RGB2YUV(src, dst, pParams, CBs, enable);
+		if (!SUCCESS(result)) {
+			BZLoge("Failed! result:%d", result);
+		}
+	}
+}
+
+void Lib_TailProcess(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+{
+	BZResult result = BZ_SUCCESS;
+
+	if (!pParams) {
+		result = BZ_INVALID_PARAM;
+		BZLoge("pParams is null!");
+	}
+
+	if (SUCCESS(result)) {
+		result = BZ_TailProcess(data, pParams, CBs);
 		if (!SUCCESS(result)) {
 			BZLoge("Failed! result:%d", result);
 		}
@@ -1212,6 +1234,29 @@ BZResult BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 	return result;
 }
 
+BZResult BZ_TailProcess(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+{
+	BZResult result = BZ_SUCCESS;
+	(void)CBs;
+
+	if (!data) {
+		result = BZ_INVALID_PARAM;
+		BZLoge("data is null! result:%d", result);
+	}
+
+	if (SUCCESS(result)) {
+		int32_t width, height;
+		width = pParams->info.width;
+		height = pParams->info.height;
+
+		Mat container(height, width, CV_8UC3, Scalar(0, 0, 0));
+		memcpy(container.data, data, width * height * container.channels());
+		cvtColor(container, container, COLOR_YCrCb2BGR, 0);
+		memcpy(data, container.data, width * height * container.channels());
+	}
+
+	return result;
+}
 
 BZResult ReadChannels(uint16_t* data, uint16_t* pChannel1, uint16_t* pChannel2, uint16_t* pChannel3, int32_t width, int32_t height)
 {
@@ -1497,10 +1542,15 @@ BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 	}
 
 	int32_t width, height;
+	bool enable = true;
 	width = pParams->info.width;
 	height = pParams->info.height;
 	BZLogd("width:%d height:%d", width, height);
-	
+	va_list va_param;
+	va_start(va_param, CBs);
+	enable = static_cast<bool>(va_arg(va_param, int32_t));
+	va_end(va_param);
+	BZLogd("enable:%d", enable);
 	uint16_t* bSrc = static_cast<uint16_t*>(src);
 	uint16_t* gSrc = static_cast<uint16_t*>(src) + width * height;
 	uint16_t* rSrc = static_cast<uint16_t*>(src) + 2 * width * height;
@@ -1537,7 +1587,9 @@ BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 				YUVdst.data[i * width * 3 + 3 * j + 2] = (unsigned int)r8bit[i * width + j];
 			}
 		}
-		cvtColor(YUVdst, YUVdst, COLOR_BGR2YCrCb, 0);
+		if (enable) {
+			cvtColor(YUVdst, YUVdst, COLOR_BGR2YCrCb, 0);
+		}
 		memcpy(dst, YUVdst.data, 3 * width * height);
 		YUVdst.release();
 	}

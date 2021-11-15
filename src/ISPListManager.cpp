@@ -78,7 +78,7 @@ ISPResult ISPListManager::CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pY
 	}
 
 	if (SUCCESS(result)) {
-		result = pIspList->ConfigList(&pISPListConfigs[LIST_CFG_DEFAULT + cfgIndex]);
+		result = pIspList->SetListConfig(&pISPListConfigs[LIST_CFG_DEFAULT + cfgIndex]);
 	}
 
 	if (SUCCESS(result)) {
@@ -161,7 +161,7 @@ ISPResult ISPListManager::StartById(int32_t id)
 
 	pIspList = FindListById(id);
 	if (pIspList) {
-		pIspList->Process();
+		result = pIspList->Process();
 	}
 	else {
 		result = ISP_INVALID_PARAM;

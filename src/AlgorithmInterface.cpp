@@ -12,14 +12,24 @@
 #include "LibInterface.h"
 
 static LIB_PARAMS gISPLibParams;
+static LIB_FUNCS gLibFuncs;
+static ISP_CALLBACKS gISPCallbacks;
 
-ISPResult ISPLibParamsInit(ISPParamManager* pPM, ...)
+ISPResult ISPLibInit(ISPParamManager* pPM, ...)
 {
 	ISPResult result = ISP_SUCCESS;
 
 	if (!pPM) {
 		result = ISP_INVALID_PARAM;
 		ISPLoge("ParamManager is null! result%d", result);
+	}
+
+	if (SUCCESS(result)) {
+		result = InitISPCallbacks(&gISPCallbacks);
+	}
+
+	if (SUCCESS(result)) {
+		RegisterISPLibFuncs(&gLibFuncs);
 	}
 
 	if (SUCCESS(result)) {
@@ -32,6 +42,21 @@ ISPResult ISPLibParamsInit(ISPParamManager* pPM, ...)
 
 	return result;
 }
+
+ISPResult InitISPCallbacks(ISP_CALLBACKS* pCbs)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!pCbs) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("cbs is null! result%d", result);
+	}
+
+	//TODO: add callbacks if need
+
+	return result;
+}
+
 
 //Bayer Process
 ISPResult BlackLevelCorrection(void* data, ISPParamManager* pPM, ...)
@@ -51,7 +76,13 @@ ISPResult BlackLevelCorrection(void* data, ISPParamManager* pPM, ...)
 	}
 
 	if (SUCCESS(result)) {
-		Lib_BlackLevelCorrection(data, &gISPLibParams);
+		if (gLibFuncs.LIB_BLC) {
+			gLibFuncs.LIB_BLC(data, &gISPLibParams, gISPCallbacks);
+		}
+		else {
+			result = ISP_FAILED;
+			ISPLoge("Lib function has not been registed!");
+		}
 	}
 
 	return result;
@@ -75,7 +106,13 @@ ISPResult LensShadingCorrection(void* data, ISPParamManager* pPM, ...)
 	}
 
 	if (SUCCESS(result)) {
-		Lib_LensShadingCorrection(data, &gISPLibParams);
+		if (gLibFuncs.LIB_LSC) {
+			gLibFuncs.LIB_LSC(data, &gISPLibParams, gISPCallbacks);
+		}
+		else {
+			result = ISP_FAILED;
+			ISPLoge("Lib function has not been registed!");
+		}
 	}
 
 	return result;
@@ -99,7 +136,13 @@ ISPResult WhiteBalance(void* data, ISPParamManager* pPM, ...)
 	}
 
 	if (SUCCESS(result)) {
-		Lib_WhiteBalance(data, &gISPLibParams);
+		if (gLibFuncs.LIB_WB) {
+			gLibFuncs.LIB_WB(data, &gISPLibParams, gISPCallbacks);
+		}
+		else {
+			result = ISP_FAILED;
+			ISPLoge("Lib function has not been registed!");
+		}
 	}
 
 	return result;
@@ -123,7 +166,13 @@ ISPResult ColorCorrection(void* data, ISPParamManager* pPM, ...)
 
 
 	if (SUCCESS(result)) {
-		Lib_ColorCorrection(data, &gISPLibParams);
+		if (gLibFuncs.LIB_CC) {
+			gLibFuncs.LIB_CC(data, &gISPLibParams, gISPCallbacks);
+		}
+		else {
+			result = ISP_FAILED;
+			ISPLoge("Lib function has not been registed!");
+		}
 	}
 
 	return result;
@@ -147,7 +196,13 @@ ISPResult GammaCorrection(void* data, ISPParamManager* pPM, ...)
 	}
 
 	if (SUCCESS(result)) {
-		Lib_GammaCorrection(data, &gISPLibParams);
+		if (gLibFuncs.LIB_Gamma) {
+			gLibFuncs.LIB_Gamma(data, &gISPLibParams, gISPCallbacks);
+		}
+		else {
+			result = ISP_FAILED;
+			ISPLoge("Lib function has not been registed!");
+		}
 	}
 
 	return result;
@@ -171,7 +226,13 @@ ISPResult WaveletNR(void* data, ISPParamManager* pPM, ...)
 	}
 
 	if (SUCCESS(result)) {
-		Lib_WaveletNR(data, &gISPLibParams);
+		if (gLibFuncs.LIB_WNR) {
+			gLibFuncs.LIB_WNR(data, &gISPLibParams, gISPCallbacks);
+		}
+		else {
+			result = ISP_FAILED;
+			ISPLoge("Lib function has not been registed!");
+		}
 	}
 
 	return result;
@@ -186,7 +247,6 @@ ISPResult EdgeEnhancement(void* data, ISPParamManager* pPM, ...)
 		ISPLoge("ParamManager is null! result%d", result);
 	}
 
-
 	if (SUCCESS(result)) {
 		result = pPM->GetEEParam(&gISPLibParams);
 		if (!SUCCESS(result)) {
@@ -195,7 +255,35 @@ ISPResult EdgeEnhancement(void* data, ISPParamManager* pPM, ...)
 	}
 
 	if (SUCCESS(result)) {
-		Lib_EdgeEnhancement(data, &gISPLibParams);
+		if (gLibFuncs.LIB_EE) {
+			gLibFuncs.LIB_EE(data, &gISPLibParams, gISPCallbacks);
+		}
+		else {
+			result = ISP_FAILED;
+			ISPLoge("Lib function has not been registed!");
+		}
+	}
+
+	return result;
+}
+
+ISPResult TailProcess(void* data, ISPParamManager* pPM, ...)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!pPM) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("ParamManager is null! result%d", result);
+	}
+
+	if (SUCCESS(result)) {
+		if (gLibFuncs.LIB_TAIL) {
+			gLibFuncs.LIB_TAIL(data, &gISPLibParams, gISPCallbacks);
+		}
+		else {
+			result = ISP_FAILED;
+			ISPLoge("Lib function has not been registed!");
+		}
 	}
 
 	return result;
@@ -216,7 +304,13 @@ ISPResult Demosaic(void* src, void* dst, ISPParamManager* pPM, ...)
 		va_start(va, pPM);
 		enable = static_cast<bool>(va_arg(va, int32_t));
 		va_end(va);
-		Lib_Demosaic(src, dst, &gISPLibParams);
+		if (gLibFuncs.LIB_Demosaic) {
+			gLibFuncs.LIB_Demosaic(src, dst, &gISPLibParams, gISPCallbacks, enable);
+		}
+		else {
+			result = ISP_FAILED;
+			ISPLoge("Lib function has not been registed!");
+		}
 	}
 
 	return result;
@@ -232,7 +326,18 @@ ISPResult CST_RGB2YUV(void* src, void* dst, ISPParamManager* pPM, ...)
 	}
 
 	if (SUCCESS(result)) {
-		Lib_CST_RGB2YUV(src, dst, &gISPLibParams);
+		bool enable = true;
+		va_list va;
+		va_start(va, pPM);
+		enable = static_cast<bool>(va_arg(va, int32_t));
+		va_end(va);
+		if (gLibFuncs.LIB_CST_RGB2YUV) {
+			gLibFuncs.LIB_CST_RGB2YUV(src, dst, &gISPLibParams, gISPCallbacks, enable);
+		}
+		else {
+			result = ISP_FAILED;
+			ISPLoge("Lib function has not been registed!");
+		}
 	}
 
 	return result;
