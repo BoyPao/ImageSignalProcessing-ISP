@@ -5,7 +5,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////
 // @file: ISPList.h
-// @brief: ISPList is a serial abstract object helps to construct processing 
+// @brief: ISPList is a serial abstract object helps to construct processing
 // steps more flexabl.
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -45,7 +45,7 @@ public:
 	virtual ISP_NODE_PROPERTY GetProperty();
 
 	ISPNode<T2,T2>* pNext;
-	
+
 protected:
 	ISP_NODE_PROPERTY mProperty;
 
@@ -57,7 +57,7 @@ private:
 };
 
 template<typename T1, typename T2>
-class ISPNecNode : public ISPNode<T1, T2> {   
+class ISPNecNode : public ISPNode<T1, T2> {
 public:
 	ISPResult Disable();
 private:
@@ -619,7 +619,7 @@ ISPResult ISPList<T1, T2, T3>::CreateRawList()
 	}
 
 	if (SUCCESS(result)) {
-		for (int32_t i = 0; i < sizeof(RawNodeConfigure) / sizeof(PROCESS_TYPE); i++) {
+		for (int32_t i = 0; i < (int32_t)(sizeof(RawNodeConfigure) / sizeof(PROCESS_TYPE)); i++) {
 			newNodeType = RawNodeConfigure[i];
 			pNewNode = new ISPNode<T1, T1>;
 			if (pNewNode) {
@@ -661,7 +661,7 @@ ISPResult ISPList<T1, T2, T3>::AddNodeToRawTail(ISPNode<T1, T1>* pNode)
 {
 	ISPResult result = ISP_SUCCESS;
 	ISPNode<T1, T1>* pTmp = mRawHead;
-	
+
 	if (mState != ISP_LIST_CONFIGED) {
 		result = ISP_STATE_ERROR;
 		ISPLoge("func called in invaled state:%d %d", mState, result);
@@ -699,7 +699,7 @@ ISPResult ISPList<T1, T2, T3>::CreateRgbList()
 	}
 
 	if (SUCCESS(result)) {
-		for (int32_t i = 0; i < sizeof(RgbNodeConfigure) / sizeof(PROCESS_TYPE); i++) {
+		for (int32_t i = 0; i < (int32_t)(sizeof(RgbNodeConfigure) / sizeof(PROCESS_TYPE)); i++) {
 			newNodeType = RgbNodeConfigure[i];
 			pNewNode = new ISPNode<T2, T2>;
 			if (pNewNode) {
@@ -743,7 +743,7 @@ ISPResult ISPList<T1, T2, T3>::AddNodeToRgbTail(ISPNode<T2, T2>* pNode)
 {
 	ISPResult result = ISP_SUCCESS;
 	ISPNode<T2, T2>* pTmp = mRgbHead->pNext;
-	
+
 	if (mState != ISP_LIST_CONFIGED) {
 		result = ISP_STATE_ERROR;
 		ISPLoge("func called in invaled state:%d %d", mState, result);
@@ -785,7 +785,7 @@ ISPResult ISPList<T1, T2, T3>::CreateYuvList()
 	}
 
 	if (SUCCESS(result)) {
-		for (int32_t i = 0; i < sizeof(YuvNodeConfigure) / sizeof(PROCESS_TYPE); i++) {
+		for (int32_t i = 0; i < (int32_t)(sizeof(YuvNodeConfigure) / sizeof(PROCESS_TYPE)); i++) {
 			newNodeType = YuvNodeConfigure[i];
 			pNewNode = new ISPNode<T3, T3>;
 			if (pNewNode) {
@@ -857,11 +857,11 @@ ISPResult ISPList<T1, T2, T3>::AddNodeToYuvTail(ISPNode<T3, T3>* pNode)
 }
 
 template<typename T1, typename T2, typename T3>
-ISPResult ISPList<T1, T2, T3>::Process() 
+ISPResult ISPList<T1, T2, T3>::Process()
 {
 	ISPResult result = ISP_SUCCESS;
 	ISPNode<T1, T1>* pNode = mRawHead;
-	
+
 	if (mState != ISP_LIST_CONSTRUCTED) {
 		result = ISP_STATE_ERROR;
 		ISPLoge("func called in invaled state:%d %d", mState, result);
@@ -981,7 +981,7 @@ ISPResult ISPList<T1, T2, T3>::TriggerYuvProcess()
 }
 
 template<typename T1, typename T2, typename T3>
-ISPResult ISPList<T1, T2, T3>::YuvProcess() 
+ISPResult ISPList<T1, T2, T3>::YuvProcess()
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -1022,7 +1022,6 @@ template<typename T1, typename T2, typename T3>
 ISPResult ISPList<T1, T2, T3>::EnableNodebyType(PROCESS_TYPE type)
 {
 	ISPResult result = ISP_SUCCESS;
-	LIST_TYPE listType = RAW_LIST;
 	bool needFind = true;
 
 	if (mState != ISP_LIST_CONSTRUCTED) {
@@ -1074,7 +1073,7 @@ ISPResult ISPList<T1, T2, T3>::EnableNodebyType(PROCESS_TYPE type)
 			result = EnableNecNodebyType(type);
 		}
 	}
-	
+
 	return result;
 }
 
@@ -1082,7 +1081,6 @@ template<typename T1, typename T2, typename T3>
 ISPResult ISPList<T1, T2, T3>::DisableNodebyType(PROCESS_TYPE type)
 {
 	ISPResult result = ISP_SUCCESS;
-	LIST_TYPE listType = RAW_LIST;
 	bool needFind = true;
 
 	if (mState != ISP_LIST_CONSTRUCTED) {

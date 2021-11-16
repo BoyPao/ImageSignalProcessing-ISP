@@ -11,9 +11,6 @@
 #include "../include/LibInterface.h"
 #include "../include/Algorithm.h"
 
-static LIB_FUNCS gLib_funcs = {nullptr};
-static ISP_CALLBACKS gISP_cbs = {nullptr};
-
 void RegisterISPLibFuncs(LIB_FUNCS* pLibFuncs)
 {
 	if (pLibFuncs) {

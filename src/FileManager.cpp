@@ -93,14 +93,14 @@ ISPResult ImageFileManager::SetOutputImgInfo(int32_t width, int32_t hight)
 	return result;
 }
 
-ISPResult ImageFileManager::ReadRawData(uint8_t* buffer, size_t bufferSize, ISPRawFormate formate)
+ISPResult ImageFileManager::ReadRawData(uint8_t* buffer, int32_t bufferSize, ISPRawFormate formate)
 {
 	ISPResult result = ISP_SUCCESS;
 
 	if (mState == Uninited) {
 		result = ISP_STATE_ERROR;
 	}
-	
+
 	if (SUCCESS(result)) {
 		ifstream OpenFile(mInputImg.pInputPath, ios::in | ios::binary);
 		if (OpenFile.fail()) {

@@ -43,9 +43,6 @@ int main() {
 	uint8_t* mipiRawData = nullptr;
 	uint16_t* rawData = nullptr;
 	uint16_t* bgrData = nullptr;
-	uint16_t* bData = nullptr;
-	uint16_t* gData = nullptr;
-	uint16_t* rData = nullptr;
 	Mat dst;
 	InputImgInfo inputInfo;
 	OutputImgInfo outputInfo;
@@ -91,9 +88,6 @@ int main() {
 		mipiRawData = new uint8_t[bufferSize];
 		rawData = new uint16_t[numPixel];
 		bgrData = new uint16_t[numPixel * 3];
-		bData = bgrData;
-		gData = bData + numPixel;
-		rData = gData + numPixel;
 		dst = Mat(imgInfo.height, imgInfo.width, CV_8UC3, Scalar(0, 0, 0));
 		if (mipiRawData && rawData && bgrData && !dst.empty()) {
 			memset(mipiRawData, 0x0, bufferSize);
@@ -208,23 +202,23 @@ ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info)
 			result = ISP_INVALID_PARAM;
 		}
 	}
-	
+
 	if (SUCCESS(result)) {
 		for (int32_t row = 0; row < info->height; row++) {
 			for (int32_t col = 0; col < alignedW; col += 5) {
 				if (col * BITS_PER_WORD / info->bitspp < info->width && row < info->height) {
 					static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp] =
 						((static_cast<uint8_t*>(src)[row * alignedW + col] & 0xffff) << leftShift) |
-						(static_cast<uint8_t*>(src)[row * alignedW + col + 4] & 0x3) & 0x3ff;
+						((static_cast<uint8_t*>(src)[row * alignedW + col + 4] & 0x3) & 0x3ff);
 					static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 1] =
 						((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0xffff) << leftShift) |
-						((static_cast<uint8_t*>(src)[row * alignedW + col + 4] >> 2) & 0x3) & 0x3ff;
+						(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] >> 2) & 0x3) & 0x3ff);
 					static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 2] =
 						((static_cast<uint8_t*>(src)[row * alignedW + col + 2] & 0xffff) << leftShift) |
-						((static_cast<uint8_t*>(src)[row * alignedW + col + 4] >> 4) & 0x3) & 0x3ff;
+						(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] >> 4) & 0x3) & 0x3ff);
 					static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 3] =
 						((static_cast<uint8_t*>(src)[row * alignedW + col + 3] & 0xffff) << leftShift) |
-						((static_cast<uint8_t*>(src)[row * alignedW + col + 4] >> 6) & 0x3) & 0x3ff;
+						(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] >> 6) & 0x3) & 0x3ff);
 				}
 			}
 		}

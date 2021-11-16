@@ -12,7 +12,7 @@
 #include "BZUtils.h"
 
 #define LOG_ON 1
-#define LOG_LEVEL 0x1 | 0x2 | 0x4 | 0x8
+#define LOG_LEVEL (0x1 + 0x2 + 0x4 + 0x8)
 
 #define LOG_BUFFER_SIZE				256
 #define LOG_BUFFER_PERSERVE_SIZE	2		//2 preserve for \0 and \n
