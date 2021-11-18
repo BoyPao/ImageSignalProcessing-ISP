@@ -119,6 +119,28 @@ ISPResult LensShadingCorrection(void* data, ISPParamManager* pPM, ...)
 }
 
 //RGB Process
+ISPResult Demosaic(void* data, ISPParamManager* pPM, ...)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!pPM) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("ParamManager is null! result%d", result);
+	}
+
+	if (SUCCESS(result)) {
+		if (gLibFuncs.LIB_Demosaic) {
+			gLibFuncs.LIB_Demosaic(data, &gISPLibParams, gISPCallbacks);
+		}
+		else {
+			result = ISP_FAILED;
+			ISPLoge("Lib function has not been registed!");
+		}
+	}
+
+	return result;
+}
+
 ISPResult WhiteBalance(void* data, ISPParamManager* pPM, ...)
 {
 	ISPResult result = ISP_SUCCESS;
@@ -267,29 +289,7 @@ ISPResult EdgeEnhancement(void* data, ISPParamManager* pPM, ...)
 	return result;
 }
 
-ISPResult TailProcess(void* data, ISPParamManager* pPM, ...)
-{
-	ISPResult result = ISP_SUCCESS;
-
-	if (!pPM) {
-		result = ISP_INVALID_PARAM;
-		ISPLoge("ParamManager is null! result%d", result);
-	}
-
-	if (SUCCESS(result)) {
-		if (gLibFuncs.LIB_TAIL) {
-			gLibFuncs.LIB_TAIL(data, &gISPLibParams, gISPCallbacks);
-		}
-		else {
-			result = ISP_FAILED;
-			ISPLoge("Lib function has not been registed!");
-		}
-	}
-
-	return result;
-}
-
-ISPResult Demosaic(void* src, void* dst, ISPParamManager* pPM, ...)
+ISPResult CST_RAW2RGB(void* src, void* dst, ISPParamManager* pPM, ...)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -304,8 +304,8 @@ ISPResult Demosaic(void* src, void* dst, ISPParamManager* pPM, ...)
 		va_start(va, pPM);
 		enable = static_cast<bool>(va_arg(va, int32_t));
 		va_end(va);
-		if (gLibFuncs.LIB_Demosaic) {
-			gLibFuncs.LIB_Demosaic(src, dst, &gISPLibParams, gISPCallbacks, enable);
+		if (gLibFuncs.LIB_CST_RAW2RGB) {
+			gLibFuncs.LIB_CST_RAW2RGB(src, dst, &gISPLibParams, gISPCallbacks, enable);
 		}
 		else {
 			result = ISP_FAILED;
@@ -342,3 +342,31 @@ ISPResult CST_RGB2YUV(void* src, void* dst, ISPParamManager* pPM, ...)
 
 	return result;
 }
+
+ISPResult CST_YUV2RGB(void* src, void* dst, ISPParamManager* pPM, ...)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!pPM) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("ParamManager is null! result%d", result);
+	}
+
+	if (SUCCESS(result)) {
+		bool enable = true;
+		va_list va;
+		va_start(va, pPM);
+		enable = static_cast<bool>(va_arg(va, int32_t));
+		va_end(va);
+		if (gLibFuncs.LIB_CST_YUV2RGB) {
+			gLibFuncs.LIB_CST_YUV2RGB(src, dst, &gISPLibParams, gISPCallbacks, enable);
+		}
+		else {
+			result = ISP_FAILED;
+			ISPLoge("Lib function has not been registed!");
+		}
+	}
+
+	return result;
+}
+

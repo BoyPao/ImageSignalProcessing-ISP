@@ -23,7 +23,7 @@ ISPState ImageFileManager::Init()
 ISPState ImageFileManager::Deinit()
 {
 	mInputImg.pInputPath = nullptr;
-	mInputImg.rawSize = 640 * 480; 
+	mInputImg.rawSize = 640 * 480;
 	mOutputImg.pOutputPath = nullptr;
 	mOutputImg.width = 640;
 	mOutputImg.hight = 480;
@@ -170,7 +170,7 @@ ISPResult ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dst
 	if (SUCCESS(result)) {
 		memcpy(dstData, srcData, channels * size);
 
-		//Convertion for the head & tail of data array  	
+		//Convertion for the head & tail of data array
 		while (j < channels * size - j) {
 			temp = dstData[channels * size - j - 1];
 			dstData[channels * size - j - 1] = dstData[j];

@@ -141,7 +141,7 @@ ISPResult ISPParamManager::GetBLCParam(LIB_PARAMS* pParams)
 	return result;
 }
 
-ISPResult ISPParamManager::GetLSCParam(LIB_PARAMS* pParams) 
+ISPResult ISPParamManager::GetLSCParam(LIB_PARAMS* pParams)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -300,7 +300,7 @@ ISPResult ISPParamManager::GetRawType(RAW_TYPE* pType)
 ISPResult ISPParamManager::GetBLCParam(uint16_t* offset)
 {
 	ISPResult result = ISP_SUCCESS;
-	
+
 	if (mState != PM_SELECTED) {
 		result = ISP_STATE_ERROR;
 		ISPLoge("Invalid param manager state:%d", mState);
@@ -539,7 +539,7 @@ ISPResult ISPParamManager::SetIMGHeight(int32_t* height)
 	return result;
 }
 
-ISPResult ISPParamManager::SetBLCParam(uint16_t* offset) 
+ISPResult ISPParamManager::SetBLCParam(uint16_t* offset)
 {
 	ISPResult result = ISP_SUCCESS;
 	return result;
@@ -576,13 +576,13 @@ ISPResult ISPParamManager::SetGAMMAPARAM(uint16_t* plut)
 	return result;
 }
 
-ISPResult ISPParamManager::SetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, int32_t* l3Threshold) 
+ISPResult ISPParamManager::SetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, int32_t* l3Threshold)
 {
 	ISPResult result = ISP_SUCCESS;
 	return result;
 }
 
-ISPResult ISPParamManager::SetEERPARAM(double* alph, int32_t* coreSize, int32_t* delta) 
+ISPResult ISPParamManager::SetEERPARAM(double* alph, int32_t* coreSize, int32_t* delta)
 {
 	ISPResult result = ISP_SUCCESS;
 	return result;

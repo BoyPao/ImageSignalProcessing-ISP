@@ -43,6 +43,7 @@ int main() {
 	uint8_t* mipiRawData = nullptr;
 	uint16_t* rawData = nullptr;
 	uint16_t* bgrData = nullptr;
+	uint8_t* yuvData = nullptr;
 	Mat dst;
 	InputImgInfo inputInfo;
 	OutputImgInfo outputInfo;
@@ -88,11 +89,13 @@ int main() {
 		mipiRawData = new uint8_t[bufferSize];
 		rawData = new uint16_t[numPixel];
 		bgrData = new uint16_t[numPixel * 3];
+		yuvData = new uint8_t[numPixel * 3];
 		dst = Mat(imgInfo.height, imgInfo.width, CV_8UC3, Scalar(0, 0, 0));
-		if (mipiRawData && rawData && bgrData && !dst.empty()) {
+		if (mipiRawData && rawData && bgrData && yuvData && !dst.empty()) {
 			memset(mipiRawData, 0x0, bufferSize);
 			memset(rawData, 0x0, numPixel);
 			memset(bgrData, 0x0, numPixel * 3);
+			memset(yuvData, 0x0, numPixel * 3);
 		}
 		else {
 			result = ISP_MEMORY_ERROR;
@@ -114,7 +117,7 @@ int main() {
 		result = ISPListMgr.Init(pParamManager);
 
 		if (SUCCESS(result)) {
-			result = ISPListMgr.CreateList(rawData, bgrData, dst.data, LIST_CFG_DEFAULT, &listId);
+			result = ISPListMgr.CreateList(rawData, bgrData, yuvData, dst.data, LIST_CFG_DEFAULT, &listId);
 		}
 
 		if (SUCCESS(result)) {
@@ -159,6 +162,10 @@ int main() {
 		delete[] bgrData;
 	}
 
+	if (yuvData) {
+		delete[] yuvData;
+	}
+
 	if (SUCCESS(result)) {
 		//Show the result
 		/*
@@ -185,7 +192,7 @@ int main() {
 	return 0;
 }
 
-ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info) 
+ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info)
 {
 	ISPResult result = ISP_SUCCESS;
 

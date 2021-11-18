@@ -38,11 +38,11 @@ ISPResult ISPListManager::Init(ISPParamManager* pPM)
 	return result;
 }
 
-ISPResult ISPListManager::CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pYUV, int32_t cfgIndex, int32_t *id)
+ISPResult ISPListManager::CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pYUV, uint8_t* pPOST, int32_t cfgIndex, int32_t *id)
 {
 	ISPResult result = ISP_SUCCESS;
 	int32_t listId = 0;
-	ISPList<uint16_t, uint16_t, uint8_t>* pIspList = nullptr;
+	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
 
 	if (cfgIndex >= LIST_CFG_NUM)
 	{
@@ -67,9 +67,9 @@ ISPResult ISPListManager::CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pY
 	}
 
 	if (SUCCESS(result)) {
-		pIspList = new ISPList<uint16_t, uint16_t, uint8_t>(listId);
+		pIspList = new ISPList<uint16_t, uint16_t, uint8_t, uint8_t>(listId);
 		if (pIspList) {
-			result = pIspList->Init(pRaw, pBGR, pYUV, pParamManager);
+			result = pIspList->Init(pRaw, pBGR, pYUV, pPOST, pParamManager);
 		}
 		else {
 			result = ISP_MEMORY_ERROR;
@@ -97,9 +97,9 @@ ISPResult ISPListManager::CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pY
 	return result;
 }
 
-ISPList<uint16_t, uint16_t, uint8_t>* ISPListManager::FindListById(int32_t id)
+ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* ISPListManager::FindListById(int32_t id)
 {
-	ISPList<uint16_t, uint16_t, uint8_t>* pIspList = nullptr;
+	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
 
 	if (mListMap.find(id) != mListMap.end()) {
 		pIspList = mListMap.find(id)->second;
@@ -114,7 +114,7 @@ ISPList<uint16_t, uint16_t, uint8_t>* ISPListManager::FindListById(int32_t id)
 ISPResult ISPListManager::DestoryAllList()
 {
 	ISPResult result = ISP_SUCCESS;
-	ISPList<uint16_t, uint16_t, uint8_t>* pIspList = nullptr;
+	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
 
 	while (mListMap.size()) {
 		pIspList = mListMap.begin()->second;
@@ -137,7 +137,7 @@ ISPResult ISPListManager::DestoryAllList()
 ISPResult ISPListManager::DestoryListbyId(int32_t id)
 {
 	ISPResult result = ISP_SUCCESS;
-	ISPList<uint16_t, uint16_t, uint8_t>* pIspList = nullptr;
+	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
 
 	pIspList = FindListById(id);
 	if (pIspList) {
@@ -157,7 +157,7 @@ ISPResult ISPListManager::DestoryListbyId(int32_t id)
 ISPResult ISPListManager::StartById(int32_t id)
 {
 	ISPResult result = ISP_SUCCESS;
-	ISPList<uint16_t, uint16_t, uint8_t>* pIspList = nullptr;
+	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
 
 	pIspList = FindListById(id);
 	if (pIspList) {
@@ -174,7 +174,7 @@ ISPResult ISPListManager::StartById(int32_t id)
 ISPResult ISPListManager::EnableNodebyType(int32_t id, PROCESS_TYPE type)
 {
 	ISPResult result = ISP_SUCCESS;
-	ISPList<uint16_t, uint16_t, uint8_t>* pIspList = nullptr;
+	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
 
 	pIspList = FindListById(id);
 	if (pIspList) {
@@ -190,8 +190,8 @@ ISPResult ISPListManager::EnableNodebyType(int32_t id, PROCESS_TYPE type)
 
 ISPResult ISPListManager::DisableNodebyType(int32_t id, PROCESS_TYPE type)
 {
-	ISPResult result = ISP_SUCCESS; 
-	ISPList<uint16_t, uint16_t, uint8_t>* pIspList = nullptr;
+	ISPResult result = ISP_SUCCESS;
+	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
 
 	pIspList = FindListById(id);
 	if (pIspList) {
@@ -201,6 +201,6 @@ ISPResult ISPListManager::DisableNodebyType(int32_t id, PROCESS_TYPE type)
 		result = ISP_INVALID_PARAM;
 		ISPLoge("Invaled index:%d. %d", id, result);
 	}
-	
+
 	return result;
 }

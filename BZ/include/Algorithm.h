@@ -40,6 +40,7 @@ void Lib_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs
 void Lib_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //RGB Process
+void Lib_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 void Lib_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 void Lib_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 void Lib_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
@@ -47,17 +48,18 @@ void Lib_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 //YUVProcess
 void Lib_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 void Lib_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-void Lib_TailProcess(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //CST
-void Lib_Demosaic	(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-void Lib_CST_RGB2YUV (void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void Lib_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void Lib_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void Lib_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //Bayer Process
 BZResult BZ_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //RGB Process
+BZResult BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 BZResult BZ_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 BZResult BZ_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 BZResult BZ_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
@@ -65,11 +67,11 @@ BZResult BZ_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 //YUVProcess
 BZResult BZ_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 BZResult BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-BZResult BZ_TailProcess(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 //CST
-BZResult BZ_Demosaic(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+BZResult BZ_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+BZResult BZ_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
 
 

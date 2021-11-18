@@ -57,6 +57,23 @@ void Lib_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 }
 
 //RGB Process
+void Lib_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+{
+	BZResult result = BZ_SUCCESS;
+
+	if (!pParams) {
+		result = BZ_INVALID_PARAM;
+		BZLoge("pParams is null!");
+	}
+
+	if (SUCCESS(result)) {
+		result = BZ_Demosaic(data, pParams, CBs);
+		if (!SUCCESS(result)) {
+			BZLoge("Failed! result:%d", result);
+		}
+	}
+}
+
 void Lib_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
@@ -144,7 +161,7 @@ void Lib_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 }
 
 //CST
-void Lib_Demosaic(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void Lib_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
 
@@ -159,8 +176,7 @@ void Lib_Demosaic(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 		va_start(va, CBs);
 		enable = static_cast<bool>(va_arg(va, int32_t));
 		va_end(va);
-
-		result = BZ_Demosaic(src, dst, pParams, CBs, enable);
+		result = BZ_CST_RAW2RGB(src, dst, pParams, CBs, enable);
 		if (!SUCCESS(result)) {
 			BZLoge("Failed! result:%d", result);
 		}
@@ -189,7 +205,7 @@ void Lib_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 	}
 }
 
-void Lib_TailProcess(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void Lib_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
 
@@ -199,7 +215,12 @@ void Lib_TailProcess(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	}
 
 	if (SUCCESS(result)) {
-		result = BZ_TailProcess(data, pParams, CBs);
+		bool enable = true;
+		va_list va;
+		va_start(va, CBs);
+		enable = static_cast<bool>(va_arg(va, int32_t));
+		va_end(va);
+		result = BZ_CST_YUV2RGB(src, dst, pParams, CBs, enable);
 		if (!SUCCESS(result)) {
 			BZLoge("Failed! result:%d", result);
 		}
@@ -321,9 +342,9 @@ BZResult BZ_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS 
 	return result;
 }
 
-float LSCinterpolation(int32_t WIDTH, int32_t HEIGHT, 
-	float LT, float RT, float LB, float RB, 
-	int32_t row, int32_t col) 
+float LSCinterpolation(int32_t WIDTH, int32_t HEIGHT,
+	float LT, float RT, float LB, float RB,
+	int32_t row, int32_t col)
 {
 	float TempT, TempB, result;
 	TempT = LT - (LT - RT) * (col % (WIDTH / (LSC_LUT_WIDTH - 1))) * (LSC_LUT_WIDTH - 1) / WIDTH;
@@ -336,12 +357,12 @@ BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS
 {
 	BZResult result = BZ_SUCCESS;
 	(void)CBs;
-	
+
 	if (!data) {
 		result = BZ_INVALID_PARAM;
 		BZLoge("data is null! result:%d", result);
 	}
-	
+
 	if (SUCCESS(result)) {
 		int32_t width, height;
 		LIB_RAW_TYPE rawType = LIB_RAW_TYPE_NUM;
@@ -375,7 +396,7 @@ BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS
 			BZLoge("Unsupported raw type:%d result:%d", rawType, result);
 			break;
 		}
-		
+
 		if (SUCCESS(result)) {
 			for (i = 0; i < height; i++) {
 				for (j = 0; j < width; j++) {
@@ -474,6 +495,201 @@ BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS
 
 	return result;
 }*/
+
+void FirstPixelInsertProcess(uint16_t* src, uint16_t* dst, int32_t width, int32_t height) 
+{
+	int32_t i, j;
+
+	for (i = 0; i < height; i++) {
+		for (j = 0; j < width; j++) {
+			if (i % 2 == 0 && j % 2 == 1) {
+				if (j == width - 1) {
+					dst[i * width + j] = src[i * width + j - 1];
+				}
+				else {
+					dst[i * width + j] = (src[i * width + j - 1] +
+						src[i * width + j + 1]) / 2;
+				}
+			}
+			if (i % 2 == 1 && j % 2 == 0) {
+				if (i == height - 1) {
+					dst[i * width + j] = src[(i - 1) * width + j];
+				}
+				else {
+					dst[i * width + j] = (src[(i - 1) * width + j] +
+						src[(i + 1) * width + j]) / 2;
+				}
+			}
+		}
+	}
+	for (i = 0; i < height; i++) {
+		for (j = 0; j < width; j++) {
+			if (i % 2 == 1 && j % 2 == 1) {
+				if (j < width - 1 && i < height - 1) {
+					dst[i * width + j] = (src[(i - 1) * width + j - 1] +
+						src[(i - 1) * width + j + 1] +
+						src[(i + 1) * width + j - 1] +
+						src[(i + 1) * width + j + 1]) / 4;
+				}
+				else if (i == height - 1 && j < width - 1) {
+					dst[i * width + j] = (src[(i - 1) * width + j - 1] +
+						src[(i - 1) * width + j + 1]) / 2;
+				}
+				else if (i < height - 1 && j == width - 1) {
+					dst[i * width + j] = (src[(i - 1) * width + j - 1] +
+						src[(i + 1) * width + j - 1]) / 2;
+				}
+				else {
+					dst[i * width + j] = src[(i - 1) * width + j - 1];
+				}
+
+			}
+		}
+	}
+	//cout << " First Pixel Insert Process finished " << endl;
+}
+
+void TwoGPixelInsertProcess(uint16_t* src, uint16_t* dst, int32_t width, int32_t height)
+{
+	int32_t i, j;
+	for (i = 0; i < height; i++) {
+		for (j = 0; j < width; j++) {
+			if (i == 0 && j == 0) {
+				dst[i * width + j] = (src[(i + 1) * width + j] +
+					src[i * width + j + 1]) / 2;
+			}
+			else if (i == 0 && j > 0 && j % 2 == 0) {
+				dst[i * width + j] = (src[i * width + j - 1] +
+					src[(i + 1) * width + j] +
+					src[i * width + j + 1]) / 3;
+			}
+			else if (i > 0 && j == 0 && i % 2 == 0) {
+				dst[i * width + j] = (src[(i - 1) * width + j] +
+					src[i * width + j + 1] +
+					src[(i + 1) * width + j]) / 3;
+			}
+			else if (i == height - 1 && j < width - 1 && j % 2 == 1) {
+				dst[i * width + j] = (src[i * width + j - 1] +
+					src[(i - 1) * width + j] +
+					src[i * width + j + 1]) / 3;
+			}
+			else if (i < height - 1 && j == width - 1 && i % 2 == 1) {
+				dst[i * width + j] = (src[(i - 1) * width + j] +
+					src[i * width + j - 1] +
+					src[(i + 1) * width + j]) / 3;
+			}
+			else if (i == height - 1 && j == width - 1) {
+				dst[i * width + j] = (src[(i - 1) * width + j] +
+					src[i * width + j - 1]) / 2;
+			}
+			else if ((i % 2 == 0 && j % 2 == 0) ||
+				(i % 2 == 1 && j % 2 == 1)) {
+				dst[i * width + j] = (src[i * width + j - 1] +
+					src[i * width + j + 1] +
+					src[(i - 1) * width + j] +
+					src[(i + 1) * width + j]) / 4;
+			}
+		}
+	}
+	//cout << " TWO Green Pixel Insert Process finished " << endl;
+}
+
+void LastPixelInsertProcess(uint16_t* src, uint16_t* dst , int32_t width, int32_t height) 
+{
+	int32_t i, j;
+	for (i = 0; i < height; i++) {
+		for (j = 0; j < width; j++) {
+			if (i % 2 == 1 && j % 2 == 0) {
+				if (j == 0) {
+					dst[i * width + j] = src[i * width + j + 1];
+				}
+				else {
+					dst[i * width + j] = (src[i * width + j - 1] +
+						src[i * width + j + 1]) / 2;
+				}
+			}
+			if (i % 2 == 0 && j % 2 == 1) {
+				if (i == 0) {
+					dst[i * width + j] = src[(i + 1) * width + j];
+				}
+				else {
+					dst[i * width + j] = (src[(i - 1) * width + j] +
+						src[(i + 1) * width + j]) / 2;
+				}
+			}
+		}
+	}
+	for (i = 0; i < height; i++) {
+		for (j = 0; j < width; j++) {
+			if (i % 2 == 0 && j % 2 == 0) {
+				if (i > 0 && j > 0) {
+					dst[i * width + j] = (src[(i - 1) * width + j - 1] +
+						src[(i - 1) * width + j + 1] +
+						src[(i + 1) * width + j - 1] +
+						src[(i + 1) * width + j + 1]) / 4;
+				}
+				else if (i == 0 && j > 0) {
+					dst[i * width + j] = (src[(i + 1) * width + j - 1] +
+						src[(i + 1) * width + j + 1]) / 2;
+				}
+				else if (i > 0 && j == 0) {
+					dst[i * width + j] = (src[(i - 1) * width + j + 1] +
+						src[(i + 1) * width + j + 1]) / 2;
+				}
+				else {
+					dst[i * width + j] = src[(i + 1) * width + j + 1];
+				}
+			}
+		}
+	}
+	//cout << " Last Pixel Insert Process finished " << endl;
+}
+
+BZResult BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+{
+	BZResult result = BZ_SUCCESS;
+	(void)CBs;
+
+	if (!data) {
+		result = BZ_INVALID_PARAM;
+		BZLoge("data is null! result:%d", result);
+	}
+
+	int32_t width, height;
+	LIB_RAW_TYPE rawType = LIB_RAW_TYPE_NUM;
+	width = pParams->info.width;
+	height = pParams->info.height;
+	rawType = pParams->info.rawType;
+	BZLogd("width:%d height:%d type:%d", width, height, rawType);
+	uint16_t* pChannel1 = nullptr;
+	uint16_t* pChannel2 = nullptr;
+	uint16_t* pChannel3 = nullptr;
+	switch (rawType) {
+	case LIB_RAW10_MIPI_RGGB:
+	case LIB_RAW10_UNPACKAGED_RGGB:
+		pChannel3 = static_cast<uint16_t*>(data);
+		pChannel2 = static_cast<uint16_t*>(data) + width * height;
+		pChannel1 = static_cast<uint16_t*>(data) + 2 * width * height;
+		break;
+	case LIB_RAW10_MIPI_BGGR:
+	case LIB_RAW10_UNPACKAGED_BGGR:
+		pChannel1 = static_cast<uint16_t*>(data);
+		pChannel2 = static_cast<uint16_t*>(data) + width * height;
+		pChannel3 = static_cast<uint16_t*>(data) + 2 * width * height;
+		break;
+	default:
+		result = BZ_INVALID_PARAM;
+		BZLoge("Unsupported raw type:%d result:%d", rawType, result);
+		break;
+	}
+	if (SUCCESS(result)) {
+		FirstPixelInsertProcess(pChannel1, pChannel1, width, height);
+		TwoGPixelInsertProcess(pChannel2, pChannel2, width, height);
+		LastPixelInsertProcess(pChannel3, pChannel3, width, height);
+	}
+
+	return result;
+}
 
 BZResult BZ_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
@@ -764,7 +980,7 @@ Mat WDT(const Mat& _src, WAVELET_TYPE type, const int _level)
 		IplImage dstImg2 = IplImage(dst);
 		cvSaveImage("dst2.jpg", &dstImg2);
 #endif
-		//更新 
+		//更新
 		row /= 2;
 		col /= 2;
 		t++;
@@ -777,7 +993,7 @@ Mat WDT(const Mat& _src, WAVELET_TYPE type, const int _level)
 
 
 Mat getim(Mat src, int32_t WIDTH, int32_t HEIGHT,
-	int depth, int channel, 
+	int depth, int channel,
 	int strength1, int strength2, int strength3)
 {
 	int i, j;
@@ -1234,30 +1450,6 @@ BZResult BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 	return result;
 }
 
-BZResult BZ_TailProcess(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
-{
-	BZResult result = BZ_SUCCESS;
-	(void)CBs;
-
-	if (!data) {
-		result = BZ_INVALID_PARAM;
-		BZLoge("data is null! result:%d", result);
-	}
-
-	if (SUCCESS(result)) {
-		int32_t width, height;
-		width = pParams->info.width;
-		height = pParams->info.height;
-
-		Mat container(height, width, CV_8UC3, Scalar(0, 0, 0));
-		memcpy(container.data, data, width * height * container.channels());
-		cvtColor(container, container, COLOR_YCrCb2BGR, 0);
-		memcpy(data, container.data, width * height * container.channels());
-	}
-
-	return result;
-}
-
 BZResult ReadChannels(uint16_t* data, uint16_t* pChannel1, uint16_t* pChannel2, uint16_t* pChannel3, int32_t width, int32_t height)
 {
 	BZResult result = BZ_SUCCESS;
@@ -1292,156 +1484,7 @@ BZResult ReadChannels(uint16_t* data, uint16_t* pChannel1, uint16_t* pChannel2, 
 	return result;
 }
 
-void FirstPixelInsertProcess(uint16_t* src, uint16_t* dst, int32_t width, int32_t height) 
-{
-	int32_t i, j;
-
-	for (i = 0; i < height; i++) {
-		for (j = 0; j < width; j++) {
-			if (i % 2 == 0 && j % 2 == 1) {
-				if (j == width - 1) {
-					dst[i * width + j] = src[i * width + j - 1];
-				}
-				else {
-					dst[i * width + j] = (src[i * width + j - 1] +
-						src[i * width + j + 1]) / 2;
-				}
-			}
-			if (i % 2 == 1 && j % 2 == 0) {
-				if (i == height - 1) {
-					dst[i * width + j] = src[(i - 1) * width + j];
-				}
-				else {
-					dst[i * width + j] = (src[(i - 1) * width + j] +
-						src[(i + 1) * width + j]) / 2;
-				}
-			}
-		}
-	}
-	for (i = 0; i < height; i++) {
-		for (j = 0; j < width; j++) {
-			if (i % 2 == 1 && j % 2 == 1) {
-				if (j < width - 1 && i < height - 1) {
-					dst[i * width + j] = (src[(i - 1) * width + j - 1] +
-						src[(i - 1) * width + j + 1] +
-						src[(i + 1) * width + j - 1] +
-						src[(i + 1) * width + j + 1]) / 4;
-				}
-				else if (i == height - 1 && j < width - 1) {
-					dst[i * width + j] = (src[(i - 1) * width + j - 1] +
-						src[(i - 1) * width + j + 1]) / 2;
-				}
-				else if (i < height - 1 && j == width - 1) {
-					dst[i * width + j] = (src[(i - 1) * width + j - 1] +
-						src[(i + 1) * width + j - 1]) / 2;
-				}
-				else {
-					dst[i * width + j] = src[(i - 1) * width + j - 1];
-				}
-
-			}
-		}
-	}
-	//cout << " First Pixel Insert Process finished " << endl;
-}
-
-void TwoGPixelInsertProcess(uint16_t* src, uint16_t* dst, int32_t width, int32_t height)
-{
-	int32_t i, j;
-	for (i = 0; i < height; i++) {
-		for (j = 0; j < width; j++) {
-			if (i == 0 && j == 0) {
-				dst[i * width + j] = (src[(i + 1) * width + j] +
-					src[i * width + j + 1]) / 2;
-			}
-			else if (i == 0 && j > 0 && j % 2 == 0) {
-				dst[i * width + j] = (src[i * width + j - 1] +
-					src[(i + 1) * width + j] +
-					src[i * width + j + 1]) / 3;
-			}
-			else if (i > 0 && j == 0 && i % 2 == 0) {
-				dst[i * width + j] = (src[(i - 1) * width + j] +
-					src[i * width + j + 1] +
-					src[(i + 1) * width + j]) / 3;
-			}
-			else if (i == height - 1 && j < width - 1 && j % 2 == 1) {
-				dst[i * width + j] = (src[i * width + j - 1] +
-					src[(i - 1) * width + j] +
-					src[i * width + j + 1]) / 3;
-			}
-			else if (i < height - 1 && j == width - 1 && i % 2 == 1) {
-				dst[i * width + j] = (src[(i - 1) * width + j] +
-					src[i * width + j - 1] +
-					src[(i + 1) * width + j]) / 3;
-			}
-			else if (i == height - 1 && j == width - 1) {
-				dst[i * width + j] = (src[(i - 1) * width + j] +
-					src[i * width + j - 1]) / 2;
-			}
-			else if ((i % 2 == 0 && j % 2 == 0) ||
-				(i % 2 == 1 && j % 2 == 1)) {
-				dst[i * width + j] = (src[i * width + j - 1] +
-					src[i * width + j + 1] +
-					src[(i - 1) * width + j] +
-					src[(i + 1) * width + j]) / 4;
-			}
-		}
-	}
-	//cout << " TWO Green Pixel Insert Process finished " << endl;
-}
-
-void LastPixelInsertProcess(uint16_t* src, uint16_t* dst , int32_t width, int32_t height) 
-{
-	int32_t i, j;
-	for (i = 0; i < height; i++) {
-		for (j = 0; j < width; j++) {
-			if (i % 2 == 1 && j % 2 == 0) {
-				if (j == 0) {
-					dst[i * width + j] = src[i * width + j + 1];
-				}
-				else {
-					dst[i * width + j] = (src[i * width + j - 1] +
-						src[i * width + j + 1]) / 2;
-				}
-			}
-			if (i % 2 == 0 && j % 2 == 1) {
-				if (i == 0) {
-					dst[i * width + j] = src[(i + 1) * width + j];
-				}
-				else {
-					dst[i * width + j] = (src[(i - 1) * width + j] +
-						src[(i + 1) * width + j]) / 2;
-				}
-			}
-		}
-	}
-	for (i = 0; i < height; i++) {
-		for (j = 0; j < width; j++) {
-			if (i % 2 == 0 && j % 2 == 0) {
-				if (i > 0 && j > 0) {
-					dst[i * width + j] = (src[(i - 1) * width + j - 1] +
-						src[(i - 1) * width + j + 1] +
-						src[(i + 1) * width + j - 1] +
-						src[(i + 1) * width + j + 1]) / 4;
-				}
-				else if (i == 0 && j > 0) {
-					dst[i * width + j] = (src[(i + 1) * width + j - 1] +
-						src[(i + 1) * width + j + 1]) / 2;
-				}
-				else if (i > 0 && j == 0) {
-					dst[i * width + j] = (src[(i - 1) * width + j + 1] +
-						src[(i + 1) * width + j + 1]) / 2;
-				}
-				else {
-					dst[i * width + j] = src[(i + 1) * width + j + 1];
-				}
-			}
-		}
-	}
-	//cout << " Last Pixel Insert Process finished " << endl;
-}
-
-BZResult BZ_Demosaic(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+BZResult BZ_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
 
@@ -1452,16 +1495,10 @@ BZResult BZ_Demosaic(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 
 	int32_t width, height;
 	LIB_RAW_TYPE rawType = LIB_RAW_TYPE_NUM;
-	bool enable = true;
 	width = pParams->info.width;
 	height = pParams->info.height;
 	rawType = pParams->info.rawType;
 	BZLogd("width:%d height:%d type:%d", width, height, rawType);
-	va_list va_param;
-	va_start(va_param, CBs);
-	enable = static_cast<bool>(va_arg(va_param, int32_t));
-	va_end(va_param);
-	BZLogd("enable:%d", enable);
 	uint16_t* pChannel1 = nullptr;
 	uint16_t* pChannel2 = nullptr;
 	uint16_t* pChannel3 = nullptr;
@@ -1493,17 +1530,6 @@ BZResult BZ_Demosaic(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 		DumpImgDataAsText((void*)gData, height, width, sizeof(uint16_t), DUMP_PATH);
 	}
 #endif
-
-	if (SUCCESS(result)) {
-		if (enable) {
-			FirstPixelInsertProcess(static_cast<uint16_t*>(src), pChannel1, width, height);
-			TwoGPixelInsertProcess(static_cast<uint16_t*>(src), pChannel2, width, height);
-			LastPixelInsertProcess(static_cast<uint16_t*>(src), pChannel3, width, height);
-		}
-	}
-	else {
-		BZLoge("Failed to channels read data!");
-	}
 
 	return result;
 }
@@ -1600,3 +1626,28 @@ BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 
 	return result;
 }
+
+BZResult BZ_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+{
+	BZResult result = BZ_SUCCESS;
+	(void)CBs;
+
+	if (!src) {
+		result = BZ_INVALID_PARAM;
+		BZLoge("data is null! result:%d", result);
+	}
+
+	if (SUCCESS(result)) {
+		int32_t width, height;
+		width = pParams->info.width;
+		height = pParams->info.height;
+
+		Mat container(height, width, CV_8UC3, Scalar(0, 0, 0));
+		memcpy(container.data, src, width * height * container.channels());
+		cvtColor(container, container, COLOR_YCrCb2BGR, 0);
+		memcpy(dst, container.data, width * height * container.channels());
+	}
+
+	return result;
+}
+

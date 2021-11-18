@@ -94,6 +94,7 @@ struct LIB_FUNCS
 	void (*LIB_LSC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 
 	//RGB Process
+	void (*LIB_Demosaic)	(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_WB)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_CC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_Gamma)		(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
@@ -101,11 +102,11 @@ struct LIB_FUNCS
 	//YUVProcess
 	void (*LIB_WNR)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_EE)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-	void (*LIB_TAIL)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 
 	//CST
-	void (*LIB_Demosaic)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+	void (*LIB_CST_RAW2RGB)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_CST_RGB2YUV)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+	void (*LIB_CST_YUV2RGB)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 };
 
 void RegisterISPLibFuncs(LIB_FUNCS* pLibFuncs);

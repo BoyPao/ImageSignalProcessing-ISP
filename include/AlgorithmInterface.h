@@ -40,6 +40,7 @@ ISPResult BlackLevelCorrection(void* data, ISPParamManager* pPM, ...);
 ISPResult LensShadingCorrection(void* data, ISPParamManager* pPM, ...);
 
 //RGB Process
+ISPResult Demosaic(void* data, ISPParamManager* pPM, ...);
 ISPResult WhiteBalance(void* data, ISPParamManager* pPM, ...);
 ISPResult WhiteBalance(void* data, ISPParamManager* pPM, ...);
 ISPResult ColorCorrection(void* data, ISPParamManager* pPM, ...);
@@ -50,6 +51,6 @@ ISPResult WaveletNR(void* data, ISPParamManager* pPM, ...);
 ISPResult EdgeEnhancement(void* data, ISPParamManager* pPM, ...);
 
 //CST
-ISPResult Demosaic(void* src, void* dst, ISPParamManager* pPM, ...);
+ISPResult CST_RAW2RGB(void* src, void* dst, ISPParamManager* pPM, ...);
 ISPResult CST_RGB2YUV(void* src, void* dst, ISPParamManager* pPM, ...);
-ISPResult TailProcess(void* data, ISPParamManager* pPM, ...);
+ISPResult CST_YUV2RGB(void* src, void* dst, ISPParamManager* pPM, ...);
