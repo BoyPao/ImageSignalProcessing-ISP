@@ -1,10 +1,18 @@
-#include "ISPListManager.h"
+//////////////////////////////////////////////////////////////////////////////////////
+// Author: Peng Hao <635945005@qq.com>
+// License: GPL
+//////////////////////////////////////////////////////////////////////////////////////
 
-ISP_LIST_PROPERTY gISPListConfigs[LIST_CFG_NUM] = {
-	{
-		sizeof(DefaultNodesConfigure) / sizeof(ISP_NODE_PROPERTY),
-		DefaultNodesConfigure
-	},
+//////////////////////////////////////////////////////////////////////////////////////
+// @file: ISPListManager.cpp
+// @brief: Source file of ISPListManager.
+//////////////////////////////////////////////////////////////////////////////////////
+
+#include "ISPListManager.h"
+#include "ISPListConfig.h"
+
+ISP_LIST_PROPERTY* gISPListConfigs[LIST_CFG_NUM] = {
+	&DefaultListConfigure
 };
 
 ISPListManager::ISPListManager():
@@ -32,7 +40,7 @@ ISPResult ISPListManager::Init(ISPParamManager* pPM)
 	}
 
 	if (SUCCESS(result)) {
-		pISPListConfigs = gISPListConfigs;
+		pISPListConfigs = gISPListConfigs[LIST_CFG_DEFAULT];
 	}
 
 	return result;

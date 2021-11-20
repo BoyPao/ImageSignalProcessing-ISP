@@ -9,7 +9,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "AlgorithmInterface.h"
-#include "LibInterface.h"
+#include "../BZ/include/LibInterface.h"
 
 static LIB_PARAMS gISPLibParams;
 static LIB_FUNCS gLibFuncs;

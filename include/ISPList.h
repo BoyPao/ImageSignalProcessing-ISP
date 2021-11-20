@@ -12,26 +12,30 @@
 #pragma once
 
 #include "AlgorithmInterface.h"
-#include "ISPListConfig.h"
 
-const PROCESS_TYPE RawNodeConfigure[] = {
-	PROCESS_BLC,
+#define NODE_NAME_MAX_SZIE 15
+
+enum PROCESS_TYPE {
+	PROCESS_BLC = 0,
 	PROCESS_LSC,
-};
-
-const PROCESS_TYPE RgbNodeConfigure[] = {
 	PROCESS_Demosaic,
 	PROCESS_WB,
 	PROCESS_CC,
 	PROCESS_GAMMA,
-};
-
-const PROCESS_TYPE YuvNodeConfigure[] = {
 	PROCESS_WNR,
 	PROCESS_EE,
+	PROCESS_TYPE_NUM
 };
 
-const PROCESS_TYPE PostNodeConfigure[] = {
+enum NODE_SWITCH {
+	NODE_OFF = 0,
+	NODE_ON
+};
+
+struct ISP_NODE_PROPERTY {
+	char name[NODE_NAME_MAX_SZIE];
+	PROCESS_TYPE type;
+	NODE_SWITCH enable;
 };
 
 template<typename T1, typename T2>
@@ -224,13 +228,6 @@ struct ISP_NECNODE_PROPERTY {
 	NODE_SWITCH enable;
 };
 
-static ISP_NECNODE_PROPERTY gNecNodesConfigure[] = {
-	{"HEAD",			NEC_PROCESS_HEAD,			NODE_ON},
-	{"CST_RAW2RGB",	    NEC_PROCESS_CST_RAW2RGB,	NODE_ON},
-	{"CST_RGB2YUV",		NEC_PROCESS_CST_RGB2YUV,	NODE_ON},
-	{"CST_YUV2RGB",		NEC_PROCESS_CST_YUV2RGB,	NODE_ON},
-};
-
 template<typename T1, typename T2>
 class ISPNecNode : public ISPNode<T1, T2> {
 public:
@@ -355,11 +352,6 @@ ISPResult ISPNecNode<T1, T2>::Disable()
 }
 
 /* Node List */
-struct ISP_LIST_PROPERTY {
-	int32_t nodeNum;
-	ISP_NODE_PROPERTY* pNodeConfig;
-};
-
 enum ISP_LIST_STATE {
 	ISP_LIST_NEW = 0,
 	ISP_LIST_INITED,
@@ -374,15 +366,41 @@ enum STATE_TRANS_ORIENTATION {
 	STATE_TRANS_TO_SELF
 };
 
-/*
-enum LIST_TYPE {
-	RAW_LIST,
-	RGB_LIST,
-	YUV_LIST,
-	POST_LIST,
-	LIST_TYPE_NUM
+struct ISP_LIST_PROPERTY {
+	ISP_NODE_PROPERTY NodeProperty[PROCESS_TYPE_NUM];
 };
-*/
+
+struct ISP_LISTHEAD_PROPERTY {
+	ISP_NECNODE_PROPERTY NecNodeProperty[NEC_PROCESS_TYPE_NUM - NEC_PROCESS_HEAD];
+};
+
+static ISP_LISTHEAD_PROPERTY gListHeadsConfigure = {
+	{{"HEAD",			NEC_PROCESS_HEAD,			NODE_ON},
+	 {"CST_RAW2RGB",	NEC_PROCESS_CST_RAW2RGB,	NODE_ON},
+	 {"CST_RGB2YUV",	NEC_PROCESS_CST_RGB2YUV,	NODE_ON},
+	 {"CST_YUV2RGB",	NEC_PROCESS_CST_YUV2RGB,	NODE_ON}}
+};
+
+const PROCESS_TYPE RawListConfigure[] = {
+	PROCESS_BLC,
+	PROCESS_LSC,
+};
+
+const PROCESS_TYPE RgbListConfigure[] = {
+	PROCESS_Demosaic,
+	PROCESS_WB,
+	PROCESS_CC,
+	PROCESS_GAMMA,
+};
+
+const PROCESS_TYPE YuvListConfigure[] = {
+	PROCESS_WNR,
+	PROCESS_EE,
+};
+
+const PROCESS_TYPE PostListConfigure[] = {
+};
+
 
 template<typename T1, typename T2, typename T3, typename T4>
 class ISPList {
@@ -632,9 +650,9 @@ ISPResult ISPList<T1, T2, T3, T4>::FindNodePropertyIndex(PROCESS_TYPE type, int3
 	ISPResult result = ISP_SUCCESS;
 
 	if (index) {
-		for (int32_t i = 0; i < mProperty.nodeNum; i++)
+		for (int32_t i = 0; i < PROCESS_TYPE_NUM; i++)
 		{
-			if (type == mProperty.pNodeConfig[i].type)
+			if (type == mProperty.NodeProperty[i].type)
 			{
 				*index = i;
 				break;
@@ -657,7 +675,7 @@ ISPResult ISPList<T1, T2, T3, T4>::FindNecNodePropertyIndex(NEC_PROCESS_TYPE typ
 	if (index) {
 		for (int32_t i = 0; i < NEC_PROCESS_TYPE_NUM - NEC_PROCESS_HEAD; i++)
 		{
-			if (type == gNecNodesConfigure[i].type)
+			if (type == gListHeadsConfigure.NecNodeProperty[i].type)
 			{
 				*index = i;
 				break;
@@ -733,7 +751,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateNecList()
 		FindNecNodePropertyIndex(NEC_PROCESS_HEAD, &nodePropertyIndex);
 		mRawHead = new ISPNecNode<T1, T1>;
 		if (mRawHead) {
-			mRawHead->Init(&gNecNodesConfigure[nodePropertyIndex], pRawBuffer, pRawBuffer);
+			mRawHead->Init(&gListHeadsConfigure.NecNodeProperty[nodePropertyIndex], pRawBuffer, pRawBuffer);
 			mNodeNum++;
 		}
 		else {
@@ -747,7 +765,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateNecList()
 		FindNecNodePropertyIndex(NEC_PROCESS_CST_RAW2RGB, &nodePropertyIndex);
 		mRgbHead = new ISPNecNode<T1, T2>;
 		if (mRgbHead) {
-			mRgbHead->Init(&gNecNodesConfigure[nodePropertyIndex], pRawBuffer, pRgbBuffer);
+			mRgbHead->Init(&gListHeadsConfigure.NecNodeProperty[nodePropertyIndex], pRawBuffer, pRgbBuffer);
 			mNodeNum++;
 		}
 		else {
@@ -761,7 +779,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateNecList()
 		FindNecNodePropertyIndex(NEC_PROCESS_CST_RGB2YUV, &nodePropertyIndex);
 		mYuvHead = new ISPNecNode<T2, T3>;
 		if (mYuvHead) {
-			mYuvHead->Init(&gNecNodesConfigure[nodePropertyIndex], pRgbBuffer, pYuvBuffer);
+			mYuvHead->Init(&gListHeadsConfigure.NecNodeProperty[nodePropertyIndex], pRgbBuffer, pYuvBuffer);
 			mNodeNum++;
 		}
 		else {
@@ -775,7 +793,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateNecList()
 		FindNecNodePropertyIndex(NEC_PROCESS_CST_YUV2RGB, &nodePropertyIndex);
 		mPostHead = new ISPNecNode<T3, T4>;
 		if (mPostHead) {
-			mPostHead->Init(&gNecNodesConfigure[nodePropertyIndex], pYuvBuffer, pPostBuffer);
+			mPostHead->Init(&gListHeadsConfigure.NecNodeProperty[nodePropertyIndex], pYuvBuffer, pPostBuffer);
 			mNodeNum++;
 		}
 		else {
@@ -804,12 +822,12 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateRawList()
 	}
 
 	if (SUCCESS(result)) {
-		for (int32_t i = 0; i < (int32_t)(sizeof(RawNodeConfigure) / sizeof(PROCESS_TYPE)); i++) {
-			newNodeType = RawNodeConfigure[i];
+		for (int32_t i = 0; i < (int32_t)(sizeof(RawListConfigure) / sizeof(PROCESS_TYPE)); i++) {
+			newNodeType = RawListConfigure[i];
 			pNewNode = new ISPNode<T1, T1>;
 			if (pNewNode) {
 				FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
-				result = pNewNode->Init(&mProperty.pNodeConfig[nodePropertyIndex], pRawBuffer, pRawBuffer);
+				result = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pRawBuffer, pRawBuffer);
 				if (SUCCESS(result)) {
 					result = AddNodeToRawTail(pNewNode);
 					if (!SUCCESS(result)) {
@@ -884,12 +902,12 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateRgbList()
 	}
 
 	if (SUCCESS(result)) {
-		for (int32_t i = 0; i < (int32_t)(sizeof(RgbNodeConfigure) / sizeof(PROCESS_TYPE)); i++) {
-			newNodeType = RgbNodeConfigure[i];
+		for (int32_t i = 0; i < (int32_t)(sizeof(RgbListConfigure) / sizeof(PROCESS_TYPE)); i++) {
+			newNodeType = RgbListConfigure[i];
 			pNewNode = new ISPNode<T2, T2>;
 			if (pNewNode) {
 				FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
-				result = pNewNode->Init(&mProperty.pNodeConfig[nodePropertyIndex], pRgbBuffer, pRgbBuffer);
+				result = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pRgbBuffer, pRgbBuffer);
 				if (SUCCESS(result)) {
 					result = AddNodeToRgbTail(pNewNode);
 					if (!SUCCESS(result)) {
@@ -970,12 +988,12 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateYuvList()
 	}
 
 	if (SUCCESS(result)) {
-		for (int32_t i = 0; i < (int32_t)(sizeof(YuvNodeConfigure) / sizeof(PROCESS_TYPE)); i++) {
-			newNodeType = YuvNodeConfigure[i];
+		for (int32_t i = 0; i < (int32_t)(sizeof(YuvListConfigure) / sizeof(PROCESS_TYPE)); i++) {
+			newNodeType = YuvListConfigure[i];
 			pNewNode = new ISPNode<T3, T3>;
 			if (pNewNode) {
 				FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
-				result = pNewNode->Init(&mProperty.pNodeConfig[nodePropertyIndex], pYuvBuffer, pYuvBuffer);
+				result = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pYuvBuffer, pYuvBuffer);
 				if (SUCCESS(result)) {
 					result = AddNodeToYuvTail(pNewNode);
 					if (!SUCCESS(result)) {
@@ -1056,12 +1074,12 @@ ISPResult ISPList<T1, T2, T3, T4>::CreatePostList()
 	}
 
 	if (SUCCESS(result)) {
-		for (int32_t i = 0; i < (int32_t)(sizeof(PostNodeConfigure) / sizeof(PROCESS_TYPE)); i++) {
-			newNodeType = PostNodeConfigure[i];
+		for (int32_t i = 0; i < (int32_t)(sizeof(PostListConfigure) / sizeof(PROCESS_TYPE)); i++) {
+			newNodeType = PostListConfigure[i];
 			pNewNode = new ISPNode<T4, T4>;
 			if (pNewNode) {
 				FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
-				result = pNewNode->Init(&mProperty.pNodeConfig[nodePropertyIndex], pPostBuffer, pPostBuffer);
+				result = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pPostBuffer, pPostBuffer);
 				if (SUCCESS(result)) {
 					result = AddNodeToPostTail(pNewNode);
 					if (!SUCCESS(result)) {
