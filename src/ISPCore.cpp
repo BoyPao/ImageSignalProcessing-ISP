@@ -25,9 +25,9 @@ using namespace cv;
 #define RESNAME "Result"
 #define TEMP "Temp"
 
-#define INPUTPATH "/home2/penghao/test_porject/ISP/res/1MCC_IMG_20181229_001526_1.raw"
+#define INPUTPATH "/home2/penghao/test_porject/ISP/ISP/res/1MCC_IMG_20181229_001526_1.raw"
 //#define INPUTPATH "D:\\test_project\\ISP\\local\\ISP-Local\\ISP-Local\\20210103062220_input_4000x3000_0.raw"
-#define OUTPUTPATH "/home2/penghao/test_porject/ISP/res/out/output.bmp"
+#define OUTPUTPATH "/home2/penghao/test_porject/ISP/ISP/res/out/output.bmp"
 
 ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info);
 

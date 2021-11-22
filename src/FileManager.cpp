@@ -201,6 +201,8 @@ void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 	int32_t tempSize;
 
 	ISPLogd("BYTE:%d WORD:%d DWORD:%d LONG:%d", sizeof(BYTE), sizeof(WORD), sizeof(DWORD), sizeof(LONG));
+	memset(&header, 0, sizeof(BITMAPFILEHEADER));
+	memset(&headerinfo, 0, sizeof(BITMAPINFOHEADER));
 	headerinfo.biSize = sizeof(BITMAPINFOHEADER);
 	headerinfo.biHeight = mOutputImg.hight;
 	headerinfo.biWidth = mOutputImg.width;
