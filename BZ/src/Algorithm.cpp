@@ -342,7 +342,7 @@ BZResult BZ_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS 
 	return result;
 }
 
-float LSCinterpolation(int32_t WIDTH, int32_t HEIGHT,
+float LSCInterpolation(int32_t WIDTH, int32_t HEIGHT,
 	float LT, float RT, float LB, float RB,
 	int32_t row, int32_t col)
 {
@@ -371,6 +371,7 @@ BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS
 		float* pGr = nullptr;
 		float* pGb = nullptr;
 		float* pB = nullptr;
+		float* pLut = nullptr;
 		width = pParams->info.width;
 		height = pParams->info.height;
 		rawType = pParams->info.rawType;
@@ -401,45 +402,25 @@ BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS
 			for (i = 0; i < height; i++) {
 				for (j = 0; j < width; j++) {
 					if (i % 2 == 0 && j % 2 == 0) {
-						static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
-							LSCinterpolation(width, height,
-								*(pB + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
-								*(pB + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
-								*(pB + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
-								*(pB + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
-								i,
-								j);
+						pLut = pB;
 					}
 					if (i % 2 == 0 && j % 2 == 1) {
-						static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
-							LSCinterpolation(width, height,
-								*(pGb + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
-								*(pGb + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
-								*(pGb + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
-								*(pGb + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
-								i,
-								j);
+						pLut = pGb;
 					}
 					if (i % 2 == 1 && j % 2 == 0) {
-						static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
-							LSCinterpolation(width, height,
-								*(pGr + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
-								*(pGr + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
-								*(pGr + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
-								*(pGr + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
-								i,
-								j);
+						pLut = pGr;
 					}
 					if (i % 2 == 1 && j % 2 == 1) {
-						static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
-							LSCinterpolation(width, height,
-								*(pR + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
-								*(pR + 12 * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
-								*(pR + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
-								*(pR + (12 * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
+						pLut = pR;
+					}
+					static_cast<uint16_t*>(data)[i * width + j] = static_cast<uint16_t*>(data)[i * width + j] *
+						LSCInterpolation(width, height,
+								*(pLut + (LSC_LUT_HEIGHT - 1) * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
+								*(pLut + (LSC_LUT_HEIGHT - 1) * i / height * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
+								*(pLut + ((LSC_LUT_HEIGHT - 1) * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width),
+								*(pLut + ((LSC_LUT_HEIGHT - 1) * i / height + 1) * LSC_LUT_WIDTH + (LSC_LUT_WIDTH - 1) * j / width + 1),
 								i,
 								j);
-					}
 				}
 			}
 		}

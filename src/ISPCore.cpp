@@ -12,6 +12,7 @@
 #include "FileManager.h"
 #include "ParamManager.h"
 #include "ISPListManager.h"
+#include <pthread.h>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -25,17 +26,33 @@ using namespace cv;
 #define RESNAME "Result"
 #define TEMP "Temp"
 
-#define INPUTPATH "/home2/penghao/test_porject/ISP/ISP/res/1MCC_IMG_20181229_001526_1.raw"
-//#define INPUTPATH "D:\\test_project\\ISP\\local\\ISP-Local\\ISP-Local\\20210103062220_input_4000x3000_0.raw"
-#define OUTPUTPATH "/home2/penghao/test_porject/ISP/ISP/res/out/output.bmp"
+#define INPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/1MCC_IMG_20181229_001526_1.raw"
+//#define INPUT_PATH "D:\\test_project\\ISP\\local\\ISP-Local\\ISP-Local\\20210103062220_input_4000x3000_0.raw"
+#define OUTPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/out/output.bmp"
+#define VIDEO_OUTPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/out/video_output.avi"
 
 ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info);
+void* VideoEncodingFunc(void* args);
+
+enum MEDIA_TYPE {
+	IMAGE_MEDIA = 0,
+	VIDEO_MEDIA,
+	IMAGE_AND_VIDEO_MEDIA,
+	MEDIA_TYPE_NUM
+};
+
+pthread_cond_t gCond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t gMutex = PTHREAD_MUTEX_INITIALIZER;
+int32_t* pFrameNum = nullptr;
+int32_t* pFPS = nullptr;
+Mat* pDst = nullptr;
 
 int main() {
 	ISPResult result = ISP_SUCCESS;
 
 	ISPParamManager* pParamManager = nullptr;
 	ImageFileManager* pImgFileManager = nullptr;
+	ISPListManager* pISPListMgr = nullptr;
 	int32_t numPixel = 0;
 	int32_t alignedW = 0;
 	int32_t bufferSize = 0;
@@ -49,6 +66,12 @@ int main() {
 	char inputPath[FILE_PATH_MAX_SIZE] = { '\0' };
 	char outputPath[FILE_PATH_MAX_SIZE] = { '\0' };
 	IMG_INFO imgInfo = { 0 };
+	int32_t listId = 0;
+	int32_t frameNum = 0;
+	int32_t fps = 0;
+	pthread_t videoThread;
+	//MEDIA_TYPE mediaType = IMAGE_MEDIA;
+	MEDIA_TYPE mediaType = IMAGE_AND_VIDEO_MEDIA;
 
 	//Set raw info
 	imgInfo.width = 1920;
@@ -64,8 +87,8 @@ int main() {
 	result = pParamManager->SetIMGInfo(&imgInfo);
 
 	if (SUCCESS(result)) {
-		strcpy(inputPath, INPUTPATH);
-		strcpy(outputPath, OUTPUTPATH);
+		strcpy(inputPath, INPUT_PATH);
+		strcpy(outputPath, OUTPUT_PATH);
 		inputInfo.pInputPath = inputPath;
 		outputInfo.pOutputPath = outputPath;
 		result = pParamManager->GetIMGDimension(&outputInfo.width, &outputInfo.hight);
@@ -103,42 +126,107 @@ int main() {
 	}
 
 	if (SUCCESS(result)) {
-		result = pImgFileManager->ReadRawData(mipiRawData, bufferSize, Mipi10Bit);
+		if (!pISPListMgr) {
+			pISPListMgr = new ISPListManager;
+		}
+		result = pISPListMgr->Init(pParamManager);
+		if (SUCCESS(result)) {
+			result = pISPListMgr->CreateList(rawData, bgrData, yuvData, dst.data, LIST_CFG_DEFAULT, &listId);
+		}
 	}
 
 	if (SUCCESS(result)) {
-		result = Mipi10decode((void*)mipiRawData, (void*)rawData, &imgInfo);
-	}
-
-	if (SUCCESS(result)) {
-		ISPListManager ISPListMgr;
-		int32_t listId = 0;
-		result = ISPListMgr.Init(pParamManager);
-
-		if (SUCCESS(result)) {
-			result = ISPListMgr.CreateList(rawData, bgrData, yuvData, dst.data, LIST_CFG_DEFAULT, &listId);
+		if (mediaType == IMAGE_MEDIA) {
+			frameNum = 1;
 		}
+		else if (mediaType >= VIDEO_MEDIA && mediaType < MEDIA_TYPE_NUM) {
+			if (!pthread_mutex_init(&gMutex, NULL)) {
+				if (pthread_cond_init(&gCond, NULL)) {
+					result = ISP_FAILED;
+				}
+			}
+			else {
+				result = ISP_FAILED;
+			}
 
-		if (SUCCESS(result)) {
-			//===================================================================
-			//|	Process steps can be switch on/off here as you wish				|
-			//|	eg: ISPListMgr.EnableNodebyType(listId, PROCESS_CC);			|
-			//|	eg: ISPListMgr.DisableNodebyType(listId, PROCESS_CST_RAW2RGB);	|
-			//===================================================================
-		}
+			if (SUCCESS(result)) {
+				if (pthread_create(&videoThread, NULL, VideoEncodingFunc, NULL)) {
+					result = ISP_FAILED;
+				}
+			}
 
-		if (SUCCESS(result)) {
-			result = ISPListMgr.StartById(listId);
-			if (!SUCCESS(result)) {
-				ISPLoge("Failed to start list:%d %d", listId, result);
+			if (SUCCESS(result)) {
+				/* TODO: method of video param configuration */
+				frameNum = 90;
+				fps = 30;
+				pFrameNum = & frameNum;
+				pFPS = &fps;
+				pDst = &dst;
 			}
 		}
-
-		result = ISPListMgr.DestoryAllList();
 	}
 
 	if (SUCCESS(result)) {
-		result = pImgFileManager->SaveBMP(dst.data, dst.channels());
+		for (int32_t frameCount = 1; frameCount <= frameNum; frameCount++) {
+			ISPLogd("=========================== %d(%d) ==========================", frameCount, frameNum);
+			if (SUCCESS(result)) {
+				result = pImgFileManager->ReadRawData(mipiRawData, bufferSize, Mipi10Bit);
+			}
+
+			if (SUCCESS(result)) {
+				result = Mipi10decode((void*)mipiRawData, (void*)rawData, &imgInfo);
+			}
+
+			if (SUCCESS(result)) {
+				if (SUCCESS(result)) {
+					//===================================================================
+					//|	Process steps can be switch on/off here as you wish				|
+					//|	eg: ISPListMgr.EnableNodebyType(listId, PROCESS_CC);			|
+					//|	eg: ISPListMgr.DisableNodebyType(listId, PROCESS_CST_RAW2RGB);	|
+					//===================================================================
+				}
+
+				if (SUCCESS(result)) {
+					result = pISPListMgr->StartById(listId);
+					if (!SUCCESS(result)) {
+						ISPLoge("Failed to start list:%d %d", listId, result);
+					}
+				}
+
+			}
+
+			if (mediaType >= VIDEO_MEDIA && mediaType < MEDIA_TYPE_NUM) {
+				pthread_mutex_lock(&gMutex);
+				pthread_cond_signal(&gCond);
+				ISPLogd("signal F:%d", frameCount);
+				pthread_mutex_unlock(&gMutex);
+
+			}
+		}
+	}
+
+	if (SUCCESS(result)) {
+		if (mediaType >= VIDEO_MEDIA && mediaType < MEDIA_TYPE_NUM) {
+			if(pthread_join(videoThread, NULL)) {
+				ISPLoge("join video thread failed!");
+			}
+			pthread_mutex_destroy(&gMutex);
+			pthread_cond_destroy(&gCond);
+		}
+	}
+
+	if (SUCCESS(result)) {
+		if (mediaType == IMAGE_MEDIA || mediaType == IMAGE_AND_VIDEO_MEDIA) {
+			result = pImgFileManager->SaveBMP(dst.data, dst.channels());
+		}
+	}
+
+	if (SUCCESS(result)) {
+		result = pISPListMgr->DestoryAllList();
+	}
+
+	if (pISPListMgr) {
+		delete pISPListMgr;
 	}
 
 	if (pParamManager) {
@@ -185,9 +273,11 @@ int main() {
 		dst.release();
 	}
 
+	//For windows not exit CMD
+	/*
 	int32_t i;
 	scanf("%d", &i);
-
+	*/
 	return 0;
 }
 
@@ -232,4 +322,31 @@ ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info)
 	}
 
 	return result;
+}
+
+void* VideoEncodingFunc(void* args)
+{
+	if (pFrameNum && pFPS && pDst) {
+		VideoWriter vWriter(VIDEO_OUTPUT_PATH, VideoWriter::fourcc('M', 'J', 'P', 'G'), *pFPS, Size(pDst->cols, pDst->rows));
+		if (vWriter.isOpened()) {
+			for (int32_t frameCount = 1; frameCount <= *pFrameNum; frameCount++) {
+				pthread_mutex_lock(&gMutex);
+				pthread_cond_wait(&gCond, &gMutex);
+				vWriter << *pDst;
+				ISPLogi("Recording F:%d (%ds)", frameCount, frameCount / *pFPS);
+				if (frameCount == *pFrameNum) {
+					ISPLogi("Record finish");
+				}
+				pthread_mutex_unlock(&gMutex);
+			}
+		}
+		else {
+			ISPLoge("Failed to initialize VideoWriter!");
+		}
+	}
+	else {
+		ISPLoge("Video func not init!");
+	}
+
+	return args;
 }
