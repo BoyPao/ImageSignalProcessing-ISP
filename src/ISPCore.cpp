@@ -12,7 +12,7 @@
 #include "FileManager.h"
 #include "ParamManager.h"
 #include "ISPListManager.h"
-#include <pthread.h>
+#include "ISPVideo.h"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -32,7 +32,6 @@ using namespace cv;
 #define VIDEO_OUTPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/out/video_output.avi"
 
 ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info);
-void* VideoEncodingFunc(void* args);
 
 enum MEDIA_TYPE {
 	IMAGE_MEDIA = 0,
@@ -41,18 +40,13 @@ enum MEDIA_TYPE {
 	MEDIA_TYPE_NUM
 };
 
-pthread_cond_t gCond = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t gMutex = PTHREAD_MUTEX_INITIALIZER;
-int32_t* pFrameNum = nullptr;
-int32_t* pFPS = nullptr;
-Mat* pDst = nullptr;
-
 int main() {
 	ISPResult result = ISP_SUCCESS;
 
 	ISPParamManager* pParamManager = nullptr;
 	ImageFileManager* pImgFileManager = nullptr;
 	ISPListManager* pISPListMgr = nullptr;
+	ISPVideo* pVideo = nullptr;
 	int32_t numPixel = 0;
 	int32_t alignedW = 0;
 	int32_t bufferSize = 0;
@@ -63,13 +57,14 @@ int main() {
 	Mat dst;
 	InputImgInfo inputInfo;
 	OutputImgInfo outputInfo;
+	OutputVideoInfo videoOutputInfo;
 	char inputPath[FILE_PATH_MAX_SIZE] = { '\0' };
 	char outputPath[FILE_PATH_MAX_SIZE] = { '\0' };
+	char videoOutputPath[FILE_PATH_MAX_SIZE] = { '\0' };
 	IMG_INFO imgInfo = { 0 };
 	int32_t listId = 0;
 	int32_t frameNum = 0;
 	int32_t fps = 0;
-	pthread_t videoThread;
 	//MEDIA_TYPE mediaType = IMAGE_MEDIA;
 	MEDIA_TYPE mediaType = IMAGE_AND_VIDEO_MEDIA;
 
@@ -81,24 +76,46 @@ int main() {
 	imgInfo.packaged = true;
 	imgInfo.rawType = RAW10_MIPI_BGGR;
 
-	if (!pParamManager) {
-		pParamManager = new ISPParamManager;
+	if (SUCCESS(result)) {
+		if (mediaType == IMAGE_MEDIA) {
+			frameNum = 1;
+		}
+		else if (mediaType >= VIDEO_MEDIA && mediaType < MEDIA_TYPE_NUM) {
+			/* TODO: method of video param configuration */
+			frameNum = 30;
+			fps = 30;
+		}
 	}
-	result = pParamManager->SetIMGInfo(&imgInfo);
+
+	if (SUCCESS(result)) {
+		if (!pParamManager) {
+			pParamManager = new ISPParamManager;
+		}
+		result = pParamManager->SetIMGInfo(&imgInfo);
+	}
 
 	if (SUCCESS(result)) {
 		strcpy(inputPath, INPUT_PATH);
 		strcpy(outputPath, OUTPUT_PATH);
+		strcpy(videoOutputPath, VIDEO_OUTPUT_PATH);
 		inputInfo.pInputPath = inputPath;
 		outputInfo.pOutputPath = outputPath;
+		videoOutputInfo.pOutputPath = videoOutputPath;
+		videoOutputInfo.fps = fps;
+		videoOutputInfo.frameNum = frameNum;
+
 		result = pParamManager->GetIMGDimension(&outputInfo.width, &outputInfo.hight);
+		result = pParamManager->GetIMGDimension(&videoOutputInfo.width, &videoOutputInfo.hight);
 
 		if (!pImgFileManager) {
 			pImgFileManager = new ImageFileManager;
 		}
-		pImgFileManager->Init();
-		result = pImgFileManager->SetInputImgInfo(inputInfo);
-		result = pImgFileManager->SetOutputImgInfo(outputInfo);
+		result = pImgFileManager->Init();
+		if (SUCCESS(result)) {
+			result = pImgFileManager->SetInputImgInfo(inputInfo);
+			result = pImgFileManager->SetOutputImgInfo(outputInfo);
+			result = pImgFileManager->SetOutputVideoInfo(videoOutputInfo);
+		}
 	}
 
 	if (SUCCESS(result)) {
@@ -136,32 +153,13 @@ int main() {
 	}
 
 	if (SUCCESS(result)) {
-		if (mediaType == IMAGE_MEDIA) {
-			frameNum = 1;
+		if (!pVideo) {
+			pVideo = new ISPVideo;
 		}
-		else if (mediaType >= VIDEO_MEDIA && mediaType < MEDIA_TYPE_NUM) {
-			if (!pthread_mutex_init(&gMutex, NULL)) {
-				if (pthread_cond_init(&gCond, NULL)) {
-					result = ISP_FAILED;
-				}
-			}
-			else {
-				result = ISP_FAILED;
-			}
-
+		if (mediaType >= VIDEO_MEDIA && mediaType < MEDIA_TYPE_NUM) {
+			result = pVideo->Init(&dst, pImgFileManager, pParamManager);
 			if (SUCCESS(result)) {
-				if (pthread_create(&videoThread, NULL, VideoEncodingFunc, NULL)) {
-					result = ISP_FAILED;
-				}
-			}
-
-			if (SUCCESS(result)) {
-				/* TODO: method of video param configuration */
-				frameNum = 90;
-				fps = 30;
-				pFrameNum = & frameNum;
-				pFPS = &fps;
-				pDst = &dst;
+				result = pVideo->CreateThread();
 			}
 		}
 	}
@@ -196,22 +194,9 @@ int main() {
 			}
 
 			if (mediaType >= VIDEO_MEDIA && mediaType < MEDIA_TYPE_NUM) {
-				pthread_mutex_lock(&gMutex);
-				pthread_cond_signal(&gCond);
+				pVideo->Notify();
 				ISPLogd("signal F:%d", frameCount);
-				pthread_mutex_unlock(&gMutex);
-
 			}
-		}
-	}
-
-	if (SUCCESS(result)) {
-		if (mediaType >= VIDEO_MEDIA && mediaType < MEDIA_TYPE_NUM) {
-			if(pthread_join(videoThread, NULL)) {
-				ISPLoge("join video thread failed!");
-			}
-			pthread_mutex_destroy(&gMutex);
-			pthread_cond_destroy(&gCond);
 		}
 	}
 
@@ -222,7 +207,18 @@ int main() {
 	}
 
 	if (SUCCESS(result)) {
+		if (mediaType >= VIDEO_MEDIA && mediaType < MEDIA_TYPE_NUM) {
+			result = pVideo->DestroyThread();
+		}
+
+	}
+
+	if (SUCCESS(result)) {
 		result = pISPListMgr->DestoryAllList();
+	}
+
+	if (pVideo) {
+		delete pVideo;
 	}
 
 	if (pISPListMgr) {
@@ -322,31 +318,4 @@ ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info)
 	}
 
 	return result;
-}
-
-void* VideoEncodingFunc(void* args)
-{
-	if (pFrameNum && pFPS && pDst) {
-		VideoWriter vWriter(VIDEO_OUTPUT_PATH, VideoWriter::fourcc('M', 'J', 'P', 'G'), *pFPS, Size(pDst->cols, pDst->rows));
-		if (vWriter.isOpened()) {
-			for (int32_t frameCount = 1; frameCount <= *pFrameNum; frameCount++) {
-				pthread_mutex_lock(&gMutex);
-				pthread_cond_wait(&gCond, &gMutex);
-				vWriter << *pDst;
-				ISPLogi("Recording F:%d (%ds)", frameCount, frameCount / *pFPS);
-				if (frameCount == *pFrameNum) {
-					ISPLogi("Record finish");
-				}
-				pthread_mutex_unlock(&gMutex);
-			}
-		}
-		else {
-			ISPLoge("Failed to initialize VideoWriter!");
-		}
-	}
-	else {
-		ISPLoge("Video func not init!");
-	}
-
-	return args;
 }

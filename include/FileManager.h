@@ -33,19 +33,30 @@ struct OutputImgInfo {
 	int32_t hight;
 };
 
+struct OutputVideoInfo {
+	char* pOutputPath;
+	int32_t width;
+	int32_t hight;
+	int32_t fps;
+	int32_t frameNum;
+};
+
 class ImageFileManager {
 private:
 	InputImgInfo mInputImg;
 	OutputImgInfo mOutputImg;
+	OutputVideoInfo mOutputVideo;
 	ISPState mState = Uninited;
 
 public:
-	ImageFileManager() { mState = Init(); };
-	~ImageFileManager() { mState = Deinit(); };
-	ISPState Init();
-	ISPState Deinit();
+	ImageFileManager();
+	~ImageFileManager();
+	ISPResult Init();
+	ISPResult DeInit();
+
 	InputImgInfo GetInputImgInfo() { return mInputImg; };
 	OutputImgInfo GetOutputImgInfo() { return mOutputImg; };
+	OutputVideoInfo GetOutputVideoInfo() { return mOutputVideo; };
 	ISPResult SetInputImgInfo(InputImgInfo info);
 	ISPResult SetInputImgInfo(char* path, int32_t size);
 	ISPResult SetInputImgInfo(char* path);
@@ -54,6 +65,7 @@ public:
 	ISPResult SetOutputImgInfo(char* path, int32_t width, int32_t hight);
 	ISPResult SetOutputImgInfo(char* path);
 	ISPResult SetOutputImgInfo(int32_t width, int32_t hight);
+	ISPResult SetOutputVideoInfo(OutputVideoInfo info);
 	ISPResult ReadRawData(uint8_t* buffer, int32_t bufferSize, ISPRawFormate formate);
 	ISPResult SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData);
 	void WriteBMP(BYTE* data, int32_t channels);

@@ -10,24 +10,40 @@
 
 #include "FileManager.h"
 
-ISPState ImageFileManager::Init()
+ImageFileManager::ImageFileManager()
 {
-	mInputImg.pInputPath = nullptr;
-	mInputImg.rawSize = 640 * 480;
-	mOutputImg.pOutputPath = nullptr;
-	mOutputImg.width = 640;
-	mOutputImg.hight = 480;
-	return Inited;
+	memset(&mInputImg, 0, sizeof(InputImgInfo));
+	memset(&mOutputImg, 0, sizeof(OutputImgInfo));
+	memset(&mOutputVideo, 0, sizeof(OutputVideoInfo));
+	mState = Uninited;
 }
 
-ISPState ImageFileManager::Deinit()
+ImageFileManager::~ImageFileManager()
 {
-	mInputImg.pInputPath = nullptr;
-	mInputImg.rawSize = 640 * 480;
-	mOutputImg.pOutputPath = nullptr;
-	mOutputImg.width = 640;
-	mOutputImg.hight = 480;
-	return Uninited;
+	memset(&mInputImg, 0, sizeof(InputImgInfo));
+	memset(&mOutputImg, 0, sizeof(OutputImgInfo));
+	memset(&mOutputVideo, 0, sizeof(OutputVideoInfo));
+	mState = Uninited;
+}
+
+ISPResult ImageFileManager::Init()
+{
+	ISPResult result = ISP_SUCCESS;
+
+	//Currentlly nothing to do here
+	mState = Inited;
+
+	return result;
+}
+
+ISPResult ImageFileManager::DeInit()
+{
+	ISPResult result = ISP_SUCCESS;
+
+	//Currentlly nothing to do here
+	mState = Uninited;
+
+	return result;
 }
 
 ISPResult ImageFileManager::SetInputImgInfo(InputImgInfo info)
@@ -90,6 +106,18 @@ ISPResult ImageFileManager::SetOutputImgInfo(int32_t width, int32_t hight)
 	ISPResult result = ISP_SUCCESS;
 	mOutputImg.width = width;
 	mOutputImg.hight = hight;
+	return result;
+}
+
+ISPResult ImageFileManager::SetOutputVideoInfo(OutputVideoInfo info)
+{
+	ISPResult result = ISP_SUCCESS;
+	mOutputVideo.pOutputPath = info.pOutputPath;
+	mOutputVideo.width = info.width;
+	mOutputVideo.hight = info.hight;
+	mOutputVideo.fps = info.fps;
+	mOutputVideo.frameNum = info.frameNum;
+
 	return result;
 }
 
