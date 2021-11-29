@@ -11,8 +11,12 @@
 #pragma once
 #include <fstream>
 
-#include "BMP.h"
 #include "Utils.h"
+#ifdef LINUX_SYSTEM
+#include "BMP.h"
+#elif defined WIN32_SYSTEM
+#include <windows.h>
+#endif
 
 typedef int32_t ISPState;
 static const ISPState Uninited = 0;

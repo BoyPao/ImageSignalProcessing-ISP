@@ -19,6 +19,12 @@
 
 #include "Log.h"
 
+#if defined __linux__
+#define LINUX_SYSTEM
+#elif defined _WIN32
+#define WIN32_SYSTEM
+#endif
+
 #define SYSTEM_YEAR_OFFSET			1900
 #define SYSTEM_MONTH_OFFSET			1
 #define LOCAL_TIME_ZOOM_OFFSET		8	//Beijing time zoom

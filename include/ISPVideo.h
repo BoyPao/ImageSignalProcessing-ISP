@@ -10,7 +10,9 @@
 
 #pragma once
 
-#include <pthread.h>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -42,6 +44,7 @@ public:
 	ISPResult GetVideoInfo(OutputVideoInfo* pInfo);
 	ISPResult GetSrc(Mat** ppSrc);
 
+	ISPResult Record(VideoWriter* pRecorder);
 	ISPResult Lock();
 	ISPResult Unlock();
 	ISPResult Wait();
@@ -55,9 +58,9 @@ private:
 	ISPParamManager* pParamMgr;
 	VIDEO_STATE mState;
 
-	pthread_t mThread;
-	pthread_mutex_t mMutex;
-	pthread_cond_t mCond;
+	thread mThread;
+	mutex mMutex;
+	condition_variable mCond;
 };
 
 void* VideoEncodeFunc(void* pVideo);

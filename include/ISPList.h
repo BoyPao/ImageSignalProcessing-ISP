@@ -399,6 +399,7 @@ const PROCESS_TYPE YuvListConfigure[] = {
 };
 
 const PROCESS_TYPE PostListConfigure[] = {
+	PROCESS_TYPE_NUM
 };
 
 
@@ -812,7 +813,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateRawList()
 {
 	ISPResult result = ISP_SUCCESS;
 
-	int32_t nodePropertyIndex = 0;
+	int32_t nodePropertyIndex = -1;
 	ISPNode<T1, T1>* pNewNode = nullptr;
 	PROCESS_TYPE newNodeType = PROCESS_TYPE_NUM;
 
@@ -824,24 +825,29 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateRawList()
 	if (SUCCESS(result)) {
 		for (int32_t i = 0; i < (int32_t)(sizeof(RawListConfigure) / sizeof(PROCESS_TYPE)); i++) {
 			newNodeType = RawListConfigure[i];
-			pNewNode = new ISPNode<T1, T1>;
-			if (pNewNode) {
-				FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
-				result = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pRawBuffer, pRawBuffer);
-				if (SUCCESS(result)) {
-					result = AddNodeToRawTail(pNewNode);
-					if (!SUCCESS(result)) {
+			FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
+			if (nodePropertyIndex >= 0) {
+				pNewNode = new ISPNode<T1, T1>;
+				if (pNewNode) {
+					result = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pRawBuffer, pRawBuffer);
+					if (SUCCESS(result)) {
+						result = AddNodeToRawTail(pNewNode);
+						if (!SUCCESS(result)) {
+							break;
+						}
+					}
+					else {
 						break;
 					}
 				}
 				else {
+					result = ISP_MEMORY_ERROR;
+					ISPLoge("Failed to new node! result:%d", result);
 					break;
 				}
 			}
 			else {
-				result = ISP_MEMORY_ERROR;
-				ISPLoge("Failed to new node! result:%d", result);
-				break;
+				ISPLogw("Not find node type:%d", newNodeType);
 			}
 		}
 	}
@@ -892,7 +898,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateRgbList()
 {
 	ISPResult result = ISP_SUCCESS;
 
-	int32_t nodePropertyIndex = 0;
+	int32_t nodePropertyIndex = -1;
 	ISPNode<T2, T2>* pNewNode = nullptr;
 	PROCESS_TYPE newNodeType = PROCESS_TYPE_NUM;
 
@@ -904,24 +910,29 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateRgbList()
 	if (SUCCESS(result)) {
 		for (int32_t i = 0; i < (int32_t)(sizeof(RgbListConfigure) / sizeof(PROCESS_TYPE)); i++) {
 			newNodeType = RgbListConfigure[i];
-			pNewNode = new ISPNode<T2, T2>;
-			if (pNewNode) {
-				FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
-				result = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pRgbBuffer, pRgbBuffer);
-				if (SUCCESS(result)) {
-					result = AddNodeToRgbTail(pNewNode);
-					if (!SUCCESS(result)) {
+			FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
+			if (nodePropertyIndex >= 0) {
+				pNewNode = new ISPNode<T2, T2>;
+				if (pNewNode) {
+					result = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pRgbBuffer, pRgbBuffer);
+					if (SUCCESS(result)) {
+						result = AddNodeToRgbTail(pNewNode);
+						if (!SUCCESS(result)) {
+							break;
+						}
+					}
+					else {
 						break;
 					}
 				}
 				else {
+					result = ISP_MEMORY_ERROR;
+					ISPLoge("Failed to new node! result:%d", result);
 					break;
 				}
 			}
 			else {
-				result = ISP_MEMORY_ERROR;
-				ISPLoge("Failed to new node! result:%d", result);
-				break;
+				ISPLogw("Not find node type:%d", newNodeType);
 			}
 		}
 	}
@@ -978,7 +989,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateYuvList()
 {
 	ISPResult result = ISP_SUCCESS;
 
-	int32_t nodePropertyIndex = 0;
+	int32_t nodePropertyIndex = -1;
 	ISPNode<T3, T3>* pNewNode = nullptr;
 	PROCESS_TYPE newNodeType = PROCESS_TYPE_NUM;
 
@@ -990,24 +1001,30 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateYuvList()
 	if (SUCCESS(result)) {
 		for (int32_t i = 0; i < (int32_t)(sizeof(YuvListConfigure) / sizeof(PROCESS_TYPE)); i++) {
 			newNodeType = YuvListConfigure[i];
-			pNewNode = new ISPNode<T3, T3>;
-			if (pNewNode) {
-				FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
-				result = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pYuvBuffer, pYuvBuffer);
-				if (SUCCESS(result)) {
-					result = AddNodeToYuvTail(pNewNode);
-					if (!SUCCESS(result)) {
+			FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
+			if (nodePropertyIndex >= 0) {
+				pNewNode = new ISPNode<T3, T3>;
+				if (pNewNode) {
+
+					result = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pYuvBuffer, pYuvBuffer);
+					if (SUCCESS(result)) {
+						result = AddNodeToYuvTail(pNewNode);
+						if (!SUCCESS(result)) {
+							break;
+						}
+					}
+					else {
 						break;
 					}
 				}
 				else {
+					result = ISP_MEMORY_ERROR;
+					ISPLoge("Failed to new node! result:%d", result);
 					break;
 				}
 			}
 			else {
-				result = ISP_MEMORY_ERROR;
-				ISPLoge("Failed to new node! result:%d", result);
-				break;
+				ISPLogw("Not find node type:%d", newNodeType);
 			}
 		}
 	}
@@ -1064,7 +1081,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreatePostList()
 {
 	ISPResult result = ISP_SUCCESS;
 
-	int32_t nodePropertyIndex = 0;
+	int32_t nodePropertyIndex = -1;
 	ISPNode<T4, T4>* pNewNode = nullptr;
 	PROCESS_TYPE newNodeType = PROCESS_TYPE_NUM;
 
@@ -1076,24 +1093,29 @@ ISPResult ISPList<T1, T2, T3, T4>::CreatePostList()
 	if (SUCCESS(result)) {
 		for (int32_t i = 0; i < (int32_t)(sizeof(PostListConfigure) / sizeof(PROCESS_TYPE)); i++) {
 			newNodeType = PostListConfigure[i];
-			pNewNode = new ISPNode<T4, T4>;
-			if (pNewNode) {
-				FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
-				result = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pPostBuffer, pPostBuffer);
-				if (SUCCESS(result)) {
-					result = AddNodeToPostTail(pNewNode);
-					if (!SUCCESS(result)) {
+			FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
+			if (nodePropertyIndex >= 0) {
+				pNewNode = new ISPNode<T4, T4>;
+				if (pNewNode) {
+					result = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pPostBuffer, pPostBuffer);
+					if (SUCCESS(result)) {
+						result = AddNodeToPostTail(pNewNode);
+						if (!SUCCESS(result)) {
+							break;
+						}
+					}
+					else {
 						break;
 					}
 				}
 				else {
+					result = ISP_MEMORY_ERROR;
+					ISPLoge("Failed to new node! result:%d", result);
 					break;
 				}
 			}
 			else {
-				result = ISP_MEMORY_ERROR;
-				ISPLoge("Failed to new node! result:%d", result);
-				break;
+				ISPLogw("Not find node type:%d", newNodeType);
 			}
 		}
 	}

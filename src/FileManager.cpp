@@ -249,17 +249,25 @@ void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 		(sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD)) :
 		(sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER));
 
+#ifdef LINUX_SYSTEM
 	header.bfOffBits[0] = (tempSize % 0x10000) & 0xffff;
 	header.bfOffBits[1] = (tempSize / 0x10000) & 0xffff;
 	ISPLogd("ch:%d head:%d headinfo:%d bfOffBits:%d(%x %x)",
 			channels, sizeof(BITMAPFILEHEADER), sizeof(BITMAPINFOHEADER),
 			tempSize, header.bfOffBits[1], header.bfOffBits[0]);
+#elif defined WIN32_SYSTEM
+	header.bfOffBits = tempSize;
+#endif
 
 	tempSize += headerinfo.biSizeImage;
+#ifdef LINUX_SYSTEM
 	header.bfSize[0] = (tempSize % 0x10000) & 0xffff;
 	header.bfSize[1] = (tempSize / 0x10000) & 0xffff;
 	ISPLogd("biSizeImage:%d bfSize:%d(%x %x)", headerinfo.biSizeImage,
 			tempSize, header.bfSize[1], header.bfSize[0]);
+#elif defined WIN32_SYSTEM
+	header.bfSize = tempSize;
+#endif
 
 	ISPLogi("BMPPath:%s", mOutputImg.pOutputPath);
 	ofstream out(mOutputImg.pOutputPath, ios::binary);

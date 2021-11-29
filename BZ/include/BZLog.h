@@ -28,11 +28,6 @@ int BZLogAddInfo(const char* str, ...);
 void BZLogAddTime(const char* str, va_list va);
 void BZLogPrint(const char* str, va_list va);
 
-enum SYSTEM_TYPES {
-	WINDOWS_SYSTEM = 1,
-	LINUX_SYSTEM
-};
-
 enum LOG_MASK {
 	LOG_ERROR_MASK = 0x1,
 	LOG_WARN_MASK = 0x2,

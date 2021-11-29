@@ -11,6 +11,7 @@
 #include "ISPVideo.h"
 
 using namespace cv;
+using namespace std;
 
 ISPVideo::ISPVideo():
 	pSrc(nullptr),
@@ -71,24 +72,7 @@ ISPResult ISPVideo::CreateThread()
 	}
 
 	if (SUCCESS(result)) {
-		if (pthread_mutex_init(&mMutex, NULL)) {
-			result = ISP_FAILED;
-			ISPLoge("Failed to init mutex!");
-		}
-	}
-
-	if (SUCCESS(result)) {
-		if (pthread_cond_init(&mCond, NULL)) {
-			result = ISP_FAILED;
-			ISPLoge("Failed to init condition!");
-		}
-	}
-
-	if (SUCCESS(result)) {
-		if (pthread_create(&mThread, NULL, VideoEncodeFunc, (void*)this)) {
-			result = ISP_FAILED;
-			ISPLoge("Failed to create thread!");
-		}
+		mThread = thread(VideoEncodeFunc, (void*)this);
 	}
 
 	if (SUCCESS(result)) {
@@ -108,24 +92,7 @@ ISPResult ISPVideo::DestroyThread()
 	}
 
 	if (SUCCESS(result)) {
-		if (pthread_join(mThread, NULL)) {
-			result = ISP_FAILED;
-			ISPLoge("Wait tid:%d join failed!", mThread);
-		}
-	}
-
-	if (SUCCESS(result)) {
-		if (pthread_mutex_destroy(&mMutex)) {
-			result = ISP_FAILED;
-			ISPLoge("Failed to destroy mutex");
-		}
-	}
-
-	if (SUCCESS(result)) {
-		if (pthread_cond_destroy(&mCond)) {
-			result = ISP_FAILED;
-			ISPLoge("Failed to destroy condition");
-		}
+		mThread.join();
 	}
 
 	if (SUCCESS(result)) {
@@ -163,37 +130,21 @@ ISPResult ISPVideo::GetSrc(Mat** ppSrc)
 	return result;
 }
 
-ISPResult ISPVideo::Lock()
+ISPResult ISPVideo::Record(VideoWriter* pRecorder)
 {
 	ISPResult result = ISP_SUCCESS;
 
-	if (SUCCESS(result)) {
-		pthread_mutex_lock(&mMutex);
-		mState = VIDEO_LOCK;
+	if (!pRecorder)
+	{
+		result = ISP_INVALID_PARAM;
+		ISPLoge("Input param is null");
 	}
 
-	return result;
-}
-
-ISPResult ISPVideo::Unlock()
-{
-	ISPResult result = ISP_SUCCESS;
-
-	if (SUCCESS(result)) {
-		pthread_mutex_unlock(&mMutex);
-		mState = VIDEO_READY;
-	}
-
-	return result;
-}
-
-ISPResult ISPVideo::Wait()
-{
-	ISPResult result = ISP_SUCCESS;
-
-	if (SUCCESS(result)) {
-		pthread_cond_wait(&mCond, &mMutex);
-		mState = VIDEO_WAIT_FRAME_DONE;
+	if (SUCCESS(result))
+	{
+		unique_lock <mutex> lock(mMutex);
+		mCond.wait(lock);
+		*pRecorder << *pSrc;
 	}
 
 	return result;
@@ -203,10 +154,10 @@ ISPResult ISPVideo::Notify()
 {
 	ISPResult result = ISP_SUCCESS;
 
-	if (SUCCESS(result)) {
-		result = Lock();
-		pthread_cond_signal(&mCond);
-		result = Unlock();
+	if (SUCCESS(result))
+	{
+		unique_lock <mutex> lock(mMutex);
+		mCond.notify_one();
 	}
 
 	return result;
@@ -236,14 +187,11 @@ void* VideoEncodeFunc(void* pVideo)
 		VideoWriter vWriter(info.pOutputPath, VideoWriter::fourcc('M', 'J', 'P', 'G'), info.fps, Size(pSrc->cols, pSrc->rows));
 		if (vWriter.isOpened()) {
 			for (int32_t frameCount = 1; frameCount <= info.frameNum; frameCount++) {
-				result = pISPVideo->Lock();
-				result = pISPVideo->Wait();
-				vWriter << *pSrc;
+				result = pISPVideo->Record(&vWriter);
 				ISPLogd("Recording F:%d (%ds)", frameCount, frameCount / info.fps);
 				if (frameCount == info.frameNum) {
 					ISPLogi("Record finish");
 				}
-				result = pISPVideo->Unlock();
 			}
 		}
 		else {

@@ -26,14 +26,21 @@ using namespace cv;
 #define RESNAME "Result"
 #define TEMP "Temp"
 
+#ifdef LINUX_SYSTEM
 #define INPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/1MCC_IMG_20181229_001526_1.raw"
-//#define INPUT_PATH "D:\\test_project\\ISP\\local\\ISP-Local\\ISP-Local\\20210103062220_input_4000x3000_0.raw"
-#define OUTPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/out/output.bmp"
+//#define INPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/20210103062220_input_4000x3000_0.raw"
+#define IMG_OUTPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/out/img_output.bmp"
 #define VIDEO_OUTPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/out/video_output.avi"
+#elif defined WIN32_SYSTEM
+#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\1MCC_IMG_20181229_001526_1.raw"
+//#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\20210103062220_input_4000x3000_0.raw"
+#define IMG_OUTPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\img_output.bmp"
+#define VIDEO_OUTPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\video_output.avi"
+#endif
 
 ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info);
 
-enum MEDIA_TYPE {
+enum MEDIA_TYPES {
 	IMAGE_MEDIA = 0,
 	VIDEO_MEDIA,
 	IMAGE_AND_VIDEO_MEDIA,
@@ -56,7 +63,7 @@ int main() {
 	uint8_t* yuvData = nullptr;
 	Mat dst;
 	InputImgInfo inputInfo;
-	OutputImgInfo outputInfo;
+	OutputImgInfo imgOutputPath;
 	OutputVideoInfo videoOutputInfo;
 	char inputPath[FILE_PATH_MAX_SIZE] = { '\0' };
 	char outputPath[FILE_PATH_MAX_SIZE] = { '\0' };
@@ -65,8 +72,8 @@ int main() {
 	int32_t listId = 0;
 	int32_t frameNum = 0;
 	int32_t fps = 0;
-	//MEDIA_TYPE mediaType = IMAGE_MEDIA;
-	MEDIA_TYPE mediaType = IMAGE_AND_VIDEO_MEDIA;
+	//MEDIA_TYPES mediaType = IMAGE_MEDIA;
+	MEDIA_TYPES mediaType = IMAGE_AND_VIDEO_MEDIA;
 
 	//Set raw info
 	imgInfo.width = 1920;
@@ -96,15 +103,15 @@ int main() {
 
 	if (SUCCESS(result)) {
 		strcpy(inputPath, INPUT_PATH);
-		strcpy(outputPath, OUTPUT_PATH);
+		strcpy(outputPath, IMG_OUTPUT_PATH);
 		strcpy(videoOutputPath, VIDEO_OUTPUT_PATH);
 		inputInfo.pInputPath = inputPath;
-		outputInfo.pOutputPath = outputPath;
+		imgOutputPath.pOutputPath = outputPath;
 		videoOutputInfo.pOutputPath = videoOutputPath;
 		videoOutputInfo.fps = fps;
 		videoOutputInfo.frameNum = frameNum;
 
-		result = pParamManager->GetIMGDimension(&outputInfo.width, &outputInfo.hight);
+		result = pParamManager->GetIMGDimension(&imgOutputPath.width, &imgOutputPath.hight);
 		result = pParamManager->GetIMGDimension(&videoOutputInfo.width, &videoOutputInfo.hight);
 
 		if (!pImgFileManager) {
@@ -113,7 +120,7 @@ int main() {
 		result = pImgFileManager->Init();
 		if (SUCCESS(result)) {
 			result = pImgFileManager->SetInputImgInfo(inputInfo);
-			result = pImgFileManager->SetOutputImgInfo(outputInfo);
+			result = pImgFileManager->SetOutputImgInfo(imgOutputPath);
 			result = pImgFileManager->SetOutputVideoInfo(videoOutputInfo);
 		}
 	}
@@ -166,7 +173,7 @@ int main() {
 
 	if (SUCCESS(result)) {
 		for (int32_t frameCount = 1; frameCount <= frameNum; frameCount++) {
-			ISPLogd("=========================== %d(%d) ==========================", frameCount, frameNum);
+			ISPLogi("=========================== %d(%d) ==========================", frameCount, frameNum);
 			if (SUCCESS(result)) {
 				result = pImgFileManager->ReadRawData(mipiRawData, bufferSize, Mipi10Bit);
 			}
@@ -193,9 +200,11 @@ int main() {
 
 			}
 
-			if (mediaType >= VIDEO_MEDIA && mediaType < MEDIA_TYPE_NUM) {
-				pVideo->Notify();
-				ISPLogd("signal F:%d", frameCount);
+			if (SUCCESS(result)) {
+				if (mediaType >= VIDEO_MEDIA && mediaType < MEDIA_TYPE_NUM) {
+					pVideo->Notify();
+					ISPLogd("Notify F:%d", frameCount);
+				}
 			}
 		}
 	}
@@ -251,7 +260,9 @@ int main() {
 
 	if (SUCCESS(result)) {
 		//Show the result
-		/*
+#ifdef LINUX_SYSTEM
+		//TODO:check if window is support
+#elif defined WIN32_SYSTEM
 		int32_t Imgsizex, Imgsizey;
 		int32_t Winsizex, Winsizey;
 		Winsizex = GetSystemMetrics(SM_CXSCREEN);
@@ -262,18 +273,13 @@ int main() {
 		resizeWindow(RESNAME, Imgsizex, Imgsizey);
 		imshow(RESNAME, dst);
 		waitKey(0); //for the possibility of interacting with window, keep the value as 0.
-		*/
+#endif
 	}
 
 	if (!dst.empty()) {
 		dst.release();
 	}
 
-	//For windows not exit CMD
-	/*
-	int32_t i;
-	scanf("%d", &i);
-	*/
 	return 0;
 }
 
