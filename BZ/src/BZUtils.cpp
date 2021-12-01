@@ -10,5 +10,3 @@
 
 #include "../include/BZUtils.h"
 
-using namespace std;
-

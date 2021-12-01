@@ -58,7 +58,7 @@ ISPResult InitISPCallbacks(ISP_CALLBACKS* pCbs)
 }
 
 
-//Bayer Process
+/* Bayer Process */
 ISPResult BlackLevelCorrection(void* data, ISPParamManager* pPM, ...)
 {
 	ISPResult result = ISP_SUCCESS;
@@ -118,7 +118,7 @@ ISPResult LensShadingCorrection(void* data, ISPParamManager* pPM, ...)
 	return result;
 }
 
-//RGB Process
+/* RGB Process */
 ISPResult Demosaic(void* data, ISPParamManager* pPM, ...)
 {
 	ISPResult result = ISP_SUCCESS;
@@ -230,7 +230,7 @@ ISPResult GammaCorrection(void* data, ISPParamManager* pPM, ...)
 	return result;
 }
 
-//YUVProcess
+/* YUVProcess */
 ISPResult WaveletNR(void* data, ISPParamManager* pPM, ...)
 {
 	ISPResult result = ISP_SUCCESS;

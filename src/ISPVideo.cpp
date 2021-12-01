@@ -134,8 +134,7 @@ ISPResult ISPVideo::Record(VideoWriter* pRecorder)
 {
 	ISPResult result = ISP_SUCCESS;
 
-	if (!pRecorder)
-	{
+	if (!pRecorder) {
 		result = ISP_INVALID_PARAM;
 		ISPLoge("Input param is null");
 	}
@@ -190,7 +189,7 @@ void* VideoEncodeFunc(void* pVideo)
 				result = pISPVideo->Record(&vWriter);
 				ISPLogd("Recording F:%d (%ds)", frameCount, frameCount / info.fps);
 				if (frameCount == info.frameNum) {
-					ISPLogi("Record finish");
+					ISPLogi("Video output path:%s", info.pOutputPath);
 				}
 			}
 		}

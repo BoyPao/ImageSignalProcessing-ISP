@@ -11,7 +11,6 @@
 #include "Log.h"
 #include <stdio.h>
 
-//using namespace std;
 int LogAddInfo(const char* str, ...)
 {
 #if LOG_ON

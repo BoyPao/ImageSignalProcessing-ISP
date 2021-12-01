@@ -11,7 +11,6 @@
 #include "../include/BZLog.h"
 #include <stdio.h>
 
-//using namespace std;
 int BZLogAddInfo(const char* str, ...)
 {
 #if LOG_ON

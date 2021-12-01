@@ -63,7 +63,7 @@ ISPResult ISPListManager::CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pY
 			listId = mListNum;
 		}
 		else {
-			//It means some lists have been destoried, ids can be reused
+			/* It means some lists have been destoried, ids can be reused */
 			for (int32_t i = 0; i < mListNum; i++)
 			{
 				if (mListMap.find(i) != mListMap.end()) {

@@ -9,13 +9,14 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-//Regular lib
+/* Regular lib */
 #include <time.h>
 #include <chrono>
 #include <stdint.h>
 #include <math.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "Log.h"
 
@@ -27,7 +28,7 @@
 
 #define SYSTEM_YEAR_OFFSET			1900
 #define SYSTEM_MONTH_OFFSET			1
-#define LOCAL_TIME_ZOOM_OFFSET		8	//Beijing time zoom
+#define LOCAL_TIME_ZOOM_OFFSET		8	/* Beijing time zoom */
 
 #define BITS_PER_WORD				8
 #define FILE_PATH_MAX_SIZE			255

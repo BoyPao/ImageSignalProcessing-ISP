@@ -12,11 +12,11 @@
 #include "Utils.h"
 
 #define LOG_ON 1
-#define LOG_LEVEL (0x1 + 0x2 + 0x4 + 0x8)
+#define LOG_LEVEL (0x1 + 0x2 + 0x4)
 
 #define LOG_BUFFER_SIZE				256
-#define LOG_BUFFER_PERSERVE_SIZE	2		//2 preserve for \0 and \n
-#define LOG_BUFFER_TIME_SIZE		24		//24 char "xxxx-xx-xx xx:xx:xx:xxx "
+#define LOG_BUFFER_PERSERVE_SIZE	2		/* 2 preserve for \0 and \n */
+#define LOG_BUFFER_TIME_SIZE		24		/* 24 char "xxxx-xx-xx xx:xx:xx:xxx " */
 #define LOG_BUFFER_LEFT_SIZE		LOG_BUFFER_SIZE - LOG_BUFFER_PERSERVE_SIZE - LOG_BUFFER_TIME_SIZE - sizeof(long long int)
 
 int LogAddInfo(const char* str, ...);

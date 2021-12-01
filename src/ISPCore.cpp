@@ -20,6 +20,16 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/photo.hpp"
 
+/* For img display in window */
+#ifdef LINUX_SYSTEM
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <linux/fb.h>
+#include <sys/ioctl.h>
+#endif
+
 using namespace cv;
 
 #define SOURCE "Source"
@@ -72,10 +82,10 @@ int main() {
 	int32_t listId = 0;
 	int32_t frameNum = 0;
 	int32_t fps = 0;
-	//MEDIA_TYPES mediaType = IMAGE_MEDIA;
-	MEDIA_TYPES mediaType = IMAGE_AND_VIDEO_MEDIA;
+	MEDIA_TYPES mediaType = IMAGE_MEDIA;
+//	MEDIA_TYPES mediaType = IMAGE_AND_VIDEO_MEDIA;
 
-	//Set raw info
+	/* Set raw info here */
 	imgInfo.width = 1920;
 	imgInfo.height = 1080;
 	imgInfo.bitspp = 10;
@@ -129,7 +139,7 @@ int main() {
 		numPixel = imgInfo.width * imgInfo.height;
 		alignedW = ALIGNx(imgInfo.width, imgInfo.bitspp, imgInfo.packaged, imgInfo.stride);
 		bufferSize = alignedW * imgInfo.height;
-		ISPLogi("(%d,%d) pixelNum:%d", imgInfo.width, imgInfo.height, numPixel);
+		ISPLogi("Image size:%dx%d pixelNum:%d", imgInfo.width, imgInfo.height, numPixel);
 		ISPLogi("Align (%d,%d) bufferSize:%d", alignedW, imgInfo.height, bufferSize);
 
 		mipiRawData = new uint8_t[bufferSize];
@@ -168,6 +178,7 @@ int main() {
 			if (SUCCESS(result)) {
 				result = pVideo->CreateThread();
 			}
+			ISPLogi("Video fps:%d total frame:%d", fps, frameNum);
 		}
 	}
 
@@ -184,11 +195,11 @@ int main() {
 
 			if (SUCCESS(result)) {
 				if (SUCCESS(result)) {
-					//===================================================================
-					//|	Process steps can be switch on/off here as you wish				|
-					//|	eg: ISPListMgr.EnableNodebyType(listId, PROCESS_CC);			|
-					//|	eg: ISPListMgr.DisableNodebyType(listId, PROCESS_CST_RAW2RGB);	|
-					//===================================================================
+					/* ====================================================================== */
+					/* |	Process steps can be switch on/off here as you wish				| */
+					/* |	eg: ISPListMgr.EnableNodebyType(listId, PROCESS_CC);			| */
+					/* |	eg: ISPListMgr.DisableNodebyType(listId, PROCESS_CST_RAW2RGB);	| */
+					/* ====================================================================== */
 				}
 
 				if (SUCCESS(result)) {
@@ -259,21 +270,36 @@ int main() {
 	}
 
 	if (SUCCESS(result)) {
-		//Show the result
+		/* Show the result */
+		int32_t winSizey;
+		bool supportWin = false;
 #ifdef LINUX_SYSTEM
-		//TODO:check if window is support
+		int fd;
+		struct fb_var_screeninfo fbVar;
+		fd = open("/dev/fb0", O_RDWR);
+		if (fd < 0) {
+			ISPLogw("Cannot open screen drv! Skip img show");
+		}
+		else {
+			ioctl(fd, FBIOGET_VSCREENINFO, &fbVar);
+			winSizey = fbVar.yres;
+			close(fd);
+			supportWin = true;
+		}
 #elif defined WIN32_SYSTEM
-		int32_t Imgsizex, Imgsizey;
-		int32_t Winsizex, Winsizey;
-		Winsizex = GetSystemMetrics(SM_CXSCREEN);
-		Winsizey = GetSystemMetrics(SM_CYSCREEN);
-		Imgsizey = Winsizey * 2 / 3;
-		Imgsizex = Imgsizey * imgInfo.width / imgInfo.height;
-		namedWindow(RESNAME, 0);
-		resizeWindow(RESNAME, Imgsizex, Imgsizey);
-		imshow(RESNAME, dst);
-		waitKey(0); //for the possibility of interacting with window, keep the value as 0.
+		winSizey = GetSystemMetrics(SM_CYSCREEN);
+		supportWin = true;
 #endif
+		if (supportWin) {
+			int32_t showSizex, showSizey;
+
+			showSizey = winSizey * 2 / 3;
+			showSizex = showSizey * imgInfo.width / imgInfo.height;
+			namedWindow(RESNAME, 0);
+			resizeWindow(RESNAME, showSizex, showSizey);
+			imshow(RESNAME, dst);
+			waitKey(0); //for the possibility of interacting with window, keep the value as 0.
+		}
 	}
 
 	if (!dst.empty()) {

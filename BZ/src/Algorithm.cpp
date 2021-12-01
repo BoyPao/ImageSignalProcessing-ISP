@@ -21,7 +21,7 @@
 
 using namespace cv;
 
-//Bayer Process
+/* Bayer Process */
 void Lib_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result= BZ_SUCCESS;
@@ -56,7 +56,7 @@ void Lib_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 	}
 }
 
-//RGB Process
+/* RGB Process */
 void Lib_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
@@ -125,7 +125,7 @@ void Lib_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 	}
 }
 
-//YUVProcess
+/* YUVProcess */
 void Lib_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
@@ -160,7 +160,7 @@ void Lib_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 	}
 }
 
-//CST
+/* CST */
 void Lib_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
@@ -527,7 +527,6 @@ void FirstPixelInsertProcess(uint16_t* src, uint16_t* dst, int32_t width, int32_
 			}
 		}
 	}
-	//cout << " First Pixel Insert Process finished " << endl;
 }
 
 void TwoGPixelInsertProcess(uint16_t* src, uint16_t* dst, int32_t width, int32_t height)
@@ -572,7 +571,6 @@ void TwoGPixelInsertProcess(uint16_t* src, uint16_t* dst, int32_t width, int32_t
 			}
 		}
 	}
-	//cout << " TWO Green Pixel Insert Process finished " << endl;
 }
 
 void LastPixelInsertProcess(uint16_t* src, uint16_t* dst , int32_t width, int32_t height) 
@@ -623,7 +621,6 @@ void LastPixelInsertProcess(uint16_t* src, uint16_t* dst , int32_t width, int32_
 			}
 		}
 	}
-	//cout << " Last Pixel Insert Process finished " << endl;
 }
 
 BZResult BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
@@ -1584,7 +1581,6 @@ BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 	}
 
 	if (SUCCESS(result)) {
-		//Fill a BMP data use three channals data
 		int32_t i, j;
 		Mat YUVdst(height, width, CV_8UC3, Scalar(0, 0, 0));
 		for (i = 0; i < height; i++) {

@@ -15,14 +15,14 @@
 #define LOG_LEVEL (0x1 + 0x2 + 0x4)
 
 #define LOG_BUFFER_SIZE				256
-#define LOG_BUFFER_PERSERVE_SIZE	2		//2 preserve for \0 and \n
-#define LOG_BUFFER_TIME_SIZE		24		//24 char "xxxx-xx-xx xx:xx:xx:xxx "
+#define LOG_BUFFER_PERSERVE_SIZE	2		/* 2 preserve for \0 and \n */
+#define LOG_BUFFER_TIME_SIZE		24		/* 24 char "xxxx-xx-xx xx:xx:xx:xxx " */
 #define LOG_BUFFER_LEFT_SIZE		LOG_BUFFER_SIZE -  LOG_BUFFER_PERSERVE_SIZE - LOG_BUFFER_TIME_SIZE - sizeof(long long int)
 
 
 #define SYSTEM_YEAR_OFFSET			1900
 #define SYSTEM_MONTH_OFFSET			1
-#define LOCAL_TIME_ZOOM_OFFSET		8	//Beijing time zoom
+#define LOCAL_TIME_ZOOM_OFFSET		8	/* Beijing time zoom */
 
 int BZLogAddInfo(const char* str, ...);
 void BZLogAddTime(const char* str, va_list va);

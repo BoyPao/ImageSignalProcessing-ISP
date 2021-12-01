@@ -15,6 +15,7 @@
 
 #define NODE_NAME_MAX_SZIE 15
 
+/* NODE */
 enum PROCESS_TYPE {
 	PROCESS_BLC = 0,
 	PROCESS_LSC,
@@ -329,7 +330,7 @@ ISPResult ISPNecNode<T1, T2>::Process(ISPParamManager* pPM)
 	char name[NODE_NAME_MAX_SZIE];
 	GetNodeName(name);
 	if (result == ISP_SUCCESS) {
-		ISPLogi("%s:Process finished.", name);
+		ISPLogd("%s:Process finished.", name);
 	}
 	else if (result == ISP_SKIP) {
 		ISPLogi("%s:Skiped.", name);
@@ -612,7 +613,7 @@ ISPResult ISPList<T1, T2, T3, T4>::Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T
 	}
 
 	if (SUCCESS(result)) {
-		StateTransform(STATE_TRANS_FORWARD);
+		result = StateTransform(STATE_TRANS_FORWARD);
 	}
 
 	return result;
@@ -639,7 +640,7 @@ ISPResult ISPList<T1, T2, T3, T4>::SetListConfig(ISP_LIST_PROPERTY* pCfg)
 	}
 
 	if (SUCCESS(result)) {
-		StateTransform(STATE_TRANS_FORWARD);
+		result = StateTransform(STATE_TRANS_FORWARD);
 	}
 
 	return result;
@@ -724,7 +725,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreatISPList()
 	ISPLogd("List(%d) current node num:%d", mId, mNodeNum);
 
 	if (SUCCESS(result)) {
-		StateTransform(STATE_TRANS_FORWARD);
+		result = StateTransform(STATE_TRANS_FORWARD);
 	}
 
 	return result;
@@ -1179,7 +1180,7 @@ ISPResult ISPList<T1, T2, T3, T4>::Process()
 	}
 
 	if (SUCCESS(result)) {
-		StateTransform(STATE_TRANS_FORWARD);
+		result = StateTransform(STATE_TRANS_FORWARD);
 	}
 
 	if (SUCCESS(result)) {
@@ -1364,7 +1365,7 @@ ISPResult ISPList<T1, T2, T3, T4>::PostProcess()
 
 	if (SUCCESS(result)) {
 		ISPLogd(">>>>> List(%d) Post process finished! >>>>>", mId);
-		StateTransform(STATE_TRANS_FORWARD);
+		result = StateTransform(STATE_TRANS_FORWARD);
 	}
 
 	return result;

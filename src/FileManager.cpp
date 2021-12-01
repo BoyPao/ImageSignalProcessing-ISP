@@ -130,6 +130,7 @@ ISPResult ImageFileManager::ReadRawData(uint8_t* buffer, int32_t bufferSize, ISP
 	}
 
 	if (SUCCESS(result)) {
+		ISPLogi("Raw input path:%s", mInputImg.pInputPath);
 		ifstream OpenFile(mInputImg.pInputPath, ios::in | ios::binary);
 		if (OpenFile.fail()) {
 			result = ISP_FAILED;
@@ -140,7 +141,7 @@ ISPResult ImageFileManager::ReadRawData(uint8_t* buffer, int32_t bufferSize, ISP
 			OpenFile.seekg(0, ios::end);
 			streampos fileSize = OpenFile.tellg();
 			mInputImg.rawSize = (int32_t)fileSize;
-			ISPLogi("Raw size:%d", (int32_t)fileSize);
+			ISPLogd("Raw size:%d", (int32_t)fileSize);
 			OpenFile.seekg(0, ios::beg);
 
 			if (bufferSize >= mInputImg.rawSize) {
@@ -192,13 +193,13 @@ ISPResult ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dst
 	if(channels != 3 && channels != 1) {
 		result = ISP_INVALID_PARAM;
 		ISPLoge("Invalid BMP output channnels:%d", channels);
-		//Wait for developing here
+		//TODO: does it need to be support?
 	}
 
 	if (SUCCESS(result)) {
 		memcpy(dstData, srcData, channels * size);
 
-		//Convertion for the head & tail of data array
+		/* Convertion for the head & tail of data array */
 		while (j < channels * size - j) {
 			temp = dstData[channels * size - j - 1];
 			dstData[channels * size - j - 1] = dstData[j];
@@ -206,7 +207,7 @@ ISPResult ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dst
 			j++;
 		}
 
-		//mirror flip
+		/* mirror flip */
 		for (int32_t row = 0; row < mOutputImg.hight; row++) {
 			int32_t col = 0;
 			while (col < channels * mOutputImg.width - col) {
@@ -241,7 +242,7 @@ void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 	headerinfo.biClrUsed = (channels == 1) ? 256 : 0;
 	headerinfo.biClrImportant = 0;
 
-	header.bfType = ('M' << 8) + 'B'; // ÆäÖµÎª0x4D42;
+	header.bfType = ('M' << 8) + 'B'; // equals to 0x4D42;
 	header.bfReserved1 = 0;
 	header.bfReserved2 = 0;
 
@@ -269,7 +270,7 @@ void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 	header.bfSize = tempSize;
 #endif
 
-	ISPLogi("BMPPath:%s", mOutputImg.pOutputPath);
+	ISPLogi("BMP output path:%s", mOutputImg.pOutputPath);
 	ofstream out(mOutputImg.pOutputPath, ios::binary);
 	out.write((char*)& header, sizeof(BITMAPFILEHEADER));
 	out.write((char*)& headerinfo, sizeof(BITMAPINFOHEADER));
@@ -286,8 +287,6 @@ void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 		}
 		out.write((char*)data, BMPSize);
 		out.close();
-
-		ISPLogi("BMP saved");
 	}
 	else {
 		ISPLoge("Cannot write file:%s", mOutputImg.pOutputPath);

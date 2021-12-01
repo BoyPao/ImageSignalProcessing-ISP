@@ -89,21 +89,21 @@ struct ISP_CALLBACKS {
 
 struct LIB_FUNCS
 {
-	//Bayer Process
+	/* Bayer Process */
 	void (*LIB_BLC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_LSC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 
-	//RGB Process
+	/* RGB Process */
 	void (*LIB_Demosaic)	(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_WB)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_CC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_Gamma)		(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 
-	//YUVProcess
+	/* YUVProcess */
 	void (*LIB_WNR)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_EE)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 
-	//CST
+	/* CST */
 	void (*LIB_CST_RAW2RGB)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_CST_RGB2YUV)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 	void (*LIB_CST_YUV2RGB)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
