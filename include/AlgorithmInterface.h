@@ -12,6 +12,9 @@
 #include "Utils.h"
 #include "ParamManager.h"
 
+#define CHECK_PACKAGED(format)                          (((format) == UNPACKAGED_RAW10_LSB) ||								\
+														((format) == UNPACKAGED_RAW10_MSB)) ? 0 : 1
+
 #define PIXELS2WORDS_MIPI_PACKAGED(pixelNum, bitspp)	(((bitspp) < BITS_PER_WORD) ?										\
 														0 :																	\
 														(((bitspp) == BITS_PER_WORD) ?										\

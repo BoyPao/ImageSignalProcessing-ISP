@@ -365,7 +365,7 @@ BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS
 
 	if (SUCCESS(result)) {
 		int32_t width, height;
-		LIB_RAW_TYPE rawType = LIB_RAW_TYPE_NUM;
+		LIB_BAYER_ORDER bayerOrder = LIB_BAYER_ORDER_NUM;
 		int32_t i, j;
 		float* pR = nullptr;
 		float* pGr = nullptr;
@@ -374,27 +374,37 @@ BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS
 		float* pLut = nullptr;
 		width = pParams->info.width;
 		height = pParams->info.height;
-		rawType = pParams->info.rawType;
-		BZLogd("width:%d height:%d type:%d", width, height, rawType);
-		switch (rawType)
+		bayerOrder = pParams->info.bayerOrder;
+		BZLogd("width:%d height:%d type:%d", width, height, bayerOrder);
+		switch (bayerOrder)
 		{
-		case LIB_RAW10_MIPI_RGGB:
-		case LIB_RAW10_UNPACKAGED_RGGB:
+		case LIB_RGGB:
 			pR = pParams->LSC_param.GainCh1;
 			pGr = pParams->LSC_param.GainCh2;
 			pGb = pParams->LSC_param.GainCh3;
 			pB = pParams->LSC_param.GainCh4;
 			break;
-		case LIB_RAW10_MIPI_BGGR:
-		case LIB_RAW10_UNPACKAGED_BGGR:
+		case LIB_BGGR:
 			pB = pParams->LSC_param.GainCh1;
 			pGb = pParams->LSC_param.GainCh2;
 			pGr = pParams->LSC_param.GainCh3;
 			pR = pParams->LSC_param.GainCh4;
 			break;
+		case LIB_GRBG:
+			pGr = pParams->LSC_param.GainCh1;
+			pR = pParams->LSC_param.GainCh2;
+			pB = pParams->LSC_param.GainCh3;
+			pGb = pParams->LSC_param.GainCh4;
+			break;
+		case LIB_GBRG:
+			pGb = pParams->LSC_param.GainCh1;
+			pB = pParams->LSC_param.GainCh2;
+			pR = pParams->LSC_param.GainCh3;
+			pGr = pParams->LSC_param.GainCh4;
+			break;
 		default:
 			result = BZ_INVALID_PARAM;
-			BZLoge("Unsupported raw type:%d result:%d", rawType, result);
+			BZLoge("Unsupported bayer order:%d result:%d", bayerOrder, result);
 			break;
 		}
 
@@ -477,7 +487,7 @@ BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS
 	return result;
 }*/
 
-void FirstPixelInsertProcess(uint16_t* src, uint16_t* dst, int32_t width, int32_t height) 
+void FirstPixelInsertProcess(uint16_t* src, uint16_t* dst, int32_t width, int32_t height)
 {
 	int32_t i, j;
 
@@ -623,6 +633,271 @@ void LastPixelInsertProcess(uint16_t* src, uint16_t* dst , int32_t width, int32_
 	}
 }
 
+BZResult DemosaicInterpolation(uint16_t* pch1, uint16_t* pch2, uint16_t* pch3,
+		int32_t width, int32_t height, LIB_BAYER_ORDER order)
+{
+	BZResult result = BZ_SUCCESS;
+
+	if (!pch1 || !pch2 || !pch3) {
+		result = BZ_FAILED;
+		BZLoge("Invalid input %d", result);
+	}
+
+	if (width % 2 || height % 2) {
+		result = BZ_FAILED;
+		BZLoge("Unsupported ord width/height %dx%d", width, height);
+	}
+
+	if (SUCCESS(result)) {
+		switch(order) {
+			case LIB_RGGB:
+			case LIB_BGGR:
+				for(int32_t row = 0; row < height; row++) {
+					for(int32_t col = 0; col < width; col++) {
+						if (row % 2 == 0 && col % 2 == 0) {
+							if (row == 0 && col == 0) {
+								pch2[row * width + col] = (pch2[(row + 1) * width + col] +
+										pch2[row * width + col + 1]) / 2;
+							}
+							else if (row == 0 && col > 0 && col % 2 == 0) {
+								pch2[row * width + col] = (pch2[row * width + col - 1] +
+										pch2[(row + 1) * width + col] +
+										pch2[row * width + col + 1]) / 3;
+							}
+							else if (row > 0 && col == 0 && row % 2 == 0) {
+								pch2[row * width + col] = (pch2[(row - 1) * width + col] +
+										pch2[row * width + col + 1] +
+										pch2[(row + 1) * width + col]) / 3;
+							}
+							else {
+								pch2[row * width + col] = (pch2[row * width + col - 1] +
+										pch2[row * width + col + 1] +
+										pch2[(row - 1) * width + col] +
+										pch2[(row + 1) * width + col]) / 4;
+							}
+
+							if (row > 0 && col > 0) {
+								pch3[row * width + col] = (pch3[(row - 1) * width + col - 1] +
+										pch3[(row - 1) * width + col + 1] +
+										pch3[(row + 1) * width + col - 1] +
+										pch3[(row + 1) * width + col + 1]) / 4;
+							}
+							else if (row == 0 && col > 0) {
+								pch3[row * width + col] = (pch3[(row + 1) * width + col - 1] +
+										pch3[(row + 1) * width + col + 1]) / 2;
+							}
+							else if (row > 0 && col == 0) {
+								pch3[row * width + col] = (pch3[(row - 1) * width + col + 1] +
+										pch3[(row + 1) * width + col + 1]) / 2;
+							}
+							else {
+								pch3[row * width + col] = pch3[(row + 1) * width + col + 1];
+							}
+						}
+						else if (row % 2 == 1 && col % 2 == 1) {
+							if (row == height - 1 && col < width - 1 && col % 2 == 1) {
+								pch2[row * width + col] = (pch2[row * width + col - 1] +
+										pch2[(row - 1) * width + col] +
+										pch2[row * width + col + 1]) / 3;
+							}
+							else if (row < height - 1 && row % 2 == 1 && col == width - 1) {
+								pch2[row * width + col] = (pch2[(row - 1) * width + col] +
+										pch2[row * width + col - 1] +
+										pch2[(row + 1) * width + col]) / 3;
+							}
+							else if (row == height - 1 && col  == width - 1) {
+								pch2[row * width + col] = (pch2[(row - 1) * width + col] +
+										pch2[row * width + col - 1]) / 2;
+							}
+							else {
+								pch2[row * width + col] = (pch2[row * width + col - 1] +
+										pch2[row * width + col + 1] +
+										pch2[(row - 1) * width + col] +
+										pch2[(row + 1) * width + col]) / 4;
+							}
+
+							if (row < height - 1 && col < width - 1) {
+								pch1[row * width + col] = (pch1[(row - 1) * width + col - 1] +
+										pch1[(row - 1) * width + col + 1] +
+										pch1[(row + 1) * width + col - 1] +
+										pch1[(row + 1) * width + col + 1]) / 4;
+							}
+							else if (row == height - 1 && col < width - 1) {
+								pch1[row * width + col] = (pch1[(row - 1) * width + col - 1] +
+										pch1[(row - 1) * width + col + 1]) / 2;
+							}
+							else if (row < height - 1 && col == width - 1) {
+								pch1[row * width + col] = (pch1[(row - 1) * width + col - 1] +
+										pch1[(row + 1) * width + col - 1]) / 2;
+							}
+							else {
+								pch1[row * width + col] = pch1[(row - 1) * width + col - 1];
+							}
+						}
+						else if (row % 2 == 0 && col % 2 == 1) {
+							if (col == width - 1) {
+								pch1[row * width + col] = pch1[row * width + col - 1];
+							}
+							else {
+								pch1[row * width + col] = (pch1[row * width + col - 1] +
+										pch1[row * width + col + 1]) / 2;
+							}
+							if (row == 0) {
+								pch3[row * width + col] = pch3[(row + 1) * width + col];
+							}
+							else {
+								pch3[row * width + col] = (pch3[(row - 1) * width + col] +
+										pch3[(row + 1) * width + col]) / 2;
+							}
+						}
+						else if (row % 2 == 1 && col % 2 == 0) {
+							if (row == height - 1) {
+								pch1[row * width + col] = pch1[(row - 1) * width + col];
+							}
+							else {
+								pch1[row * width + col] = (pch1[(row - 1) * width + col] +
+										pch1[(row + 1) * width + col]) / 2;
+							}
+							if (col == 0) {
+								pch3[row * width + col] = pch3[row * width + col + 1];
+							}
+							else {
+								pch3[row * width + col] = (pch3[row * width + col - 1] +
+										pch3[row * width + col + 1]) / 2;
+							}
+						}
+					}
+				}
+				break;
+			case LIB_GRBG:
+			case LIB_GBRG:
+				for(int32_t row = 0; row < height; row++) {
+					for(int32_t col = 0; col < width; col++) {
+						if (row % 2 == 0 && col % 2 == 0) {
+							if (col == 0) {
+								pch1[row * width + col] = pch1[row * width + col + 1];
+							}
+							else {
+								pch1[row * width + col] = (pch1[row * width + col - 1] +
+										pch1[row * width + col + 1]) / 2;
+							}
+							if (row == 0) {
+								pch3[row * width + col] = pch3[(row + 1) * width + col];
+							}
+							else {
+								pch3[row * width + col] = (pch3[(row - 1) * width + col] +
+										pch3[(row + 1) * width + col]) / 2;
+							}
+						}
+						else if (row % 2 == 1 && col % 2 == 1) {
+							if (row == height - 1) {
+								pch1[row * width + col] = pch1[(row - 1) * width + col];
+							}
+							else {
+								pch1[row * width + col] = (pch1[(row - 1) * width + col] +
+										pch1[(row + 1) * width + col]) / 2;
+							}
+							if (col == width - 1) {
+								pch3[row * width + col] = pch3[row * width + col - 1];
+							}
+							else {
+								pch3[row * width + col] = (pch3[row * width + col - 1] +
+										pch3[row * width + col + 1]) / 2;
+							}
+						}
+						else if (row % 2 == 0 && col % 2 == 1) {
+							if (row == 0 && col == width - 1) {
+								pch2[row * width + col] = (pch2[(row + 1) * width + col] +
+										pch2[row * width + col - 1]) / 2;
+							}
+							else if (row == 0 && col < width - 1 && col % 2 == 1) {
+								pch2[row * width + col] = (pch2[row * width + col - 1] +
+										pch2[(row + 1) * width + col] +
+										pch2[row * width + col + 1]) / 3;
+							}
+							else if (row > 0 && row % 2 == 0 && col == width - 1) {
+								pch2[row * width + col] = (pch2[(row - 1) * width + col] +
+										pch2[row * width + col - 1] +
+										pch2[(row + 1) * width + col]) / 3;
+							}
+							else {
+								pch2[row * width + col] = (pch2[row * width + col - 1] +
+										pch2[row * width + col + 1] +
+										pch2[(row - 1) * width + col] +
+										pch2[(row + 1) * width + col]) / 4;
+							}
+
+							if (row > 0 && col < width - 1) {
+								pch3[row * width + col] = (pch3[(row - 1) * width + col - 1] +
+										pch3[(row - 1) * width + col + 1] +
+										pch3[(row + 1) * width + col - 1] +
+										pch3[(row + 1) * width + col + 1]) / 4;
+							}
+							else if (row == 0 && col < width - 1) {
+								pch3[row * width + col] = (pch3[(row + 1) * width + col - 1] +
+										pch3[(row + 1) * width + col + 1])/ 2;
+							}
+							else if (row > 0 && col == width - 1) {
+								pch3[row * width + col] = (pch3[(row - 1) * width + col - 1] +
+										pch3[(row + 1) * width + col - 1]) / 2;
+							}
+							else {
+								pch3[row * width + col] = pch3[(row - 1) * width + col - 1];
+							}
+						}
+						else if (row % 2 == 1 && col % 2 == 0) {
+							if (row == height - 1 && col > 0 && col % 2 == 0) {
+								pch2[row * width + col] = (pch2[row * width + col - 1] +
+										pch2[(row - 1) * width + col] +
+										pch2[row * width + col + 1]) / 3;
+							}
+							else if (row < height - 1 && row % 2 == 1 && col == 0) {
+								pch2[row * width + col] = (pch2[(row - 1) * width + col] +
+										pch2[row * width + col + 1] +
+										pch2[(row + 1) * width + col]) / 3;
+							}
+							else if (row == height - 1 && col  == 0) {
+								pch2[row * width + col] = (pch2[(row - 1) * width + col] +
+										pch2[row * width + col + 1]) / 2;
+							}
+							else {
+								pch2[row * width + col] = (pch2[row * width + col - 1] +
+										pch2[row * width + col + 1] +
+										pch2[(row - 1) * width + col] +
+										pch2[(row + 1) * width + col]) / 4;
+							}
+
+							if (row < height - 1 && col > 0) {
+								pch1[row * width + col] = (pch1[(row - 1) * width + col - 1] +
+										pch1[(row - 1) * width + col + 1] +
+										pch1[(row + 1) * width + col - 1] +
+										pch1[(row + 1) * width + col + 1]) / 4;
+							}
+							else if (row == height - 1 && col > 0) {
+								pch1[row * width + col] = (pch1[(row - 1) * width + col - 1] +
+										pch1[(row - 1) * width + col + 1]) / 2;
+							}
+							else if (row < height - 1 && col == 0) {
+								pch1[row * width + col] = (pch1[(row - 1) * width + col + 1] +
+										pch1[(row + 1) * width + col + 1]) / 2;
+							}
+							else {
+								pch1[row * width + col] = pch1[(row + 1) * width + col + 1];
+							}
+						}
+					}
+				}
+				break;
+			case LIB_BAYER_ORDER_NUM:
+			default:
+				BZLoge("Unsupported bayer order:%d", result);
+				break;
+		}
+	}
+
+	return result;
+}
+
 BZResult BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult result = BZ_SUCCESS;
@@ -634,36 +909,38 @@ BZResult BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	}
 
 	int32_t width, height;
-	LIB_RAW_TYPE rawType = LIB_RAW_TYPE_NUM;
+	LIB_BAYER_ORDER bayerOrder = LIB_BAYER_ORDER_NUM;
 	width = pParams->info.width;
 	height = pParams->info.height;
-	rawType = pParams->info.rawType;
-	BZLogd("width:%d height:%d type:%d", width, height, rawType);
+	bayerOrder = pParams->info.bayerOrder;
+	BZLogd("width:%d height:%d type:%d", width, height, bayerOrder);
 	uint16_t* pChannel1 = nullptr;
 	uint16_t* pChannel2 = nullptr;
 	uint16_t* pChannel3 = nullptr;
-	switch (rawType) {
-	case LIB_RAW10_MIPI_RGGB:
-	case LIB_RAW10_UNPACKAGED_RGGB:
+	switch (bayerOrder) {
+	case LIB_RGGB:
+	case LIB_GRBG:
 		pChannel3 = static_cast<uint16_t*>(data);
 		pChannel2 = static_cast<uint16_t*>(data) + width * height;
 		pChannel1 = static_cast<uint16_t*>(data) + 2 * width * height;
 		break;
-	case LIB_RAW10_MIPI_BGGR:
-	case LIB_RAW10_UNPACKAGED_BGGR:
+	case LIB_BGGR:
+	case LIB_GBRG:
 		pChannel1 = static_cast<uint16_t*>(data);
 		pChannel2 = static_cast<uint16_t*>(data) + width * height;
 		pChannel3 = static_cast<uint16_t*>(data) + 2 * width * height;
 		break;
 	default:
 		result = BZ_INVALID_PARAM;
-		BZLoge("Unsupported raw type:%d result:%d", rawType, result);
+		BZLoge("Unsupported bayer order:%d result:%d", bayerOrder, result);
 		break;
 	}
 	if (SUCCESS(result)) {
-		FirstPixelInsertProcess(pChannel1, pChannel1, width, height);
-		TwoGPixelInsertProcess(pChannel2, pChannel2, width, height);
-		LastPixelInsertProcess(pChannel3, pChannel3, width, height);
+		result = DemosaicInterpolation(pChannel1, pChannel2, pChannel3,
+				width, height, bayerOrder);
+//		FirstPixelInsertProcess(pChannel1, pChannel1, width, height);
+//		TwoGPixelInsertProcess(pChannel2, pChannel2, width, height);
+//		LastPixelInsertProcess(pChannel3, pChannel3, width, height);
 	}
 
 	return result;
@@ -1428,7 +1705,8 @@ BZResult BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 	return result;
 }
 
-BZResult ReadChannels(uint16_t* data, uint16_t* pChannel1, uint16_t* pChannel2, uint16_t* pChannel3, int32_t width, int32_t height)
+BZResult ReadChannels(uint16_t* data, uint16_t* pChannel1, uint16_t* pChannel2, uint16_t* pChannel3,
+		int32_t width, int32_t height, LIB_BAYER_ORDER order)
 {
 	BZResult result = BZ_SUCCESS;
 	int32_t i, j;
@@ -1438,24 +1716,56 @@ BZResult ReadChannels(uint16_t* data, uint16_t* pChannel1, uint16_t* pChannel2, 
 	}
 
 	if (SUCCESS(result)) {
-		for (i = 0; i < height; i++) {
-			for (j = 0; j < width; j++) {
-				if (i % 2 == 0 && j % 2 == 0) {
-					pChannel1[i * width + j] = data[i * width + j];
-					pChannel2[i * width + j] = 0;
-					pChannel3[i * width + j] = 0;
+		switch (order) {
+			case LIB_RGGB:
+			case LIB_BGGR:
+				for (i = 0; i < height; i++) {
+					for (j = 0; j < width; j++) {
+						if (i % 2 == 0 && j % 2 == 0) {
+							pChannel1[i * width + j] = data[i * width + j];
+							pChannel2[i * width + j] = 0;
+							pChannel3[i * width + j] = 0;
+						}
+						else if ((i % 2 == 0 && j % 2 == 1) || (i % 2 == 1 && j % 2 == 0)) {
+							pChannel1[i * width + j] = 0;
+							pChannel2[i * width + j] = data[i * width + j];
+							pChannel3[i * width + j] = 0;
+						}
+						else {
+							pChannel1[i * width + j] = 0;
+							pChannel2[i * width + j] = 0;
+							pChannel3[i * width + j] = data[i * width + j];
+						}
+					}
 				}
-				else if ((i % 2 == 0 && j % 2 == 1) || (i % 2 == 1 && j % 2 == 0)) {
-					pChannel1[i * width + j] = 0;
-					pChannel2[i * width + j] = data[i * width + j];
-					pChannel3[i * width + j] = 0;
+				break;
+			case LIB_GRBG:
+			case LIB_GBRG:
+				for (i = 0; i < height; i++) {
+					for (j = 0; j < width; j++) {
+						if (i % 2 == 0 && j % 2 == 1) {
+							pChannel1[i * width + j] = data[i * width + j];
+							pChannel2[i * width + j] = 0;
+							pChannel3[i * width + j] = 0;
+						}
+						else if ((i % 2 == 0 && j % 2 == 0) || (i % 2 == 1 && j % 2 == 1)) {
+							pChannel1[i * width + j] = 0;
+							pChannel2[i * width + j] = data[i * width + j];
+							pChannel3[i * width + j] = 0;
+						}
+						else {
+							pChannel1[i * width + j] = 0;
+							pChannel2[i * width + j] = 0;
+							pChannel3[i * width + j] = data[i * width + j];
+						}
+					}
 				}
-				else {
-					pChannel1[i * width + j] = 0;
-					pChannel2[i * width + j] = 0;
-					pChannel3[i * width + j] = data[i * width + j];
-				}
-			}
+				break;
+			case LIB_BAYER_ORDER_NUM:
+			default:
+				BZLoge("Not support bayer order:%d", order);
+				result = BZ_FAILED;
+				break;
 		}
 	}
 
@@ -1472,35 +1782,36 @@ BZResult BZ_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 	}
 
 	int32_t width, height;
-	LIB_RAW_TYPE rawType = LIB_RAW_TYPE_NUM;
+	LIB_BAYER_ORDER bayerOrder = LIB_BAYER_ORDER_NUM;
 	width = pParams->info.width;
 	height = pParams->info.height;
-	rawType = pParams->info.rawType;
-	BZLogd("width:%d height:%d type:%d", width, height, rawType);
+	bayerOrder = pParams->info.bayerOrder;
+	BZLogd("width:%d height:%d type:%d", width, height, bayerOrder);
 	uint16_t* pChannel1 = nullptr;
 	uint16_t* pChannel2 = nullptr;
 	uint16_t* pChannel3 = nullptr;
-	switch (rawType) {
-	case LIB_RAW10_MIPI_RGGB:
-	case LIB_RAW10_UNPACKAGED_RGGB:
+	switch (bayerOrder) {
+	case LIB_RGGB:
+	case LIB_GRBG:
 		pChannel3 = static_cast<uint16_t*>(dst);
 		pChannel2 = static_cast<uint16_t*>(dst) + width * height;
 		pChannel1 = static_cast<uint16_t*>(dst) + 2 * width * height;
 		break;
-	case LIB_RAW10_MIPI_BGGR:
-	case LIB_RAW10_UNPACKAGED_BGGR:
+	case LIB_GBRG:
+	case LIB_BGGR:
 		pChannel1 = static_cast<uint16_t*>(dst);
 		pChannel2 = static_cast<uint16_t*>(dst) + width * height;
 		pChannel3 = static_cast<uint16_t*>(dst) + 2 * width * height;
 		break;
 	default:
 		result = BZ_INVALID_PARAM;
-		BZLoge("Unsupported raw type:%d result:%d", rawType, result);
+		BZLoge("Unsupported bayer order:%d result:%d", bayerOrder, result);
 		break;
 	}
 
 	if (SUCCESS(result)) {
-		result = ReadChannels(static_cast<uint16_t*>(src), pChannel1, pChannel2, pChannel3, width, height);
+		result = ReadChannels(static_cast<uint16_t*>(src), pChannel1, pChannel2, pChannel3,
+				width, height, bayerOrder);
 	}
 
 #if  DUMP_NEEDED

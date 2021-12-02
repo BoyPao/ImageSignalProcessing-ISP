@@ -22,9 +22,6 @@ typedef int32_t ISPState;
 static const ISPState Uninited = 0;
 static const ISPState Inited = 1;
 
-typedef int32_t ISPRawFormate;
-static const ISPRawFormate Mipi10Bit = 0;
-
 struct InputImgInfo
 {
 	char* pInputPath;
@@ -70,10 +67,11 @@ public:
 	ISPResult SetOutputImgInfo(char* path);
 	ISPResult SetOutputImgInfo(int32_t width, int32_t hight);
 	ISPResult SetOutputVideoInfo(OutputVideoInfo info);
-	ISPResult ReadRawData(uint8_t* buffer, int32_t bufferSize, ISPRawFormate formate);
+	ISPResult ReadRawData(uint8_t* buffer, int32_t bufferSize);
 	ISPResult SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData);
 	void WriteBMP(BYTE* data, int32_t channels);
 	ISPResult SaveBMP(uint8_t* srcData, int32_t channels);
+
 };
 
 void DumpImgDataAsText(void* data, int32_t height, int32_t width, size_t bitWidth, char* dumpPath);

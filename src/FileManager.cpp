@@ -121,7 +121,7 @@ ISPResult ImageFileManager::SetOutputVideoInfo(OutputVideoInfo info)
 	return result;
 }
 
-ISPResult ImageFileManager::ReadRawData(uint8_t* buffer, int32_t bufferSize, ISPRawFormate formate)
+ISPResult ImageFileManager::ReadRawData(uint8_t* buffer, int32_t bufferSize)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -141,18 +141,16 @@ ISPResult ImageFileManager::ReadRawData(uint8_t* buffer, int32_t bufferSize, ISP
 			OpenFile.seekg(0, ios::end);
 			streampos fileSize = OpenFile.tellg();
 			mInputImg.rawSize = (int32_t)fileSize;
-			ISPLogd("Raw size:%d", (int32_t)fileSize);
+			ISPLogd("File size:%d", (int32_t)fileSize);
 			OpenFile.seekg(0, ios::beg);
 
 			if (bufferSize >= mInputImg.rawSize) {
-				if (formate == Mipi10Bit) {
-					OpenFile.read((char*)buffer, mInputImg.rawSize);
-				}
+				OpenFile.read((char*)buffer, mInputImg.rawSize);
 			}
 			else {
-				buffer = nullptr;
-				result = ISP_MEMORY_ERROR;
-				ISPLoge("Invalid buffer size! result:%d", result);
+				ISPLogw("File size:%d >  buffer size:%d! result:%d",
+						mInputImg.rawSize, bufferSize, result);
+				OpenFile.read((char*)buffer, bufferSize);
 			}
 		}
 
@@ -272,9 +270,12 @@ void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 
 	ISPLogi("BMP output path:%s", mOutputImg.pOutputPath);
 	ofstream out(mOutputImg.pOutputPath, ios::binary);
-	out.write((char*)& header, sizeof(BITMAPFILEHEADER));
-	out.write((char*)& headerinfo, sizeof(BITMAPINFOHEADER));
-	if (!out.fail()) {
+	if (out.fail()) {
+		ISPLoge("Cannot open ouput file:%s", mOutputImg.pOutputPath);
+	}
+	else {
+		out.write((char*)& header, sizeof(BITMAPFILEHEADER));
+		out.write((char*)& headerinfo, sizeof(BITMAPINFOHEADER));
 		if (channels == 1) {
 			static RGBQUAD palette[256];
 			for (unsigned int i = 0; i < 256; i++)
@@ -286,11 +287,8 @@ void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 			out.write((char*)palette, sizeof(RGBQUAD) * 256);
 		}
 		out.write((char*)data, BMPSize);
-		out.close();
 	}
-	else {
-		ISPLoge("Cannot write file:%s", mOutputImg.pOutputPath);
-	}
+	out.close();
 }
 
 void DumpImgDataAsText(void* data, int32_t height, int32_t width, size_t bitWidth, char* dumpPath) 

@@ -110,10 +110,10 @@ ISPResult ISPParamManager::GetImgInfo(LIB_PARAMS* pParams)
 	if (SUCCESS(result)) {
 		pParams->info.width = mImg_Info.width;
 		pParams->info.height = mImg_Info.height;
-		pParams->info.rawType = (LIB_RAW_TYPE)mImg_Info.rawType;
+		pParams->info.rawFormat = (LIB_RAW_FORMAT)mImg_Info.rawFormat;
 		pParams->info.bitspp = mImg_Info.bitspp;
 		pParams->info.stride = mImg_Info.stride;
-		pParams->info.packaged = mImg_Info.packaged;
+		pParams->info.bayerOrder = (LIB_BAYER_ORDER)mImg_Info.bayerOrder;
 	}
 
 	return result;
@@ -275,7 +275,7 @@ ISPResult ISPParamManager::GetIMGInfo(void* imgInfo)
 	return result;
 }
 
-ISPResult ISPParamManager::GetRawType(RAW_TYPE* pType)
+ISPResult ISPParamManager::GetRawType(RAW_FORMATE* pType)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -286,7 +286,7 @@ ISPResult ISPParamManager::GetRawType(RAW_TYPE* pType)
 
 	if (SUCCESS(result)) {
 		if (pType) {
-			*pType = mImg_Info.rawType;
+			*pType = mImg_Info.rawFormat;
 		}
 		else {
 			result = ISP_INVALID_PARAM;

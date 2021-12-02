@@ -14,6 +14,8 @@
 #include "BZLog.h"
 #include "LibInterface.h"
 
+#define CHECK_PACKAGED(format)                          (((format) == LIB_UNPACKAGED_RAW10_LSB) ||                          \
+														((format) == LIB_UNPACKAGED_RAW10_MSB)) ? 0 : 1
 
 #define PIXELS2WORDS_MIPI_PACKAGED(pixelNum, bitspp)	(((bitspp) < BITS_PER_WORD) ?										\
 														0 :																	\

@@ -23,12 +23,20 @@ enum PARAM_MANAGER_STATE {
 	PM_SELECTED
 };
 
-enum RAW_TYPE {
-	RAW10_MIPI_RGGB = 0,
-	RAW10_MIPI_BGGR,
-	RAW10_UNPACKAGED_RGGB,
-	RAW10_UNPACKAGED_BGGR,
-	RAW_TYPE_NUM
+enum RAW_FORMAT {
+	ANDROID_RAW10 = 0,
+	ORDINAL_RAW10,
+	UNPACKAGED_RAW10_LSB,
+	UNPACKAGED_RAW10_MSB,
+	RAW_FORMAT_NUM
+};
+
+enum BAYER_ORDER {
+	RGGB = 0,
+	BGGR,
+	GRBG,
+	GBRG,
+	BAYER_ORDER_NUM
 };
 
 struct IMG_INFO
@@ -37,8 +45,8 @@ struct IMG_INFO
 	int32_t height;
 	int32_t bitspp;
 	int32_t stride;
-	bool	packaged;
-	RAW_TYPE rawType;
+	RAW_FORMAT rawFormat;
+	BAYER_ORDER bayerOrder;
 };
 
 struct ISP_Config_Params {
@@ -63,7 +71,7 @@ public:
 
 	/*
 	ISPResult GetIMGInfo(void* imgInfo);
-	ISPResult GetRawType(RAW_TYPE* pType);
+	ISPResult GetRawType(RAW_FORMAT* pType);
 	ISPResult GetBLCParam(uint16_t* offset);
 	ISPResult GetLSCParam(float* pRGain, float* pGrGain, float* pGbGain, float* pBGain);
 	ISPResult GetGCCParam(double * weight);
