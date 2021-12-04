@@ -37,19 +37,21 @@ using namespace cv;
 #define TEMP "Temp"
 
 #ifdef LINUX_SYSTEM
-//#define INPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/1MCC_IMG_20181229_001526_1.raw"
-//#define INPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/20210103062220_input_4000x3000_0.raw"
+#define INPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/1MCC_IMG_20181229_001526_1.raw"
+//#define INPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/20210103062220_packaged_4000x3000_0.raw"
 //#define INPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/PD_4096x768.raw"
 //#define INPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/20210103062220_package_4000x3000_0.raw"
-#define INPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/4000_3000_unpackaged_GRBG.raw"
+//#define INPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/4000_3000_unpackaged_GRBG.raw"
+//#define INPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/4000_3000_unpackaged_MSB_GRBG.raw"
 #define IMG_OUTPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/out/img_output.bmp"
 #define VIDEO_OUTPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/out/video_output.avi"
 #elif defined WIN32_SYSTEM
 #define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\1MCC_IMG_20181229_001526_1.raw"
-//#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\20210103062220_input_4000x3000_0.raw"
-//#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\PD_4096x768.raw"
-//#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\20210103062220_package_4000x3000_0.raw"
-//#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\4000_3000_unpackaged.raw"
+//#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\20210103062220_packaged_4000x3000_0.raw"
+//#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\PD_4096x768.raw"
+//#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\20210103062220_package_4000x3000_0.raw"
+//#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\4000_3000_unpackaged_GRBG.raw"
+//#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\4000_3000_unpackaged_MSB_GRBG.raw"
 #define IMG_OUTPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\img_output.bmp"
 #define VIDEO_OUTPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\video_output.avi"
 #endif
@@ -66,17 +68,17 @@ enum MEDIA_TYPES {
 int main() {
 	ISPResult result = ISP_SUCCESS;
 
-	ISPParamManager* pParamManager = nullptr;
-	ImageFileManager* pImgFileManager = nullptr;
-	ISPListManager* pISPListMgr = nullptr;
-	ISPVideo* pVideo = nullptr;
+	std::shared_ptr<ISPParamManager> pParamManager;
+	std::shared_ptr<ImageFileManager> pImgFileManager;
+	std::unique_ptr<ISPListManager> pISPListMgr;
+	std::unique_ptr<ISPVideo> pVideo;
 	int32_t numPixel = 0;
 	int32_t alignedW = 0;
 	int32_t bufferSize = 0;
-	uint8_t* mipiRawData = nullptr;
-	uint16_t* rawData = nullptr;
-	uint16_t* bgrData = nullptr;
-	uint8_t* yuvData = nullptr;
+	std::shared_ptr<uint8_t> mipiRawData;
+	std::shared_ptr<uint16_t> rawData;
+	std::shared_ptr<uint16_t> bgrData;
+	std::shared_ptr<uint8_t> yuvData;
 	Mat dst;
 	InputImgInfo inputInfo;
 	OutputImgInfo imgOutputPath;
@@ -88,16 +90,16 @@ int main() {
 	int32_t listId = 0;
 	int32_t frameNum = 0;
 	int32_t fps = 0;
-	MEDIA_TYPES mediaType = IMAGE_MEDIA;
-//	MEDIA_TYPES mediaType = IMAGE_AND_VIDEO_MEDIA;
+//	MEDIA_TYPES mediaType = IMAGE_MEDIA;
+	MEDIA_TYPES mediaType = IMAGE_AND_VIDEO_MEDIA;
 
 	/* Set raw info here */
-	imgInfo.width		= 4000;
-	imgInfo.height		= 3000;
+	imgInfo.width		= 1920;
+	imgInfo.height		= 1080;
 	imgInfo.bitspp		= 10;
-	imgInfo.stride		= 16;
-	imgInfo.rawFormat	= UNPACKAGED_RAW10_LSB;
-	imgInfo.bayerOrder	= GBRG;
+	imgInfo.stride		= 10;
+	imgInfo.rawFormat	= ANDROID_RAW10;
+	imgInfo.bayerOrder	= BGGR;
 
 	if (SUCCESS(result)) {
 		if (mediaType == IMAGE_MEDIA) {
@@ -112,7 +114,7 @@ int main() {
 
 	if (SUCCESS(result)) {
 		if (!pParamManager) {
-			pParamManager = new ISPParamManager;
+			pParamManager = std::make_shared<ISPParamManager>();
 		}
 		result = pParamManager->SetIMGInfo(&imgInfo);
 	}
@@ -131,7 +133,7 @@ int main() {
 		result = pParamManager->GetIMGDimension(&videoOutputInfo.width, &videoOutputInfo.hight);
 
 		if (!pImgFileManager) {
-			pImgFileManager = new ImageFileManager;
+			pImgFileManager = std::make_shared<ImageFileManager>();
 		}
 		result = pImgFileManager->Init();
 		if (SUCCESS(result)) {
@@ -148,16 +150,16 @@ int main() {
 		ISPLogi("Image size:%dx%d pixelNum:%d", imgInfo.width, imgInfo.height, numPixel);
 		ISPLogi("Align (%d,%d) bufferSize:%d", alignedW, imgInfo.height, bufferSize);
 
-		mipiRawData = new uint8_t[bufferSize];
-		rawData = new uint16_t[numPixel];
-		bgrData = new uint16_t[numPixel * 3];
-		yuvData = new uint8_t[numPixel * 3];
-		dst = Mat(imgInfo.height, imgInfo.width, CV_8UC3, Scalar(0, 0, 0));
+		mipiRawData = std::shared_ptr<uint8_t>(new uint8_t[bufferSize], [] (uint8_t *p) { delete[] p; });
+		rawData		= std::shared_ptr<uint16_t>(new uint16_t[numPixel], [] (uint16_t *p) { delete[] p; });
+		bgrData		= std::shared_ptr<uint16_t>(new uint16_t[numPixel * 3], [] (uint16_t *p) { delete[] p; });
+		yuvData		= std::shared_ptr<uint8_t>(new uint8_t[numPixel * 3], [] (uint8_t *p) { delete[] p; });
+		dst			= Mat(imgInfo.height, imgInfo.width, CV_8UC3, Scalar(0, 0, 0));
 		if (mipiRawData && rawData && bgrData && yuvData && !dst.empty()) {
-			memset(mipiRawData, 0x0, bufferSize);
-			memset(rawData, 0x0, numPixel);
-			memset(bgrData, 0x0, numPixel * 3);
-			memset(yuvData, 0x0, numPixel * 3);
+			memset(mipiRawData.get(), 0x0, bufferSize);
+			memset(rawData.get(), 0x0, numPixel);
+			memset(bgrData.get(), 0x0, numPixel * 3);
+			memset(yuvData.get(), 0x0, numPixel * 3);
 		}
 		else {
 			result = ISP_MEMORY_ERROR;
@@ -167,20 +169,20 @@ int main() {
 
 	if (SUCCESS(result)) {
 		if (!pISPListMgr) {
-			pISPListMgr = new ISPListManager;
+			pISPListMgr = std::make_unique<ISPListManager>();
 		}
-		result = pISPListMgr->Init(pParamManager);
+		result = pISPListMgr->Init(pParamManager.get());
 		if (SUCCESS(result)) {
-			result = pISPListMgr->CreateList(rawData, bgrData, yuvData, dst.data, LIST_CFG_DEFAULT, &listId);
+			result = pISPListMgr->CreateList(rawData.get(), bgrData.get(), yuvData.get(), dst.data, LIST_CFG_DEFAULT, &listId);
 		}
 	}
 
 	if (SUCCESS(result)) {
-		if (!pVideo) {
-			pVideo = new ISPVideo;
-		}
+			if (!pVideo) {
+				pVideo = std::make_unique<ISPVideo>();
+			}
 		if (mediaType >= VIDEO_MEDIA && mediaType < MEDIA_TYPE_NUM) {
-			result = pVideo->Init(&dst, pImgFileManager, pParamManager);
+			result = pVideo->Init(&dst, pImgFileManager.get(), pParamManager.get());
 			if (SUCCESS(result)) {
 				result = pVideo->CreateThread();
 			}
@@ -192,11 +194,11 @@ int main() {
 		for (int32_t frameCount = 1; frameCount <= frameNum; frameCount++) {
 			ISPLogi("=========================== %d(%d) ==========================", frameCount, frameNum);
 			if (SUCCESS(result)) {
-				result = pImgFileManager->ReadRawData(mipiRawData, bufferSize);
+				result = pImgFileManager->ReadRawData(mipiRawData.get(), bufferSize);
 			}
 
 			if (SUCCESS(result)) {
-				result = Mipi10decode((void*)mipiRawData, (void*)rawData, &imgInfo);
+				result = Mipi10decode((void*)mipiRawData.get(), (void*)rawData.get(), &imgInfo);
 			}
 
 			if (SUCCESS(result)) {
@@ -241,38 +243,6 @@ int main() {
 
 	if (SUCCESS(result)) {
 		result = pISPListMgr->DestoryAllList();
-	}
-
-	if (pVideo) {
-		delete pVideo;
-	}
-
-	if (pISPListMgr) {
-		delete pISPListMgr;
-	}
-
-	if (pParamManager) {
-		delete pParamManager;
-	}
-
-	if (pImgFileManager) {
-		delete pImgFileManager;
-	}
-
-	if (mipiRawData) {
-		delete[] mipiRawData;
-	}
-
-	if (rawData) {
-		delete[] rawData;
-	}
-
-	if (bgrData) {
-		delete[] bgrData;
-	}
-
-	if (yuvData) {
-		delete[] yuvData;
 	}
 
 	if (SUCCESS(result)) {
@@ -361,16 +331,16 @@ ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info)
 						if (col * BITS_PER_WORD / info->bitspp < info->width && row < info->height) {
 							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp] =
 								(((static_cast<uint8_t*>(src)[row * alignedW + col + 0] >> 0) & (0xff >> 0)) & 0xffff) |
-								((((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0x03) & 0xffff) << 8) & 0xffff);
+								(((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0x03) << 8) & 0xffff);
 							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 1] =
 								(((static_cast<uint8_t*>(src)[row * alignedW + col + 1] >> 2) & (0xff >> 2)) & 0xffff) |
-								((((static_cast<uint8_t*>(src)[row * alignedW + col + 2] & 0x0f) & 0xffff) << 6) & 0xffff);
+								(((static_cast<uint8_t*>(src)[row * alignedW + col + 2] & 0x0f) << 6) & 0xffff);
 							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 2] =
 								(((static_cast<uint8_t*>(src)[row * alignedW + col + 2] >> 4) & (0xff >> 4)) & 0xffff) |
-								((((static_cast<uint8_t*>(src)[row * alignedW + col + 3] & 0x3f) & 0xffff) << 4) & 0xffff);
+								(((static_cast<uint8_t*>(src)[row * alignedW + col + 3] & 0x3f) << 4) & 0xffff);
 							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 3] =
 								(((static_cast<uint8_t*>(src)[row * alignedW + col + 3] >> 6) & (0xff >> 6)) & 0xffff) |
-								((((static_cast<uint8_t*>(src)[row * alignedW + col + 4] & 0xff) & 0xffff) << 2) & 0xffff);
+								(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] & 0xff) << 2) & 0xffff);
 						}
 					}
 				}
@@ -384,13 +354,13 @@ ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info)
 					}
 				}
 			case UNPACKAGED_RAW10_MSB:
-//				for (int32_t row = 0; row < info->height; row++) {
-//					for (int32_t col = 0; col < alignedW; col += 2) {
-//						static_cast<uint16_t*>(dst)[row * info->width + col / 2] =
-//							((static_cast<uint8_t*>(src)[row * alignedW + col] >> (BITS_PER_WORD - leftShift)) & 0xffff) |
-//							((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0xffff) << leftShift);
-//					}
-//				}
+				for (int32_t row = 0; row < info->height; row++) {
+					for (int32_t col = 0; col < alignedW; col += 2) {
+						static_cast<uint16_t*>(dst)[row * info->width + col / 2] =
+							((static_cast<uint8_t*>(src)[row * alignedW + col] >> (BITS_PER_WORD - leftShift)) & 0xffff) |
+							((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0xffff) << leftShift);
+					}
+				}
 				break;
 			case RAW_FORMAT_NUM:
 			default:
