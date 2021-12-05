@@ -9,14 +9,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "ISPVideo.h"
+#include "FileManager.h"
 
 using namespace cv;
 using namespace std;
 
 ISPVideo::ISPVideo():
 	pSrc(nullptr),
-	pFileMgr(nullptr),
-	pParamMgr(nullptr),
 	mState(VIDEO_NEW)
 {
 }
@@ -32,7 +31,7 @@ ISPResult ISPVideo::StatusTransform()
 	return result;
 }
 
-ISPResult ISPVideo::Init(Mat* pData, ImageFileManager* pFM, ISPParamManager* pPM)
+ISPResult ISPVideo::Init(void* pData)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -42,16 +41,14 @@ ISPResult ISPVideo::Init(Mat* pData, ImageFileManager* pFM, ISPParamManager* pPM
 	}
 
 	if (SUCCESS(result)) {
-		if (!pData || !pPM || !pFM) {
+		if (!pData) {
 			ISPLoge("Invalid param!");
 			result = ISP_INVALID_PARAM;
 		}
 	}
 
 	if (SUCCESS(result)) {
-		pSrc = pData;
-		pFileMgr = pFM;
-		pParamMgr = pPM;
+		pSrc = static_cast<Mat*>(pData);
 	}
 
 	if (SUCCESS(result)) {
@@ -62,7 +59,7 @@ ISPResult ISPVideo::Init(Mat* pData, ImageFileManager* pFM, ISPParamManager* pPM
 }
 
 
-ISPResult ISPVideo::CreateThread()
+ISPResult ISPVideo::CreateThread(void* pThreadParam)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -72,7 +69,7 @@ ISPResult ISPVideo::CreateThread()
 	}
 
 	if (SUCCESS(result)) {
-		mThread = thread(VideoEncodeFunc, (void*)this);
+		mThread = thread(VideoEncodeFunc, pThreadParam);
 	}
 
 	if (SUCCESS(result)) {
@@ -98,22 +95,6 @@ ISPResult ISPVideo::DestroyThread()
 	if (SUCCESS(result)) {
 		ISPLogd("video thread exit");
 		mState = VIDEO_INITED;
-	}
-
-	return result;
-}
-
-ISPResult ISPVideo::GetVideoInfo(OutputVideoInfo* pInfo)
-{
-	ISPResult result = ISP_SUCCESS;
-
-	if (!pInfo) {
-		result = ISP_INVALID_PARAM;
-		ISPLoge("Input param is null");
-	}
-
-	if (SUCCESS(result)) {
-		*pInfo = pFileMgr->GetOutputVideoInfo();
 	}
 
 	return result;
@@ -162,20 +143,29 @@ ISPResult ISPVideo::Notify()
 	return result;
 }
 
-void* VideoEncodeFunc(void* pVideo)
+void* VideoEncodeFunc(void* threadParam)
 {
 	ISPResult result = ISP_SUCCESS;
-	ISPVideo* pISPVideo = static_cast<ISPVideo*>(pVideo);
-	OutputVideoInfo info = {0};
+	VideoThreadParam* pParam = static_cast<VideoThreadParam*>(threadParam);
+	ISPVideo* pISPVideo = nullptr;
+	FileManager* pFileMgr = nullptr;
+	OutputVideoInfo info = { 0 };
 	Mat* pSrc = nullptr;
 
-	if (!pISPVideo) {
+	if (!pParam) {
 		result = ISP_INVALID_PARAM;
-		ISPLoge("Invalid param!");
+		ISPLoge("Invalid thread param!");
+	} else {
+		pISPVideo = static_cast<ISPVideo*>(pParam->pVideo);
+		pFileMgr = static_cast<FileManager*>(pParam->pFileMgr);
+		if (!pISPVideo || !pFileMgr) {
+			result = ISP_INVALID_PARAM;
+			ISPLoge("Invalid param!");
+		}
 	}
 
 	if (SUCCESS(result)) {
-		result = pISPVideo->GetVideoInfo(&info);
+		result = pFileMgr->GetOutputVideoInfo(&info);
 	}
 
 	if (SUCCESS(result)) {
@@ -183,13 +173,13 @@ void* VideoEncodeFunc(void* pVideo)
 	}
 
 	if (SUCCESS(result)) {
-		VideoWriter vWriter(info.pOutputPath, VideoWriter::fourcc('M', 'J', 'P', 'G'), info.fps, Size(pSrc->cols, pSrc->rows));
+		VideoWriter vWriter(info.path, VideoWriter::fourcc('M', 'J', 'P', 'G'), info.fps, Size(pSrc->cols, pSrc->rows));
 		if (vWriter.isOpened()) {
 			for (int32_t frameCount = 1; frameCount <= info.frameNum; frameCount++) {
 				result = pISPVideo->Record(&vWriter);
 				ISPLogd("Recording F:%d (%ds)", frameCount, frameCount / info.fps);
 				if (frameCount == info.frameNum) {
-					ISPLogi("Video output path:%s", info.pOutputPath);
+					ISPLogi("Video output path:%s", info.path);
 				}
 			}
 		}

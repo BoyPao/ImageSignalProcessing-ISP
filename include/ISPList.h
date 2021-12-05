@@ -1115,7 +1115,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreatePostList()
 					break;
 				}
 			}
-			else {
+			else if (sizeof(PostListConfigure)/sizeof(PROCESS_TYPE) != 1) { //Special logic for post list
 				ISPLogw("Not find node type:%d", newNodeType);
 			}
 		}

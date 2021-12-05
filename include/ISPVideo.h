@@ -21,9 +21,6 @@
 
 #include "Utils.h"
 #include "ParamManager.h"
-#include "FileManager.h"
-
-using namespace cv;
 
 enum VIDEO_STATE{
 	VIDEO_NEW = 0,
@@ -38,13 +35,12 @@ public:
 	ISPVideo();
 	~ISPVideo();
 
-	ISPResult Init(Mat* pData, ImageFileManager* pFM, ISPParamManager* pPM);
-	ISPResult CreateThread();
+	ISPResult Init(void* pData);
+	ISPResult CreateThread(void* pThreadParam);
 	ISPResult DestroyThread();
-	ISPResult GetVideoInfo(OutputVideoInfo* pInfo);
-	ISPResult GetSrc(Mat** ppSrc);
+	ISPResult GetSrc(cv::Mat** ppSrc);
 
-	ISPResult Record(VideoWriter* pRecorder);
+	ISPResult Record(cv::VideoWriter* pRecorder);
 	ISPResult Lock();
 	ISPResult Unlock();
 	ISPResult Wait();
@@ -53,9 +49,7 @@ public:
 private:
 	ISPResult StatusTransform();
 
-	Mat* pSrc;
-	ImageFileManager* pFileMgr;
-	ISPParamManager* pParamMgr;
+	cv::Mat* pSrc;
 	VIDEO_STATE mState;
 
 	thread mThread;

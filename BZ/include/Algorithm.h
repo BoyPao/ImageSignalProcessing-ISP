@@ -12,7 +12,7 @@
 
 #include "BZUtils.h"
 #include "BZLog.h"
-#include "LibInterface.h"
+#include "../interface/LibInterface.h"
 
 #define CHECK_PACKAGED(format)                          (((format) == LIB_UNPACKAGED_RAW10_LSB) ||                          \
 														((format) == LIB_UNPACKAGED_RAW10_MSB)) ? 0 : 1

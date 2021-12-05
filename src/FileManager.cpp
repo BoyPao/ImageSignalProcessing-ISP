@@ -10,118 +10,112 @@
 
 #include "FileManager.h"
 
-ImageFileManager::ImageFileManager()
+FileManager::FileManager()
 {
-	memset(&mInputImg, 0, sizeof(InputImgInfo));
-	memset(&mOutputImg, 0, sizeof(OutputImgInfo));
-	memset(&mOutputVideo, 0, sizeof(OutputVideoInfo));
+	memset(&mInputInfo, 0, sizeof(InputInfo));
+	memset(&mOutputInfo, 0, sizeof(OutputInfo));
 	mState = Uninited;
 }
 
-ImageFileManager::~ImageFileManager()
+FileManager::~FileManager()
 {
-	memset(&mInputImg, 0, sizeof(InputImgInfo));
-	memset(&mOutputImg, 0, sizeof(OutputImgInfo));
-	memset(&mOutputVideo, 0, sizeof(OutputVideoInfo));
+	memset(&mInputInfo, 0, sizeof(InputInfo));
+	memset(&mOutputInfo, 0, sizeof(OutputInfo));
 	mState = Uninited;
 }
 
-ISPResult ImageFileManager::Init()
+ISPResult FileManager::Init()
 {
 	ISPResult result = ISP_SUCCESS;
 
-	//Currentlly nothing to do here
+	mVTParam = { 0 };
+
 	mState = Inited;
 
 	return result;
 }
 
-ISPResult ImageFileManager::DeInit()
+ISPResult FileManager::DeInit()
 {
 	ISPResult result = ISP_SUCCESS;
 
-	//Currentlly nothing to do here
+	mVTParam = { 0 };
+
 	mState = Uninited;
 
 	return result;
 }
 
-ISPResult ImageFileManager::SetInputImgInfo(InputImgInfo info)
+ISPResult FileManager::SetInputInfo(InputInfo info)
 {
 	ISPResult result = ISP_SUCCESS;
-	mInputImg.pInputPath = info.pInputPath;
-	mInputImg.rawSize = info.rawSize;
-	return result;
-}
 
-ISPResult ImageFileManager::SetInputImgInfo(char* path, int32_t rawSize)
-{
-	ISPResult result = ISP_SUCCESS;
-	mInputImg.pInputPath = path;
-	mInputImg.rawSize = rawSize;
-	return result;
-}
-
-ISPResult ImageFileManager::SetInputImgInfo(char* path)
-{
-	ISPResult result = ISP_SUCCESS;
-	mInputImg.pInputPath = path;
-	return result;
-}
-
-ISPResult ImageFileManager::SetInputImgInfo(int32_t rawSize)
-{
-	ISPResult result = ISP_SUCCESS;
-	mInputImg.rawSize = rawSize;
-	return result;
-}
-
-ISPResult ImageFileManager::SetOutputImgInfo(OutputImgInfo info)
-{
-	ISPResult result = ISP_SUCCESS;
-	mOutputImg.pOutputPath = info.pOutputPath;
-	mOutputImg.width = info.width;
-	mOutputImg.hight = info.hight;
-	return result;
-}
-
-ISPResult ImageFileManager::SetOutputImgInfo(char* path, int32_t width, int32_t hight)
-{
-	ISPResult result = ISP_SUCCESS;
-	mOutputImg.pOutputPath = path;
-	mOutputImg.width = width;
-	mOutputImg.hight = hight;
-	return result;
-}
-
-ISPResult ImageFileManager::SetOutputImgInfo(char* path)
-{
-	ISPResult result = ISP_SUCCESS;
-	mOutputImg.pOutputPath = path;
-	return result;
-}
-
-ISPResult ImageFileManager::SetOutputImgInfo(int32_t width, int32_t hight)
-{
-	ISPResult result = ISP_SUCCESS;
-	mOutputImg.width = width;
-	mOutputImg.hight = hight;
-	return result;
-}
-
-ISPResult ImageFileManager::SetOutputVideoInfo(OutputVideoInfo info)
-{
-	ISPResult result = ISP_SUCCESS;
-	mOutputVideo.pOutputPath = info.pOutputPath;
-	mOutputVideo.width = info.width;
-	mOutputVideo.hight = info.hight;
-	mOutputVideo.fps = info.fps;
-	mOutputVideo.frameNum = info.frameNum;
+	memcpy(&mInputInfo, &info, sizeof(InputInfo));
 
 	return result;
 }
 
-ISPResult ImageFileManager::ReadRawData(uint8_t* buffer, int32_t bufferSize)
+ISPResult FileManager::SetOutputInfo(OutputInfo info)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	memcpy(&mOutputInfo, &info, sizeof(OutputInfo));
+
+	return result;
+}
+
+ISPResult FileManager::SetOutputImgInfo(OutputImgInfo info)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	memcpy(&mOutputInfo.imgInfo, &info, sizeof(OutputImgInfo));
+
+	return result;
+}
+
+ISPResult FileManager::SetOutputVideoInfo(OutputVideoInfo info)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	memcpy(&mOutputInfo.videoInfo, &info, sizeof(OutputVideoInfo));
+
+	return result;
+}
+
+ISPResult FileManager::GetOutputVideoInfo(OutputVideoInfo* pInfo)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!pInfo) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("Invalid input!");
+	}
+
+	if (SUCCESS(result)) {
+		memcpy(pInfo, &mOutputInfo.videoInfo, sizeof(OutputVideoInfo));
+	}
+
+	return result;
+}
+
+ISPResult FileManager::ReadData(uint8_t* buffer, int32_t bufferSize)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	switch(mInputInfo.type) {
+		case INPUT_FILE_TYPE_RAW:
+			result = ReadRawData(buffer, bufferSize);
+			break;
+		case INPUT_FILE_TYPE_NUM:
+		default:
+			result = ISP_FAILED;
+			ISPLoge("Not support input type:%d", mInputInfo.type);
+			break;
+	}
+	return result;
+}
+
+ISPResult FileManager::ReadRawData(uint8_t* buffer, int32_t bufferSize)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -130,36 +124,53 @@ ISPResult ImageFileManager::ReadRawData(uint8_t* buffer, int32_t bufferSize)
 	}
 
 	if (SUCCESS(result)) {
-		ISPLogi("Raw input path:%s", mInputImg.pInputPath);
-		ifstream OpenFile(mInputImg.pInputPath, ios::in | ios::binary);
-		if (OpenFile.fail()) {
+		ISPLogi("Raw input path:%s", mInputInfo.path);
+		ifstream inputFile(mInputInfo.path, ios::in | ios::binary);
+		if (inputFile.fail()) {
 			result = ISP_FAILED;
-			ISPLoge("Open RAW failed! path:%s result:%d", mInputImg.pInputPath, result);
+			ISPLoge("Open RAW failed! path:%s result:%d", mInputInfo.path, result);
 		}
 
 		if (SUCCESS(result)) {
-			OpenFile.seekg(0, ios::end);
-			streampos fileSize = OpenFile.tellg();
-			mInputImg.rawSize = (int32_t)fileSize;
-			ISPLogd("File size:%d", (int32_t)fileSize);
-			OpenFile.seekg(0, ios::beg);
+			inputFile.seekg(0, ios::end);
+			streampos fileSize = inputFile.tellg();
+			mInputInfo.size = (int32_t)fileSize;
+			ISPLogd("File size:%d", mInputInfo.size);
+			inputFile.seekg(0, ios::beg);
 
-			if (bufferSize >= mInputImg.rawSize) {
-				OpenFile.read((char*)buffer, mInputImg.rawSize);
+			if (bufferSize >= mInputInfo.size) {
+				inputFile.read((char*)buffer, mInputInfo.size);
 			}
 			else {
-				ISPLogw("File size:%d >  buffer size:%d! result:%d",
-						mInputImg.rawSize, bufferSize, result);
-				OpenFile.read((char*)buffer, bufferSize);
+				ISPLogw("File size:%d > buffer size:%d! result:%d",
+						mInputInfo.size, bufferSize, result);
+				inputFile.read((char*)buffer, bufferSize);
 			}
 		}
 
-		OpenFile.close();
+		inputFile.close();
 	}
 	return result;
 }
 
-ISPResult ImageFileManager::SaveBMP(uint8_t* srcData, int32_t channels)
+ISPResult FileManager::SaveImgData(uint8_t* srcData)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	switch(mOutputInfo.imgInfo.type) {
+		case OUTPUT_FILE_TYPE_BMP:
+			result = SaveBMPData(srcData, mOutputInfo.imgInfo.channels);
+			break;
+		case OUTPUT_FILE_TYPE_NUM:
+		default:
+			result = ISP_FAILED;
+			ISPLoge("Not support output type:%d", mInputInfo.type);
+			break;
+	}
+	return result;
+}
+
+ISPResult FileManager::SaveBMPData(uint8_t* srcData, int32_t channels)
 {
 	ISPResult result = ISP_SUCCESS;
 	if (mState == Uninited) {
@@ -168,8 +179,11 @@ ISPResult ImageFileManager::SaveBMP(uint8_t* srcData, int32_t channels)
 	}
 
 	if(SUCCESS(result)) {
-		BYTE* BMPdata = new BYTE[mOutputImg.width * mOutputImg.hight * channels];
-		result = SetBMP(srcData, channels, BMPdata);
+		mOutputInfo.imgInfo.size = mOutputInfo.imgInfo.width *
+			mOutputInfo.imgInfo.hight *
+			mOutputInfo.imgInfo.channels;
+		BYTE* BMPdata = new BYTE[mOutputInfo.imgInfo.size];
+		result = SetBMP(srcData, mOutputInfo.imgInfo.channels, BMPdata);
 		if (SUCCESS(result)) {
 			WriteBMP(BMPdata, channels);
 		}
@@ -181,10 +195,9 @@ ISPResult ImageFileManager::SaveBMP(uint8_t* srcData, int32_t channels)
 	return result;
 }
 
-ISPResult ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
+ISPResult FileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
 {
 	ISPResult result = ISP_SUCCESS;
-	int32_t size = mOutputImg.width * mOutputImg.hight;
 	int32_t j = 0;
 	BYTE temp;
 
@@ -195,24 +208,24 @@ ISPResult ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dst
 	}
 
 	if (SUCCESS(result)) {
-		memcpy(dstData, srcData, channels * size);
+		memcpy(dstData, srcData, mOutputInfo.imgInfo.size);
 
 		/* Convertion for the head & tail of data array */
-		while (j < channels * size - j) {
-			temp = dstData[channels * size - j - 1];
-			dstData[channels * size - j - 1] = dstData[j];
+		while (j < mOutputInfo.imgInfo.size - j) {
+			temp = dstData[mOutputInfo.imgInfo.size - j - 1];
+			dstData[mOutputInfo.imgInfo.size - j - 1] = dstData[j];
 			dstData[j] = temp;
 			j++;
 		}
 
 		/* mirror flip */
-		for (int32_t row = 0; row < mOutputImg.hight; row++) {
+		for (int32_t row = 0; row < mOutputInfo.imgInfo.hight; row++) {
 			int32_t col = 0;
-			while (col < channels * mOutputImg.width - col) {
-				temp = dstData[row * channels * mOutputImg.width + channels * mOutputImg.width - col - 1];
-				dstData[channels * row * mOutputImg.width + channels * mOutputImg.width - col - 1] =
-					dstData[channels * row * mOutputImg.width + col];
-				dstData[channels * row * mOutputImg.width + col] = temp;
+			while (col < channels * mOutputInfo.imgInfo.width - col) {
+				temp = dstData[row * channels * mOutputInfo.imgInfo.width + channels * mOutputInfo.imgInfo.width - col - 1];
+				dstData[channels * row * mOutputInfo.imgInfo.width + channels * mOutputInfo.imgInfo.width - col - 1] =
+					dstData[channels * row * mOutputInfo.imgInfo.width + col];
+				dstData[channels * row * mOutputInfo.imgInfo.width + col] = temp;
 				col++;
 			}
 		}
@@ -221,22 +234,22 @@ ISPResult ImageFileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dst
 	return result;
 }
 
-void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
+void FileManager::WriteBMP(BYTE* data, int32_t channels)
+{
 	BITMAPFILEHEADER header;
 	BITMAPINFOHEADER headerinfo;
-	int32_t BMPSize = mOutputImg.width * mOutputImg.hight * channels;
 	int32_t tempSize;
 
 	ISPLogd("BYTE:%d WORD:%d DWORD:%d LONG:%d", sizeof(BYTE), sizeof(WORD), sizeof(DWORD), sizeof(LONG));
 	memset(&header, 0, sizeof(BITMAPFILEHEADER));
 	memset(&headerinfo, 0, sizeof(BITMAPINFOHEADER));
 	headerinfo.biSize = sizeof(BITMAPINFOHEADER);
-	headerinfo.biHeight = mOutputImg.hight;
-	headerinfo.biWidth = mOutputImg.width;
+	headerinfo.biHeight = mOutputInfo.imgInfo.hight;
+	headerinfo.biWidth = mOutputInfo.imgInfo.width;
 	headerinfo.biPlanes = 1;
 	headerinfo.biBitCount = (channels == 1) ? 8 : 24;
 	headerinfo.biCompression = 0; //BI_RGB
-	headerinfo.biSizeImage = BMPSize;
+	headerinfo.biSizeImage = mOutputInfo.imgInfo.size;
 	headerinfo.biClrUsed = (channels == 1) ? 256 : 0;
 	headerinfo.biClrImportant = 0;
 
@@ -268,14 +281,14 @@ void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 	header.bfSize = tempSize;
 #endif
 
-	ISPLogi("BMP output path:%s", mOutputImg.pOutputPath);
-	ofstream out(mOutputImg.pOutputPath, ios::binary);
-	if (out.fail()) {
-		ISPLoge("Cannot open ouput file:%s", mOutputImg.pOutputPath);
+	ISPLogi("BMP output path:%s", mOutputInfo.imgInfo.path);
+	ofstream outputFile(mOutputInfo.imgInfo.path, ios::binary);
+	if (outputFile.fail()) {
+		ISPLoge("Cannot open ouput file:%s", mOutputInfo.imgInfo.path);
 	}
 	else {
-		out.write((char*)& header, sizeof(BITMAPFILEHEADER));
-		out.write((char*)& headerinfo, sizeof(BITMAPINFOHEADER));
+		outputFile.write((char*)& header, sizeof(BITMAPFILEHEADER));
+		outputFile.write((char*)& headerinfo, sizeof(BITMAPINFOHEADER));
 		if (channels == 1) {
 			static RGBQUAD palette[256];
 			for (unsigned int i = 0; i < 256; i++)
@@ -284,14 +297,54 @@ void ImageFileManager::WriteBMP(BYTE* data, int32_t channels) {
 				palette[i].rgbGreen = i;
 				palette[i].rgbRed = i;
 			}
-			out.write((char*)palette, sizeof(RGBQUAD) * 256);
+			outputFile.write((char*)palette, sizeof(RGBQUAD) * 256);
 		}
-		out.write((char*)data, BMPSize);
+		outputFile.write((char*)data, mOutputInfo.imgInfo.size);
 	}
-	out.close();
+	outputFile.close();
 }
 
-void DumpImgDataAsText(void* data, int32_t height, int32_t width, size_t bitWidth, char* dumpPath) 
+ISPResult FileManager::CreateVideo(void* dst)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!mVideo) {
+		mVideo = std::make_unique<ISPVideo>();
+	}
+
+	result = mVideo->Init(dst);
+	if (SUCCESS(result)) {
+		mVTParam.pVideo = mVideo.get();
+		mVTParam.pFileMgr = this;
+		result = mVideo->CreateThread((void*)&mVTParam);
+	}
+	ISPLogi("Video fps:%d total frame:%d",
+			mOutputInfo.videoInfo.fps, mOutputInfo.videoInfo.frameNum);
+
+	return result;
+}
+
+ISPResult FileManager::SaveVideoData(int32_t frameCount)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	result = mVideo->Notify();
+	ISPLogd("Notify F:%d", frameCount);
+
+	return result;
+}
+
+
+ISPResult FileManager::DestroyVideo()
+{
+	ISPResult result = ISP_SUCCESS;
+
+	result = mVideo->DestroyThread();
+
+	return result;
+}
+
+void DumpImgDataAsText(void* data, int32_t height, int32_t width, size_t bitWidth, char* dumpPath)
 {
 	if (data != nullptr) {
 		if (dumpPath) {

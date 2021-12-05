@@ -11,7 +11,7 @@
 #pragma once
 #include "Utils.h"
 #include "Params.h"
-#include "../BZ/include/LibInterface.h"
+#include "../BZ/interface/LibInterface.h"
 
 enum PARAM_INDEX {
 	PARAM_1920x1080_D65_1000Lux = 0,

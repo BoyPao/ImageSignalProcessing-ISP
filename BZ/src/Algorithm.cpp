@@ -1008,10 +1008,10 @@ BZResult BZ_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 													i * CCM_WIDTH + 2, pCcm[i * CCM_WIDTH + 2]);
 		}
 
-		Mat A_cc = Mat::zeros(3, 3, CV_32FC1);
+		Mat CCM = Mat::zeros(3, 3, CV_32FC1);
 		for (i = 0; i < 3; i++) {
 			for (j = 0; j < 3; j++) {
-				A_cc.at<float>(i, j) = *(pCcm + i * CCM_WIDTH + j);
+				CCM.at<float>(i, j) = *(pCcm + i * CCM_WIDTH + j);
 			}
 		}
 
@@ -1019,41 +1019,41 @@ BZResult BZ_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 		uint16_t* G = B + width * height;
 		uint16_t* R = G + width * height;
 
-		Mat Pmatric;
-		Mat Oritransform(width * height, 3, CV_32FC1);
+		Mat outMatric;
+		Mat inMatric(width * height, 3, CV_32FC1);
 
 		for (i = 0; i < height * width; i++) {
-			Oritransform.at<float>(i, 0) = (float)B[i];
-			Oritransform.at<float>(i, 1) = (float)G[i];
-			Oritransform.at<float>(i, 2) = (float)R[i];
+			inMatric.at<float>(i, 0) = (float)B[i];
+			inMatric.at<float>(i, 1) = (float)G[i];
+			inMatric.at<float>(i, 2) = (float)R[i];
 		}
 
 		//ofstream OutFile2("C:\\Users\\penghao6\\Desktop\\变形.txt");
-		//OutFile2 << Oritransform;
+		//OutFile2 << inMatric;
 		//OutFile2.close();
 
-		Pmatric = Oritransform * A_cc;
+		outMatric = inMatric * CCM;
 
 		//ofstream OutFile3("C:\\Users\\penghao6\\Desktop\\计算结果.txt");
-		//OutFile3 << Pmatric;
+		//OutFile3 << outMatric;
 		//OutFile3.close();
 
 		for (i = 0; i < height * width; i++) {
-			if (Pmatric.at<float>(i, 0) > 1023)
-				Pmatric.at<float>(i, 0) = 1023;
-			if (Pmatric.at<float>(i, 0) < 0)
-				Pmatric.at<float>(i, 0) = 0;
-			if (Pmatric.at<float>(i, 1) > 1023)
-				Pmatric.at<float>(i, 1) = 1023;
-			if (Pmatric.at<float>(i, 1) < 0)
-				Pmatric.at<float>(i, 1) = 0;
-			if (Pmatric.at<float>(i, 2) > 1023)
-				Pmatric.at<float>(i, 2) = 1023;
-			if (Pmatric.at<float>(i, 2) < 0)
-				Pmatric.at<float>(i, 2) = 0;
-			B[i] = (uint16_t)Pmatric.at<float>(i, 0);
-			G[i] = (uint16_t)Pmatric.at<float>(i, 1);
-			R[i] = (uint16_t)Pmatric.at<float>(i, 2);
+			if (outMatric.at<float>(i, 0) > 1023)
+				outMatric.at<float>(i, 0) = 1023;
+			if (outMatric.at<float>(i, 0) < 0)
+				outMatric.at<float>(i, 0) = 0;
+			if (outMatric.at<float>(i, 1) > 1023)
+				outMatric.at<float>(i, 1) = 1023;
+			if (outMatric.at<float>(i, 1) < 0)
+				outMatric.at<float>(i, 1) = 0;
+			if (outMatric.at<float>(i, 2) > 1023)
+				outMatric.at<float>(i, 2) = 1023;
+			if (outMatric.at<float>(i, 2) < 0)
+				outMatric.at<float>(i, 2) = 0;
+			B[i] = (uint16_t)outMatric.at<float>(i, 0);
+			G[i] = (uint16_t)outMatric.at<float>(i, 1);
+			R[i] = (uint16_t)outMatric.at<float>(i, 2);
 		}
 
 		//ofstream OutFile4("C:\\Users\\penghao6\\Desktop\\反变形.txt");

@@ -8,7 +8,7 @@
 // @brief: ISP algorithm interface source file.
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "../include/LibInterface.h"
+#include "../interface/LibInterface.h"
 #include "../include/Algorithm.h"
 
 void RegisterISPLibFuncs(LIB_FUNCS* pLibFuncs)

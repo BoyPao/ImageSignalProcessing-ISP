@@ -12,7 +12,6 @@
 #include "FileManager.h"
 #include "ParamManager.h"
 #include "ISPListManager.h"
-#include "ISPVideo.h"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -23,11 +22,8 @@
 /* For img display in window */
 #ifdef LINUX_SYSTEM
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <linux/fb.h>
 #include <sys/ioctl.h>
+#include <termios.h>
 #endif
 
 using namespace cv;
@@ -69,9 +65,8 @@ int main() {
 	ISPResult result = ISP_SUCCESS;
 
 	std::shared_ptr<ISPParamManager> pParamManager;
-	std::shared_ptr<ImageFileManager> pImgFileManager;
+	std::shared_ptr<FileManager> pFileManager;
 	std::unique_ptr<ISPListManager> pISPListMgr;
-	std::unique_ptr<ISPVideo> pVideo;
 	int32_t numPixel = 0;
 	int32_t alignedW = 0;
 	int32_t bufferSize = 0;
@@ -80,24 +75,20 @@ int main() {
 	std::shared_ptr<uint16_t> bgrData;
 	std::shared_ptr<uint8_t> yuvData;
 	Mat dst;
-	InputImgInfo inputInfo;
-	OutputImgInfo imgOutputPath;
-	OutputVideoInfo videoOutputInfo;
-	char inputPath[FILE_PATH_MAX_SIZE] = { '\0' };
-	char outputPath[FILE_PATH_MAX_SIZE] = { '\0' };
-	char videoOutputPath[FILE_PATH_MAX_SIZE] = { '\0' };
+	InputInfo inputInfo = { 0 };
+	OutputInfo outputInfo = { 0 };
 	IMG_INFO imgInfo = { 0 };
 	int32_t listId = 0;
 	int32_t frameNum = 0;
 	int32_t fps = 0;
-//	MEDIA_TYPES mediaType = IMAGE_MEDIA;
-	MEDIA_TYPES mediaType = IMAGE_AND_VIDEO_MEDIA;
+	MEDIA_TYPES mediaType = IMAGE_MEDIA;
+//	MEDIA_TYPES mediaType = IMAGE_AND_VIDEO_MEDIA;
 
 	/* Set raw info here */
 	imgInfo.width		= 1920;
 	imgInfo.height		= 1080;
 	imgInfo.bitspp		= 10;
-	imgInfo.stride		= 10;
+	imgInfo.stride		= 0;
 	imgInfo.rawFormat	= ANDROID_RAW10;
 	imgInfo.bayerOrder	= BGGR;
 
@@ -117,30 +108,6 @@ int main() {
 			pParamManager = std::make_shared<ISPParamManager>();
 		}
 		result = pParamManager->SetIMGInfo(&imgInfo);
-	}
-
-	if (SUCCESS(result)) {
-		strcpy(inputPath, INPUT_PATH);
-		strcpy(outputPath, IMG_OUTPUT_PATH);
-		strcpy(videoOutputPath, VIDEO_OUTPUT_PATH);
-		inputInfo.pInputPath = inputPath;
-		imgOutputPath.pOutputPath = outputPath;
-		videoOutputInfo.pOutputPath = videoOutputPath;
-		videoOutputInfo.fps = fps;
-		videoOutputInfo.frameNum = frameNum;
-
-		result = pParamManager->GetIMGDimension(&imgOutputPath.width, &imgOutputPath.hight);
-		result = pParamManager->GetIMGDimension(&videoOutputInfo.width, &videoOutputInfo.hight);
-
-		if (!pImgFileManager) {
-			pImgFileManager = std::make_shared<ImageFileManager>();
-		}
-		result = pImgFileManager->Init();
-		if (SUCCESS(result)) {
-			result = pImgFileManager->SetInputImgInfo(inputInfo);
-			result = pImgFileManager->SetOutputImgInfo(imgOutputPath);
-			result = pImgFileManager->SetOutputVideoInfo(videoOutputInfo);
-		}
 	}
 
 	if (SUCCESS(result)) {
@@ -168,6 +135,32 @@ int main() {
 	}
 
 	if (SUCCESS(result)) {
+		if (!pFileManager) {
+			pFileManager = std::make_shared<FileManager>();
+		}
+		result = pFileManager->Init();
+		if (SUCCESS(result)) {
+			strcpy(inputInfo.path, INPUT_PATH);
+			inputInfo.type = INPUT_FILE_TYPE_RAW;
+			result = pFileManager->SetInputInfo(inputInfo);
+		}
+		if (SUCCESS(result)) {
+			strcpy(outputInfo.imgInfo.path, IMG_OUTPUT_PATH);
+			outputInfo.imgInfo.type = OUTPUT_FILE_TYPE_BMP;
+			result = pParamManager->GetIMGDimension(&outputInfo.imgInfo.width, &outputInfo.imgInfo.hight);
+			outputInfo.imgInfo.channels = dst.channels();
+
+			strcpy(outputInfo.videoInfo.path, VIDEO_OUTPUT_PATH);
+			outputInfo.videoInfo.type = OUTPUT_FILE_TYPE_AVI;
+			outputInfo.videoInfo.fps = fps;
+			outputInfo.videoInfo.frameNum = frameNum;
+			result = pParamManager->GetIMGDimension(&outputInfo.videoInfo.width, &outputInfo.videoInfo.hight);
+
+			result = pFileManager->SetOutputInfo(outputInfo);
+		}
+	}
+
+	if (SUCCESS(result)) {
 		if (!pISPListMgr) {
 			pISPListMgr = std::make_unique<ISPListManager>();
 		}
@@ -178,15 +171,8 @@ int main() {
 	}
 
 	if (SUCCESS(result)) {
-			if (!pVideo) {
-				pVideo = std::make_unique<ISPVideo>();
-			}
 		if (mediaType >= VIDEO_MEDIA && mediaType < MEDIA_TYPE_NUM) {
-			result = pVideo->Init(&dst, pImgFileManager.get(), pParamManager.get());
-			if (SUCCESS(result)) {
-				result = pVideo->CreateThread();
-			}
-			ISPLogi("Video fps:%d total frame:%d", fps, frameNum);
+			pFileManager->CreateVideo(&dst);
 		}
 	}
 
@@ -194,7 +180,7 @@ int main() {
 		for (int32_t frameCount = 1; frameCount <= frameNum; frameCount++) {
 			ISPLogi("=========================== %d(%d) ==========================", frameCount, frameNum);
 			if (SUCCESS(result)) {
-				result = pImgFileManager->ReadRawData(mipiRawData.get(), bufferSize);
+				result = pFileManager->ReadData(mipiRawData.get(), bufferSize);
 			}
 
 			if (SUCCESS(result)) {
@@ -221,8 +207,7 @@ int main() {
 
 			if (SUCCESS(result)) {
 				if (mediaType >= VIDEO_MEDIA && mediaType < MEDIA_TYPE_NUM) {
-					pVideo->Notify();
-					ISPLogd("Notify F:%d", frameCount);
+					pFileManager->SaveVideoData(frameCount);
 				}
 			}
 		}
@@ -230,15 +215,14 @@ int main() {
 
 	if (SUCCESS(result)) {
 		if (mediaType == IMAGE_MEDIA || mediaType == IMAGE_AND_VIDEO_MEDIA) {
-			result = pImgFileManager->SaveBMP(dst.data, dst.channels());
+			result = pFileManager->SaveImgData(dst.data);
 		}
 	}
 
 	if (SUCCESS(result)) {
 		if (mediaType >= VIDEO_MEDIA && mediaType < MEDIA_TYPE_NUM) {
-			result = pVideo->DestroyThread();
+			result = pFileManager->DestroyVideo();
 		}
-
 	}
 
 	if (SUCCESS(result)) {
@@ -250,16 +234,13 @@ int main() {
 		int32_t winSizey;
 		bool supportWin = false;
 #ifdef LINUX_SYSTEM
-		int fd;
-		struct fb_var_screeninfo fbVar;
-		fd = open("/dev/fb0", O_RDWR);
-		if (fd < 0) {
-			ISPLogw("Cannot open screen drv! Skip img show");
+		winsize winSize;
+		ioctl(STDIN_FILENO, TIOCGWINSZ, &winSize);
+		if (!winSize.ws_row) {
+			ISPLogw("Cannot get terminal size(%d,%d)! Skip img show", winSize.ws_col, winSize.ws_row);
 		}
 		else {
-			ioctl(fd, FBIOGET_VSCREENINFO, &fbVar);
-			winSizey = fbVar.yres;
-			close(fd);
+			winSizey = winSize.ws_row;
 			supportWin = true;
 		}
 #elif defined WIN32_SYSTEM
