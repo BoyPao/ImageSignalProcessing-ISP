@@ -27,7 +27,7 @@ static ISP_Config_Params ISPConfigueParams[PARAM_INDEX_NUM] {
 
 ISPParamManager::ISPParamManager()
 {
-	mImg_Info = { 0 };
+	mMediaInfo.img = { 0 };
 	mISP_ConfigParams = { nullptr };
 	mState = PM_EMPTY;
 
@@ -38,12 +38,32 @@ ISPParamManager::~ISPParamManager()
 {
 }
 
-ISPResult ISPParamManager::SetIMGInfo(IMG_INFO* info)
+ISPResult ISPParamManager::SetMediaInfo(MEDIA_INFO* info)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (!info) {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("Input is null! %d", result);
+	}
+
+	if (SUCCESS(result)) {
+		result = SetImgInfo(&info->img);
+	}
+
+	if (SUCCESS(result)) {
+		result = SetVideoInfo(&info->video);
+	}
+
+	return result;
+}
+
+ISPResult ISPParamManager::SetImgInfo(IMG_INFO* info)
 {
 	ISPResult result = ISP_SUCCESS;
 
 	if (info) {
-		memcpy(&mImg_Info, info, sizeof(IMG_INFO));
+		memcpy(&mMediaInfo.img, info, sizeof(IMG_INFO));
 	}
 	else {
 		result = ISP_INVALID_PARAM;
@@ -53,7 +73,22 @@ ISPResult ISPParamManager::SetIMGInfo(IMG_INFO* info)
 	return result;
 }
 
-ISPResult ISPParamManager::GetIMGDimension(int32_t* width, int32_t* height)
+ISPResult ISPParamManager::SetVideoInfo(VIDEO_INFO* info)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (info) {
+		memcpy(&mMediaInfo.video, info, sizeof(VIDEO_INFO));
+	}
+	else {
+		result = ISP_INVALID_PARAM;
+		ISPLoge("Input is null! %d", result);
+	}
+
+	return result;
+}
+
+ISPResult ISPParamManager::GetImgDimension(int32_t* width, int32_t* height)
 {
 	ISPResult result = ISP_SUCCESS;
 
@@ -64,8 +99,52 @@ ISPResult ISPParamManager::GetIMGDimension(int32_t* width, int32_t* height)
 
 	if (SUCCESS(result)) {
 		if (width && height) {
-			*width = mImg_Info.width;
-			*height = mImg_Info.height;
+			*width = mMediaInfo.img.width;
+			*height = mMediaInfo.img.height;
+		}
+		else {
+			result = ISP_INVALID_PARAM;
+			ISPLoge("Input is null! %d", result);
+		}
+	}
+
+	return result;
+}
+
+ISPResult ISPParamManager::GetVideoFPS(int32_t* fps)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (mState != PM_SELECTED) {
+		result = ISP_STATE_ERROR;
+		ISPLoge("Invalid param manager state:%d", mState);
+	}
+
+	if (SUCCESS(result)) {
+		if (fps) {
+			*fps = mMediaInfo.video.fps;
+		}
+		else {
+			result = ISP_INVALID_PARAM;
+			ISPLoge("Input is null! %d", result);
+		}
+	}
+
+	return result;
+}
+
+ISPResult ISPParamManager::GetVideoFrameNum(int32_t* num)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	if (mState != PM_SELECTED) {
+		result = ISP_STATE_ERROR;
+		ISPLoge("Invalid param manager state:%d", mState);
+	}
+
+	if (SUCCESS(result)) {
+		if (num) {
+			*num = mMediaInfo.video.frameNum;
 		}
 		else {
 			result = ISP_INVALID_PARAM;
@@ -108,12 +187,12 @@ ISPResult ISPParamManager::GetImgInfo(LIB_PARAMS* pParams)
 	}
 
 	if (SUCCESS(result)) {
-		pParams->info.width = mImg_Info.width;
-		pParams->info.height = mImg_Info.height;
-		pParams->info.rawFormat = (LIB_RAW_FORMAT)mImg_Info.rawFormat;
-		pParams->info.bitspp = mImg_Info.bitspp;
-		pParams->info.stride = mImg_Info.stride;
-		pParams->info.bayerOrder = (LIB_BAYER_ORDER)mImg_Info.bayerOrder;
+		pParams->info.width = mMediaInfo.img.width;
+		pParams->info.height = mMediaInfo.img.height;
+		pParams->info.rawFormat = (LIB_RAW_FORMAT)mMediaInfo.img.rawFormat;
+		pParams->info.bitspp = mMediaInfo.img.bitspp;
+		pParams->info.stride = mMediaInfo.img.stride;
+		pParams->info.bayerOrder = (LIB_BAYER_ORDER)mMediaInfo.img.bayerOrder;
 	}
 
 	return result;
@@ -264,7 +343,7 @@ ISPResult ISPParamManager::GetIMGInfo(void* imgInfo)
 
 	if (SUCCESS(result)) {
 		if (imgInfo) {
-			memcpy((IMG_INFO*)imgInfo, &mImg_Info, sizeof(IMG_INFO));
+			memcpy((IMG_INFO*)imgInfo, &mMediaInfo.img, sizeof(IMG_INFO));
 		}
 		else {
 			result = ISP_INVALID_PARAM;
@@ -286,7 +365,7 @@ ISPResult ISPParamManager::GetRawType(RAW_FORMATE* pType)
 
 	if (SUCCESS(result)) {
 		if (pType) {
-			*pType = mImg_Info.rawFormat;
+			*pType = mMediaInfo.img.rawFormat;
 		}
 		else {
 			result = ISP_INVALID_PARAM;
@@ -498,8 +577,8 @@ ISPResult ISPParamManager::SetIMGDimension(int32_t* width, int32_t* height)
 	ISPResult result = ISP_SUCCESS;
 
 	if (width && height) {
-		mImg_Info.width = *width;
-		mImg_Info.height = *height;
+		mMediaInfo.img.width = *width;
+		mMediaInfo.img.height = *height;
 	}
 	else {
 		result = ISP_INVALID_PARAM;
@@ -514,7 +593,7 @@ ISPResult ISPParamManager::SetIMGWidth(int32_t* width)
 	ISPResult result = ISP_SUCCESS;
 
 	if (width) {
-		mImg_Info.width = *width;
+		mMediaInfo.img.width = *width;
 	}
 	else {
 		result = ISP_INVALID_PARAM;
@@ -529,7 +608,7 @@ ISPResult ISPParamManager::SetIMGHeight(int32_t* height)
 	ISPResult result = ISP_SUCCESS;
 
 	if (height) {
-		mImg_Info.height = *height;
+		mMediaInfo.img.height = *height;
 	}
 	else {
 		result = ISP_INVALID_PARAM;

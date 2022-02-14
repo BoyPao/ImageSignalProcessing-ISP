@@ -13,6 +13,35 @@
 #include "Params.h"
 #include "../BZ/interface/LibInterface.h"
 
+#define CHECK_PACKAGED(format)                          (((format) == UNPACKAGED_RAW10_LSB) ||                          \
+														((format) == UNPACKAGED_RAW10_MSB)) ? 0 : 1
+
+#define PIXELS2WORDS_MIPI_PACKAGED(pixelNum, bitspp)	(((bitspp) < BITS_PER_WORD) ?										\
+														0 :																	\
+														(((bitspp) == BITS_PER_WORD) ?										\
+															(pixelNum) :													\
+															((pixelNum) * (bitspp) / BITS_PER_WORD)))
+#define	PIXELS2WORDS_UNPACKAGED(pixelNum, bitspp)		(((bitspp) < BITS_PER_WORD) ?										\
+														0 :																	\
+														(((bitspp) == BITS_PER_WORD) ?										\
+															(pixelNum) :													\
+															((pixelNum) * 2)))
+#define PIXELS2WORDS(pixelNum, bitspp, packaged)		(((bitspp) % 2 || (bitspp) > 2 * BITS_PER_WORD || (bitspp) <= 0) ?	\
+														0 :																	\
+														((packaged) ?														\
+															PIXELS2WORDS_MIPI_PACKAGED(pixelNum, bitspp) :					\
+															PIXELS2WORDS_UNPACKAGED(pixelNum, bitspp)))
+
+#define ALIGN(x, align)									(align) ? (((x) + (align) - 1) & (~((align) - 1))) : (x)
+#define ALIGNx(pixelNum, bitspp, packaged, align)		ALIGN(PIXELS2WORDS(pixelNum, bitspp, packaged), align)
+
+enum MEDIA_TYPES {
+	IMAGE_MEDIA = 0,
+	VIDEO_MEDIA,
+	IMAGE_AND_VIDEO_MEDIA,
+	MEDIA_TYPE_NUM
+};
+
 enum PARAM_INDEX {
 	PARAM_1920x1080_D65_1000Lux = 0,
 	PARAM_INDEX_NUM
@@ -49,6 +78,19 @@ struct IMG_INFO
 	BAYER_ORDER bayerOrder;
 };
 
+struct VIDEO_INFO
+{
+	int32_t fps;
+	int32_t frameNum;
+};
+
+struct MEDIA_INFO
+{
+	IMG_INFO img;
+	VIDEO_INFO video;
+	MEDIA_TYPES type;
+};
+
 struct ISP_Config_Params {
 	BLC_PARAM* pBLC_param;
 	LSC_PARAM* pLSC_param;
@@ -66,8 +108,12 @@ public:
 	~ISPParamManager();
 
 	ISPResult SelectParams(int32_t paramIndex);
-	ISPResult SetIMGInfo(IMG_INFO* info);
-	ISPResult GetIMGDimension(int32_t* width, int32_t* height);
+	ISPResult SetMediaInfo(MEDIA_INFO* info);
+	ISPResult SetImgInfo(IMG_INFO* info);
+	ISPResult SetVideoInfo(VIDEO_INFO* info);
+	ISPResult GetImgDimension(int32_t* width, int32_t* height);
+	ISPResult GetVideoFPS(int32_t* fps);
+	ISPResult GetVideoFrameNum(int32_t* num);
 
 	/*
 	ISPResult GetIMGInfo(void* imgInfo);
@@ -108,6 +154,6 @@ public:
 
 private:
 	ISP_Config_Params mISP_ConfigParams;
-	IMG_INFO mImg_Info;
+	MEDIA_INFO mMediaInfo;
 	PARAM_MANAGER_STATE mState;
 };

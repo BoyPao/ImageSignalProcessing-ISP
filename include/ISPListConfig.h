@@ -11,7 +11,7 @@
 #pragma once
 #include "ISPList.h"
 
-static ISP_LIST_PROPERTY DefaultListConfigure = {
+static ISP_LIST_PROPERTY DefaultListConfig = {
 	{{"BLC",			PROCESS_BLC,			NODE_ON},
 	 {"LSC",			PROCESS_LSC,			NODE_ON},
 	 {"Demosaic",		PROCESS_Demosaic,		NODE_ON},

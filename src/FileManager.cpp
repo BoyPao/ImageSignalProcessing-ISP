@@ -344,6 +344,94 @@ ISPResult FileManager::DestroyVideo()
 	return result;
 }
 
+ISPResult FileManager::Mipi10decode(void* src, void* dst, IMG_INFO* info)
+{
+	ISPResult result = ISP_SUCCESS;
+
+	int32_t leftShift = 0;
+	int32_t alignedW = ALIGNx(info->width, info->bitspp, CHECK_PACKAGED(info->rawFormat), info->stride);
+	if (!info) {
+		result = ISP_INVALID_PARAM;
+	}
+
+	if (SUCCESS(result)) {
+		leftShift = info->bitspp - BITS_PER_WORD;
+		if (leftShift < 0 || leftShift > 8)
+		{
+			result = ISP_INVALID_PARAM;
+		}
+	}
+
+	if (SUCCESS(result)) {
+		switch (info->rawFormat) {
+			case ANDROID_RAW10:
+				for (int32_t row = 0; row < info->height; row++) {
+					for (int32_t col = 0; col < alignedW; col += 5) {
+						if (col * BITS_PER_WORD / info->bitspp < info->width && row < info->height) {
+							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp] =
+								((static_cast<uint8_t*>(src)[row * alignedW + col] & 0xffff) << leftShift) |
+								((static_cast<uint8_t*>(src)[row * alignedW + col + 4] & 0x3) & 0x3ff);
+							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 1] =
+								((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0xffff) << leftShift) |
+								(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] >> 2) & 0x3) & 0x3ff);
+							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 2] =
+								((static_cast<uint8_t*>(src)[row * alignedW + col + 2] & 0xffff) << leftShift) |
+								(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] >> 4) & 0x3) & 0x3ff);
+							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 3] =
+								((static_cast<uint8_t*>(src)[row * alignedW + col + 3] & 0xffff) << leftShift) |
+								(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] >> 6) & 0x3) & 0x3ff);
+						}
+					}
+				}
+				break;
+			case ORDINAL_RAW10:
+				for (int32_t row = 0; row < info->height; row++) {
+					for (int32_t col = 0; col < alignedW; col += 5) {
+						if (col * BITS_PER_WORD / info->bitspp < info->width && row < info->height) {
+							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp] =
+								(((static_cast<uint8_t*>(src)[row * alignedW + col + 0] >> 0) & (0xff >> 0)) & 0xffff) |
+								(((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0x03) << 8) & 0xffff);
+							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 1] =
+								(((static_cast<uint8_t*>(src)[row * alignedW + col + 1] >> 2) & (0xff >> 2)) & 0xffff) |
+								(((static_cast<uint8_t*>(src)[row * alignedW + col + 2] & 0x0f) << 6) & 0xffff);
+							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 2] =
+								(((static_cast<uint8_t*>(src)[row * alignedW + col + 2] >> 4) & (0xff >> 4)) & 0xffff) |
+								(((static_cast<uint8_t*>(src)[row * alignedW + col + 3] & 0x3f) << 4) & 0xffff);
+							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 3] =
+								(((static_cast<uint8_t*>(src)[row * alignedW + col + 3] >> 6) & (0xff >> 6)) & 0xffff) |
+								(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] & 0xff) << 2) & 0xffff);
+						}
+					}
+				}
+				break;
+			case UNPACKAGED_RAW10_LSB:
+				for (int32_t row = 0; row < info->height; row++) {
+					for (int32_t col = 0; col < alignedW; col += 2) {
+						static_cast<uint16_t*>(dst)[row * info->width + col / 2] =
+							(static_cast<uint8_t*>(src)[row * alignedW + col] & 0xffff) |
+							(((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0x3) & 0xffff) << BITS_PER_WORD);
+					}
+				}
+			case UNPACKAGED_RAW10_MSB:
+				for (int32_t row = 0; row < info->height; row++) {
+					for (int32_t col = 0; col < alignedW; col += 2) {
+						static_cast<uint16_t*>(dst)[row * info->width + col / 2] =
+							((static_cast<uint8_t*>(src)[row * alignedW + col] >> (BITS_PER_WORD - leftShift)) & 0xffff) |
+							((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0xffff) << leftShift);
+					}
+				}
+				break;
+			case RAW_FORMAT_NUM:
+			default:
+				ISPLoge("Not support raw type:%d", info->rawFormat);
+				break;
+		}
+		ISPLogi("finished");
+	}
+
+	return result;
+}
+
 void DumpImgDataAsText(void* data, int32_t height, int32_t width, size_t bitWidth, char* dumpPath)
 {
 	if (data != nullptr) {

@@ -12,7 +12,7 @@
 #include "ISPListConfig.h"
 
 ISP_LIST_PROPERTY* gISPListConfigs[LIST_CFG_NUM] = {
-	&DefaultListConfigure
+	&DefaultListConfig
 };
 
 ISPListManager::ISPListManager():

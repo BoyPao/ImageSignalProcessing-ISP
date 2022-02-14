@@ -90,6 +90,7 @@ public:
 	ISPResult CreateVideo(void* dst);
 	ISPResult SaveVideoData(int32_t frameCount);
 	ISPResult DestroyVideo();
+	ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info);
 
 private:
 	ISPResult ReadRawData(uint8_t* buffer, int32_t bufferSize);

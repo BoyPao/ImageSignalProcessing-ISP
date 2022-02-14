@@ -33,7 +33,6 @@
 															PIXELS2WORDS_MIPI_PACKAGED(pixelNum, bitspp) :					\
 															PIXELS2WORDS_UNPACKAGED(pixelNum, bitspp)))
 
-
 #define ALIGN(x, align)									(align) ? (((x) + (align) - 1) & (~((align) - 1))) : (x)
 #define ALIGNx(pixelNum, bitspp, packaged, align)		ALIGN(PIXELS2WORDS(pixelNum, bitspp, packaged), align)
 
