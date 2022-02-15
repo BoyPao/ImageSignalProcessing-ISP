@@ -11,19 +11,9 @@
 #include "../include/BZLog.h"
 #include <stdio.h>
 
-int BZLogAddInfo(const char* str, ...)
+int LogAddInfo(const char* str, ...)
 {
-#if LOG_ON
-	va_list(va);
-	va_start(va, str);
-	BZLogAddTime(str, va);
-	va_end(va);
-#endif
-	return 0;
-}
-
-void BZLogAddTime(const char* str, va_list va)
-{
+	char strBuffer[LOG_BUFFER_LEFT_SIZE];
 	char years[4] = { '0', '0', '0', '0' };
 	char monthes[2] = { '0', '0' };
 	char days[2] = { '0', '0' };
@@ -33,7 +23,6 @@ void BZLogAddTime(const char* str, va_list va)
 	char hours[2] = { '0', '0' };
 
 	GetTimeWithDateChar(years, monthes, days, hours, minutes, seconds, milliseconds);
-	char strBuffer[LOG_BUFFER_LEFT_SIZE];
 	snprintf(strBuffer, LOG_BUFFER_LEFT_SIZE, "%c%c%c%c-%c%c-%c%c %c%c:%c%c:%c%c:%c%c%c %s",
 		years[0], years[1], years[2], years[3],
 		monthes[0], monthes[1],
@@ -44,10 +33,15 @@ void BZLogAddTime(const char* str, va_list va)
 		milliseconds[0], milliseconds[1], milliseconds[2],
 		str);
 
-	BZLogPrint(strBuffer, va);
+	va_list(va);
+	va_start(va, str);
+	LogPrint(strBuffer, va);
+	va_end(va);
+
+	return 0;
 }
 
-void BZLogPrint(const char* str, va_list va)
+void LogPrint(const char* str, va_list va)
 {
 	char strBuffer[LOG_BUFFER_SIZE];
 	vsnprintf(strBuffer, LOG_BUFFER_SIZE - LOG_BUFFER_PERSERVE_SIZE, str, va);
@@ -55,7 +49,6 @@ void BZLogPrint(const char* str, va_list va)
 	strBuffer[LOG_BUFFER_SIZE - 1] = '\n';
 	printf("%s\n", strBuffer);
 }
-
 
 char BZTimeInt2Char(int32_t i)
 {

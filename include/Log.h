@@ -20,24 +20,24 @@
 #define LOG_BUFFER_LEFT_SIZE		LOG_BUFFER_SIZE - LOG_BUFFER_PERSERVE_SIZE - LOG_BUFFER_TIME_SIZE - sizeof(long long int)
 
 int LogAddInfo(const char* str, ...);
-void LogAddTime(const char* str, va_list va);
 void LogPrint(const char* str, va_list va);
 
 enum LOG_MASK {
-	LOG_ERROR_MASK = 0x1,
-	LOG_WARN_MASK = 0x2,
-	LOG_INFO_MASK = 0x4,
-	LOG_DEBUG_MASK = 0x8
+	LOG_ERROR_MASK	= 0x1,
+	LOG_WARN_MASK	= LOG_ERROR_MASK << 1,
+	LOG_INFO_MASK	= LOG_ERROR_MASK << 2,
+	LOG_DEBUG_MASK	= LOG_ERROR_MASK << 3,
 };
 
-#define ISP_LOG_INFO_FORMAT "%d:%s: "
+#define LOG_MODULE "ISP "
+#define LOG_FORMAT " %d:%s: "
 
-#define LogErroSwitch(on, str, ...)		((on) ? (LogAddInfo("ISP E " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
-#define LogWarnSwitch(on, str, ...)		((on) ? (LogAddInfo("ISP W " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
-#define LogInfoSwitch(on, str, ...)		((on) ? (LogAddInfo("ISP I " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
-#define LogDebugSwitch(on, str, ...)	((on) ? (LogAddInfo("ISP D " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
+#define LogError(on, str, ...)		((on) ? (LogAddInfo(LOG_MODULE "E" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
+#define LogWarn(on, str, ...)		((on) ? (LogAddInfo(LOG_MODULE "W" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
+#define LogInfo(on, str, ...)		((on) ? (LogAddInfo(LOG_MODULE "I" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
+#define LogDebug(on, str, ...)		((on) ? (LogAddInfo(LOG_MODULE "D" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
 
-#define ISPLoge(str, ...)	LogErroSwitch((LOG_LEVEL & LOG_ERROR_MASK), str, ##__VA_ARGS__)
-#define ISPLogw(str, ...)	LogWarnSwitch((LOG_LEVEL & LOG_WARN_MASK), str, ##__VA_ARGS__)
-#define ISPLogi(str, ...)	LogInfoSwitch((LOG_LEVEL & LOG_INFO_MASK), str, ##__VA_ARGS__)
-#define ISPLogd(str, ...)	LogDebugSwitch((LOG_LEVEL & LOG_DEBUG_MASK), str, ##__VA_ARGS__)
+#define ISPLoge(str, ...)	((LOG_ON) ? LogError((LOG_LEVEL & LOG_ERROR_MASK), str, ##__VA_ARGS__) : (0))
+#define ISPLogw(str, ...)	((LOG_ON) ? LogWarn((LOG_LEVEL & LOG_WARN_MASK), str, ##__VA_ARGS__) : (0))
+#define ISPLogi(str, ...)	((LOG_ON) ? LogInfo((LOG_LEVEL & LOG_INFO_MASK), str, ##__VA_ARGS__) : (0))
+#define ISPLogd(str, ...)	((LOG_ON) ? LogDebug((LOG_LEVEL & LOG_DEBUG_MASK), str, ##__VA_ARGS__) : (0))

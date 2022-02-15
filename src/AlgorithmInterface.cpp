@@ -40,6 +40,8 @@ ISPResult ISPLibInit(ISPParamManager* pPM, ...)
 		}
 	}
 
+	ISPLogd("Lib init finish");
+
 	return result;
 }
 

@@ -43,6 +43,10 @@ ISPResult ISPListManager::Init(ISPParamManager* pPM)
 		pISPListConfigs = gISPListConfigs[LIST_CFG_DEFAULT];
 	}
 
+	if (SUCCESS(result)) {
+		result = ISPLibInit(pParamManager);
+	}
+
 	return result;
 }
 

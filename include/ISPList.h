@@ -609,10 +609,6 @@ ISPResult ISPList<T1, T2, T3, T4>::Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T
 	}
 
 	if (SUCCESS(result)) {
-		result = ISPLibInit(pParamManager);
-	}
-
-	if (SUCCESS(result)) {
 		result = StateTransform(STATE_TRANS_FORWARD);
 	}
 

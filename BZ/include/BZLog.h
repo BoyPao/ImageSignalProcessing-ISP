@@ -24,28 +24,28 @@
 #define SYSTEM_MONTH_OFFSET			1
 #define LOCAL_TIME_ZOOM_OFFSET		8	/* Beijing time zoom */
 
-int BZLogAddInfo(const char* str, ...);
-void BZLogAddTime(const char* str, va_list va);
-void BZLogPrint(const char* str, va_list va);
+int LogAddInfo(const char* str, ...);
+void LogPrint(const char* str, va_list va);
 
 enum LOG_MASK {
-	LOG_ERROR_MASK = 0x1,
-	LOG_WARN_MASK = 0x2,
-	LOG_INFO_MASK = 0x4,
-	LOG_DEBUG_MASK = 0x8
+	LOG_ERROR_MASK	= 0x1,
+	LOG_WARN_MASK	= LOG_ERROR_MASK << 1,
+	LOG_INFO_MASK	= LOG_ERROR_MASK << 2,
+	LOG_DEBUG_MASK	= LOG_ERROR_MASK << 3
 };
 
-#define ISP_LOG_INFO_FORMAT "%d:%s: "
+#define LOG_MODULE " BZ "
+#define LOG_FORMAT " %d:%s: "
 
-#define LogErroSwitch(on, str, ...)		((on) ? (BZLogAddInfo("BZ  E " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
-#define LogWarnSwitch(on, str, ...)		((on) ? (BZLogAddInfo("BZ  W " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
-#define LogInfoSwitch(on, str, ...)		((on) ? (BZLogAddInfo("BZ  I " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
-#define LogDebugSwitch(on, str, ...)	((on) ? (BZLogAddInfo("BZ  D " ISP_LOG_INFO_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
+#define LogError(on, str, ...)		((on) ? (LogAddInfo(LOG_MODULE "E" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
+#define LogWarn(on, str, ...)		((on) ? (LogAddInfo(LOG_MODULE "W" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
+#define LogInfo(on, str, ...)		((on) ? (LogAddInfo(LOG_MODULE "I" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
+#define LogDebug(on, str, ...)		((on) ? (LogAddInfo(LOG_MODULE "D" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
 
-#define BZLoge(str, ...)	LogErroSwitch((LOG_LEVEL & LOG_ERROR_MASK), str, ##__VA_ARGS__)
-#define BZLogw(str, ...)	LogWarnSwitch((LOG_LEVEL & LOG_WARN_MASK), str, ##__VA_ARGS__)
-#define BZLogi(str, ...)	LogInfoSwitch((LOG_LEVEL & LOG_INFO_MASK), str, ##__VA_ARGS__)
-#define BZLogd(str, ...)	LogDebugSwitch((LOG_LEVEL & LOG_DEBUG_MASK), str, ##__VA_ARGS__)
+#define BZLoge(str, ...)	((LOG_ON) ? LogError((LOG_LEVEL & LOG_ERROR_MASK), str, ##__VA_ARGS__) : (0))
+#define BZLogw(str, ...)	((LOG_ON) ? LogWarn((LOG_LEVEL & LOG_WARN_MASK), str, ##__VA_ARGS__) : (0))
+#define BZLogi(str, ...)	((LOG_ON) ? LogInfo((LOG_LEVEL & LOG_INFO_MASK), str, ##__VA_ARGS__) : (0))
+#define BZLogd(str, ...)	((LOG_ON) ? LogDebug((LOG_LEVEL & LOG_DEBUG_MASK), str, ##__VA_ARGS__) : (0))
 
 
 char BZTimeInt2Char(int32_t i);

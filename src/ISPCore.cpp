@@ -32,6 +32,7 @@ using namespace cv;
 #define RESNAME "Result"
 #define TMPNAME "Temp"
 
+/* Set raw path here */
 #ifdef LINUX_SYSTEM
 #define INPUT_PATH "/home/penghao/HAO/test_project/ISP/ISP/res/1MCC_IMG_20181229_001526_1.raw"
 //#define INPUT_PATH "/home2/penghao/test_porject/ISP/ISP/res/20210103062220_packaged_4000x3000_0.raw"
@@ -170,7 +171,7 @@ int main() {
 		}
 
 		for (int32_t frameCount = 1; frameCount <= frameNum; frameCount++) {
-			ISPLogi("=========================== %d(%d) ==========================", frameCount, frameNum);
+			ISPLogi("[%d]=========================== %d(%d) ==========================", listId, frameCount, frameNum);
 			if (SUCCESS(result)) {
 				result = pFileManager->ReadData(mipiRawData.get(), bufferSize);
 				if (SUCCESS(result)) {
