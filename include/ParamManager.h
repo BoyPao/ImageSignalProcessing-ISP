@@ -11,7 +11,6 @@
 #pragma once
 #include "Utils.h"
 #include "Params.h"
-#include "../BZ/interface/LibInterface.h"
 
 #define CHECK_PACKAGED(format)                          (((format) == UNPACKAGED_RAW10_LSB) ||                          \
 														((format) == UNPACKAGED_RAW10_MSB)) ? 0 : 1
@@ -115,42 +114,15 @@ public:
 	ISPResult GetVideoFPS(int32_t* fps);
 	ISPResult GetVideoFrameNum(int32_t* num);
 
-	/*
-	ISPResult GetIMGInfo(void* imgInfo);
-	ISPResult GetRawType(RAW_FORMAT* pType);
-	ISPResult GetBLCParam(uint16_t* offset);
-	ISPResult GetLSCParam(float* pRGain, float* pGrGain, float* pGbGain, float* pBGain);
-	ISPResult GetGCCParam(double * weight);
-
-	ISPResult GetWBParam(double* rGain, double* gGain, double* bGain);
-	ISPResult GetCCParam(float* pCcm);
-	ISPResult GetGAMMAPARAM(uint16_t* plut);
-
-	ISPResult GetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, int32_t* l3Threshold);
-	ISPResult GetEERPARAM(double* alph, int32_t* coreSize, int32_t* delta);
-
-	ISPResult SetIMGDimension(int32_t* width, int32_t* height);
-	ISPResult SetIMGWidth(int32_t* width);
-	ISPResult SetIMGHeight(int32_t* height);
-	ISPResult SetBLCParam(uint16_t* offset);
-	ISPResult SetLSCParam(float* pRGain, float* pGrGain, float* pGbGain, float* pBGain);
-	ISPResult SetGCCParam(double* weight);
-
-	ISPResult SetWBParam(double* rGain, double* gGain, double* bGain);
-	ISPResult SetCCParam(float* pCcm);
-	ISPResult SetGAMMAPARAM(uint16_t* plut);
-
-	ISPResult SetWNRPARAM(int32_t* l1Threshold, int32_t* l2Threshold, int32_t* l3Threshold);
-	ISPResult SetEERPARAM(double* alph, int32_t* coreSize, int32_t* delta);*/
-
-	ISPResult GetImgInfo(LIB_PARAMS* pParams);
-	ISPResult GetBLCParam(LIB_PARAMS* pParams);
-	ISPResult GetLSCParam(LIB_PARAMS* pParams);
-	ISPResult GetWBParam(LIB_PARAMS* pParams);
-	ISPResult GetCCParam(LIB_PARAMS* pParams);
-	ISPResult GetGAMMAParam(LIB_PARAMS* pParams);
-	ISPResult GetWNRParam(LIB_PARAMS* pParams);
-	ISPResult GetEEParam(LIB_PARAMS* pParams);
+	ISPResult GetImgInfo(void* pParams);
+	ISPResult GetParamByCMD(void* pParams, int32_t cmd);
+	ISPResult GetBLCParam(void* pParams);
+	ISPResult GetLSCParam(void* pParams);
+	ISPResult GetWBParam(void* pParams);
+	ISPResult GetCCParam(void* pParams);
+	ISPResult GetGAMMAParam(void* pParams);
+	ISPResult GetWNRParam(void* pParams);
+	ISPResult GetEEParam(void* pParams);
 
 private:
 	ISP_Config_Params mISP_ConfigParams;

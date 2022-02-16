@@ -11,19 +11,40 @@
 #include "../interface/LibInterface.h"
 #include "../include/Algorithm.h"
 
-void RegisterISPLibFuncs(LIB_FUNCS* pLibFuncs)
+#ifdef LINUX_SYSTEM
+#define BZ_PRE_DECLARE
+#elif defined WIN32_SYSTEM
+#define BZ_PRE_DECLARE _declspec(dllexport)
+#endif
+
+static ISP_CALLBACKS gISPCbs;
+
+extern "C" {
+BZ_PRE_DECLARE void InterfaceInit(void* pOps, ...)
 {
-	if (pLibFuncs) {
-		pLibFuncs->LIB_BLC = &Lib_BlackLevelCorrection;
-		pLibFuncs->LIB_LSC = &Lib_LensShadingCorrection;
-		pLibFuncs->LIB_Demosaic = &Lib_Demosaic;
-		pLibFuncs->LIB_WB = &Lib_WhiteBalance;
-		pLibFuncs->LIB_CC = &Lib_ColorCorrection;
-		pLibFuncs->LIB_Gamma = &Lib_GammaCorrection;
-		pLibFuncs->LIB_WNR = &Lib_WaveletNR;
-		pLibFuncs->LIB_EE = &Lib_EdgeEnhancement;
-		pLibFuncs->LIB_CST_RAW2RGB = &Lib_CST_RAW2RGB;
-		pLibFuncs->LIB_CST_RGB2YUV = &Lib_CST_RGB2YUV;
-		pLibFuncs->LIB_CST_YUV2RGB = &Lib_CST_YUV2RGB;
+	LIB_OPS* pLibOps = static_cast<LIB_OPS*>(pOps);
+
+	if (pLibOps) {
+		pLibOps->LIB_BLC = &Lib_BlackLevelCorrection;
+		pLibOps->LIB_LSC = &Lib_LensShadingCorrection;
+		pLibOps->LIB_Demosaic = &Lib_Demosaic;
+		pLibOps->LIB_WB = &Lib_WhiteBalance;
+		pLibOps->LIB_CC = &Lib_ColorCorrection;
+		pLibOps->LIB_Gamma = &Lib_GammaCorrection;
+		pLibOps->LIB_WNR = &Lib_WaveletNR;
+		pLibOps->LIB_EE = &Lib_EdgeEnhancement;
+		pLibOps->LIB_CST_RAW2RGB = &Lib_CST_RAW2RGB;
+		pLibOps->LIB_CST_RGB2YUV = &Lib_CST_RGB2YUV;
+		pLibOps->LIB_CST_YUV2RGB = &Lib_CST_YUV2RGB;
 	}
+}
+
+BZ_PRE_DECLARE void RegistCallbacks(void* pCbs, ...)
+{
+	ISP_CALLBACKS* pISPCbs = static_cast<ISP_CALLBACKS*>(pCbs);
+
+	if (pISPCbs) {
+		gISPCbs.UtilsFuncs.Log = pISPCbs->UtilsFuncs.Log;
+	}
+}
 }

@@ -25,7 +25,7 @@ public:
 	ISPListManager();
 	~ISPListManager();
 
-	ISPResult Init(ISPParamManager* pPM);
+	ISPResult Init(ISPParamManager* pPM, InterfaceWrapper* pIW);
 	ISPResult CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pYUV, uint8_t* pPOST, int32_t cfgIndex, int32_t* id);
 	ISPResult DestoryListbyId(int32_t id);
 	ISPResult DestoryAllList();
@@ -38,6 +38,7 @@ private:
 
 	int32_t mListNum;
 	ISPParamManager* pParamManager;
+	InterfaceWrapper* pItfWrapper;
 	ISP_LIST_PROPERTY* pISPListConfigs;
 	map<int32_t, int32_t> mISPListConfigMap;
 	map<int32_t, ISPList<uint16_t, uint16_t, uint8_t, uint8_t>*> mListMap;

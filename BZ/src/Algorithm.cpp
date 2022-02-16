@@ -24,34 +24,34 @@ using namespace cv;
 /* Bayer Process */
 void Lib_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result= BZ_SUCCESS;
+	BZResult rt= BZ_SUCCESS;
 
 	if (!pParams) {
-		result = BZ_INVALID_PARAM;
+		rt = BZ_INVALID_PARAM;
 		BZLoge("pParams is null!");
 	}
 
-	if (SUCCESS(result)) {
-		result = BZ_BlackLevelCorrection(data, pParams, CBs);
-		if (!SUCCESS(result)) {
-			BZLoge("Failed! result:%d", result);
+	if (SUCCESS(rt)) {
+		rt = BZ_BlackLevelCorrection(data, pParams, CBs);
+		if (!SUCCESS(rt)) {
+			BZLoge("Failed! rt:%d", rt);
 		}
 	}
 }
 
 void Lib_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 
 	if (!pParams) {
-		result = BZ_INVALID_PARAM;
+		rt = BZ_INVALID_PARAM;
 		BZLoge("pParams is null!");
 	}
 
-	if (SUCCESS(result)) {
-		result = BZ_LensShadingCorrection(data, pParams, CBs);
-		if (!SUCCESS(result)) {
-			BZLoge("Failed! result:%d", result);
+	if (SUCCESS(rt)) {
+		rt = BZ_LensShadingCorrection(data, pParams, CBs);
+		if (!SUCCESS(rt)) {
+			BZLoge("Failed! rt:%d", rt);
 		}
 	}
 }
@@ -59,68 +59,68 @@ void Lib_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 /* RGB Process */
 void Lib_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 
 	if (!pParams) {
-		result = BZ_INVALID_PARAM;
+		rt = BZ_INVALID_PARAM;
 		BZLoge("pParams is null!");
 	}
 
-	if (SUCCESS(result)) {
-		result = BZ_Demosaic(data, pParams, CBs);
-		if (!SUCCESS(result)) {
-			BZLoge("Failed! result:%d", result);
+	if (SUCCESS(rt)) {
+		rt = BZ_Demosaic(data, pParams, CBs);
+		if (!SUCCESS(rt)) {
+			BZLoge("Failed! rt:%d", rt);
 		}
 	}
 }
 
 void Lib_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 
 	if (!pParams) {
-		result = BZ_INVALID_PARAM;
+		rt = BZ_INVALID_PARAM;
 		BZLoge("pParams is null!");
 	}
 
-	if (SUCCESS(result)) {
-		result = BZ_WhiteBalance(data, pParams, CBs);
-		if (!SUCCESS(result)) {
-			BZLoge("Failed! result:%d", result);
+	if (SUCCESS(rt)) {
+		rt = BZ_WhiteBalance(data, pParams, CBs);
+		if (!SUCCESS(rt)) {
+			BZLoge("Failed! rt:%d", rt);
 		}
 	}
 }
 
 void Lib_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 
 	if (!pParams) {
-		result = BZ_INVALID_PARAM;
+		rt = BZ_INVALID_PARAM;
 		BZLoge("pParams is null!");
 	}
 
-	if (SUCCESS(result)) {
-		result = BZ_ColorCorrection(data, pParams, CBs);
-		if (!SUCCESS(result)) {
-			BZLoge("Failed! result:%d", result);
+	if (SUCCESS(rt)) {
+		rt = BZ_ColorCorrection(data, pParams, CBs);
+		if (!SUCCESS(rt)) {
+			BZLoge("Failed! rt:%d", rt);
 		}
 	}
 }
 
 void Lib_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 
 	if (!pParams) {
-		result = BZ_INVALID_PARAM;
+		rt = BZ_INVALID_PARAM;
 		BZLoge("pParams is null!");
 	}
 
-	if (SUCCESS(result)) {
-		result = BZ_GammaCorrection(data, pParams, CBs);
-		if (!SUCCESS(result)) {
-			BZLoge("Failed! result:%d", result);
+	if (SUCCESS(rt)) {
+		rt = BZ_GammaCorrection(data, pParams, CBs);
+		if (!SUCCESS(rt)) {
+			BZLoge("Failed! rt:%d", rt);
 		}
 	}
 }
@@ -128,34 +128,34 @@ void Lib_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 /* YUVProcess */
 void Lib_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 
 	if (!pParams) {
-		result = BZ_INVALID_PARAM;
+		rt = BZ_INVALID_PARAM;
 		BZLoge("pParams is null!");
 	}
 
-	if (SUCCESS(result)) {
-		result = BZ_WaveletNR(data, pParams, CBs);
-		if (!SUCCESS(result)) {
-			BZLoge("Failed! result:%d", result);
+	if (SUCCESS(rt)) {
+		rt = BZ_WaveletNR(data, pParams, CBs);
+		if (!SUCCESS(rt)) {
+			BZLoge("Failed! rt:%d", rt);
 		}
 	}
 }
 
 void Lib_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 
 	if (!pParams) {
-		result = BZ_INVALID_PARAM;
+		rt = BZ_INVALID_PARAM;
 		BZLoge("pParams is null!");
 	}
 
-	if (SUCCESS(result)) {
-		result = BZ_EdgeEnhancement(data, pParams, CBs);
-		if (!SUCCESS(result)) {
-			BZLoge("Failed! result:%d", result);
+	if (SUCCESS(rt)) {
+		rt = BZ_EdgeEnhancement(data, pParams, CBs);
+		if (!SUCCESS(rt)) {
+			BZLoge("Failed! rt:%d", rt);
 		}
 	}
 }
@@ -163,78 +163,78 @@ void Lib_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 /* CST */
 void Lib_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 
 	if (!pParams) {
-		result = BZ_INVALID_PARAM;
+		rt = BZ_INVALID_PARAM;
 		BZLoge("pParams is null!");
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		bool enable = true;
 		va_list va;
 		va_start(va, CBs);
 		enable = static_cast<bool>(va_arg(va, int32_t));
 		va_end(va);
-		result = BZ_CST_RAW2RGB(src, dst, pParams, CBs, enable);
-		if (!SUCCESS(result)) {
-			BZLoge("Failed! result:%d", result);
+		rt = BZ_CST_RAW2RGB(src, dst, pParams, CBs, enable);
+		if (!SUCCESS(rt)) {
+			BZLoge("Failed! rt:%d", rt);
 		}
 	}
 }
 
 void Lib_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 
 	if (!pParams) {
-		result = BZ_INVALID_PARAM;
+		rt = BZ_INVALID_PARAM;
 		BZLoge("pParams is null!");
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		bool enable = true;
 		va_list va;
 		va_start(va, CBs);
 		enable = static_cast<bool>(va_arg(va, int32_t));
 		va_end(va);
-		result = BZ_CST_RGB2YUV(src, dst, pParams, CBs, enable);
-		if (!SUCCESS(result)) {
-			BZLoge("Failed! result:%d", result);
+		rt = BZ_CST_RGB2YUV(src, dst, pParams, CBs, enable);
+		if (!SUCCESS(rt)) {
+			BZLoge("Failed! rt:%d", rt);
 		}
 	}
 }
 
 void Lib_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 
 	if (!pParams) {
-		result = BZ_INVALID_PARAM;
+		rt = BZ_INVALID_PARAM;
 		BZLoge("pParams is null!");
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		bool enable = true;
 		va_list va;
 		va_start(va, CBs);
 		enable = static_cast<bool>(va_arg(va, int32_t));
 		va_end(va);
-		result = BZ_CST_YUV2RGB(src, dst, pParams, CBs, enable);
-		if (!SUCCESS(result)) {
-			BZLoge("Failed! result:%d", result);
+		rt = BZ_CST_YUV2RGB(src, dst, pParams, CBs, enable);
+		if (!SUCCESS(rt)) {
+			BZLoge("Failed! rt:%d", rt);
 		}
 	}
 }
 
 //EdgePreservedNR not used, it should be redeveloped
-/*ISPResult EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable) {
-	ISPResult result = ISP_SUCCESS;
+/*ISPrt EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable) {
+	ISPrt rt = ISP_SUCCESS;
 
 	if (enable == true) {
 		int32_t WIDTH;
 		int32_t HEIGHT;
-		result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
+		rt = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
 
 		int i, j;
 		Mat Edge, YUVEdge, NoEdgeNR, AYUV, BYUV;
@@ -283,7 +283,7 @@ void Lib_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 		}
 	}
 
-	return result;
+	return rt;
 }*/
 
 //BF not used, it use opencvlib. it should be develop with self alg
@@ -314,15 +314,15 @@ void Lib_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 
 BZResult BZ_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 	(void)CBs;
 
 	if (!data) {
-		result = BZ_INVALID_PARAM;
-		BZLoge("data is null! result:%d", result);
+		rt = BZ_INVALID_PARAM;
+		BZLoge("data is null! rt:%d", rt);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		int32_t width, height;
 		int32_t offset;
 		int32_t temp;
@@ -339,31 +339,31 @@ BZResult BZ_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS 
 		}
 	}
 
-	return result;
+	return rt;
 }
 
 float LSCInterpolation(int32_t WIDTH, int32_t HEIGHT,
 	float LT, float RT, float LB, float RB,
 	int32_t row, int32_t col)
 {
-	float TempT, TempB, result;
+	float TempT, TempB, rt;
 	TempT = LT - (LT - RT) * (col % (WIDTH / (LSC_LUT_WIDTH - 1))) * (LSC_LUT_WIDTH - 1) / WIDTH;
 	TempB = LB - (LB - RB) * (col % (WIDTH / (LSC_LUT_WIDTH - 1))) * (LSC_LUT_WIDTH - 1) / WIDTH;
-	result = TempT - (TempT - TempB) * (row % (HEIGHT / (LSC_LUT_HEIGHT - 1))) * (LSC_LUT_HEIGHT - 1) / HEIGHT;
-	return result;
+	rt = TempT - (TempT - TempB) * (row % (HEIGHT / (LSC_LUT_HEIGHT - 1))) * (LSC_LUT_HEIGHT - 1) / HEIGHT;
+	return rt;
 }
 
 BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 	(void)CBs;
 
 	if (!data) {
-		result = BZ_INVALID_PARAM;
-		BZLoge("data is null! result:%d", result);
+		rt = BZ_INVALID_PARAM;
+		BZLoge("data is null! rt:%d", rt);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		int32_t width, height;
 		LIB_BAYER_ORDER bayerOrder = LIB_BAYER_ORDER_NUM;
 		int32_t i, j;
@@ -403,12 +403,12 @@ BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS
 			pGr = pParams->LSC_param.GainCh4;
 			break;
 		default:
-			result = BZ_INVALID_PARAM;
-			BZLoge("Unsupported bayer order:%d result:%d", bayerOrder, result);
+			rt = BZ_INVALID_PARAM;
+			BZLoge("Unsupported bayer order:%d rt:%d", bayerOrder, rt);
 			break;
 		}
 
-		if (SUCCESS(result)) {
+		if (SUCCESS(rt)) {
 			for (i = 0; i < height; i++) {
 				for (j = 0; j < width; j++) {
 					if (i % 2 == 0 && j % 2 == 0) {
@@ -436,29 +436,29 @@ BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS
 		}
 	}
 
-	return result;
+	return rt;
 }
 
 //GCC now is too simple, it should be considered more
-/*ISPResult GreenChannelsCorrection(void* gdata, int32_t argNum, ...)
+/*ISPrt GreenChannelsCorrection(void* gdata, int32_t argNum, ...)
 {
-	ISPResult result = ISP_SUCCESS;
+	ISPrt rt = ISP_SUCCESS;
 
 	int32_t WIDTH, HEIGHT;
 	double GCCWeight;
 
-	result = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (SUCCESS(result)) {
-		result = gParamManager.GetGCCParam(&GCCWeight);
-		if(!SUCCESS(result)) {
-			ISPLoge("get GCCWeight failed. result:%d", result);
+	rt = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
+	if (SUCCESS(rt)) {
+		rt = gParamManager.GetGCCParam(&GCCWeight);
+		if(!SUCCESS(rt)) {
+			ISPLoge("get GCCWeight failed. rt:%d", rt);
 		}
 	}
 	else {
-		ISPLoge("get IMG Dimension failed. result:%d", result);
+		ISPLoge("get IMG Dimension failed. rt:%d", rt);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		float temp = 1.0;
 		for (int32_t i = 0; i < HEIGHT; i++) {
 			for (int32_t j = 1; j < WIDTH; j++) {
@@ -484,7 +484,7 @@ BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS
 		ISPLogi("finished");
 	}
 
-	return result;
+	return rt;
 }*/
 
 void FirstPixelInsertProcess(uint16_t* src, uint16_t* dst, int32_t width, int32_t height)
@@ -636,19 +636,19 @@ void LastPixelInsertProcess(uint16_t* src, uint16_t* dst , int32_t width, int32_
 BZResult DemosaicInterpolation(uint16_t* pch1, uint16_t* pch2, uint16_t* pch3,
 		int32_t width, int32_t height, LIB_BAYER_ORDER order)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 
 	if (!pch1 || !pch2 || !pch3) {
-		result = BZ_FAILED;
-		BZLoge("Invalid input %d", result);
+		rt = BZ_FAILED;
+		BZLoge("Invalid input %d", rt);
 	}
 
 	if (width % 2 || height % 2) {
-		result = BZ_FAILED;
+		rt = BZ_FAILED;
 		BZLoge("Unsupported ord width/height %dx%d", width, height);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		switch(order) {
 			case LIB_RGGB:
 			case LIB_BGGR:
@@ -890,22 +890,22 @@ BZResult DemosaicInterpolation(uint16_t* pch1, uint16_t* pch2, uint16_t* pch3,
 				break;
 			case LIB_BAYER_ORDER_NUM:
 			default:
-				BZLoge("Unsupported bayer order:%d", result);
+				BZLoge("Unsupported bayer order:%d", rt);
 				break;
 		}
 	}
 
-	return result;
+	return rt;
 }
 
 BZResult BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 	(void)CBs;
 
 	if (!data) {
-		result = BZ_INVALID_PARAM;
-		BZLoge("data is null! result:%d", result);
+		rt = BZ_INVALID_PARAM;
+		BZLoge("data is null! rt:%d", rt);
 	}
 
 	int32_t width, height;
@@ -931,32 +931,32 @@ BZResult BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 		pChannel3 = static_cast<uint16_t*>(data) + 2 * width * height;
 		break;
 	default:
-		result = BZ_INVALID_PARAM;
-		BZLoge("Unsupported bayer order:%d result:%d", bayerOrder, result);
+		rt = BZ_INVALID_PARAM;
+		BZLoge("Unsupported bayer order:%d rt:%d", bayerOrder, rt);
 		break;
 	}
-	if (SUCCESS(result)) {
-		result = DemosaicInterpolation(pChannel1, pChannel2, pChannel3,
+	if (SUCCESS(rt)) {
+		rt = DemosaicInterpolation(pChannel1, pChannel2, pChannel3,
 				width, height, bayerOrder);
 //		FirstPixelInsertProcess(pChannel1, pChannel1, width, height);
 //		TwoGPixelInsertProcess(pChannel2, pChannel2, width, height);
 //		LastPixelInsertProcess(pChannel3, pChannel3, width, height);
 	}
 
-	return result;
+	return rt;
 }
 
 BZResult BZ_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 	(void)CBs;
 
 	if (!data) {
-		result = BZ_INVALID_PARAM;
-		BZLoge("data is null! result:%d", result);
+		rt = BZ_INVALID_PARAM;
+		BZLoge("data is null! rt:%d", rt);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		int32_t width, height;
 		float rGain, gGain, bGain;
 		width = pParams->info.width;
@@ -971,7 +971,7 @@ BZResult BZ_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 		uint16_t* G = B + width * height;
 		uint16_t* R = G + width * height;
 
-		if (SUCCESS(result)) {
+		if (SUCCESS(rt)) {
 			for (int i = 0; i < width * height; i++)
 			{
 				B[i] = B[i] * bGain;
@@ -981,20 +981,20 @@ BZResult BZ_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 		}
 	}
 
-	return result;
+	return rt;
 }
 
 BZResult BZ_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 	(void)CBs;
 
 	if (!data) {
-		result = BZ_INVALID_PARAM;
-		BZLoge("data is null! result:%d", result);
+		rt = BZ_INVALID_PARAM;
+		BZLoge("data is null! rt:%d", rt);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		int32_t width, height;
 		float* pCcm;
 		int32_t i, j;
@@ -1002,83 +1002,85 @@ BZResult BZ_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 		height = pParams->info.height;
 		pCcm = pParams->CC_param.CCM;
 		BZLogd("width:%d height:%d", width, height);
-		for (i = 0; i < CCM_HEIGHT; i++) {
-			BZLogd("CCM[%d]:%f CCM[%d]:%f CCM[%d]:%f", i * CCM_WIDTH, pCcm[i * CCM_WIDTH],
-													i * CCM_WIDTH + 1, pCcm[i * CCM_WIDTH + 1],
-													i * CCM_WIDTH + 2, pCcm[i * CCM_WIDTH + 2]);
-		}
-
-		Mat CCM = Mat::zeros(3, 3, CV_32FC1);
-		for (i = 0; i < 3; i++) {
-			for (j = 0; j < 3; j++) {
-				CCM.at<float>(i, j) = *(pCcm + i * CCM_WIDTH + j);
+		if (width && height) {
+			for (i = 0; i < CCM_HEIGHT; i++) {
+				BZLogd("CCM[%d]:%f CCM[%d]:%f CCM[%d]:%f", i * CCM_WIDTH, pCcm[i * CCM_WIDTH],
+						i * CCM_WIDTH + 1, pCcm[i * CCM_WIDTH + 1],
+						i * CCM_WIDTH + 2, pCcm[i * CCM_WIDTH + 2]);
 			}
+
+			Mat CCM = Mat::zeros(3, 3, CV_32FC1);
+			for (i = 0; i < 3; i++) {
+				for (j = 0; j < 3; j++) {
+					CCM.at<float>(i, j) = *(pCcm + i * CCM_WIDTH + j);
+				}
+			}
+
+			uint16_t* B = static_cast<uint16_t*>(data);
+			uint16_t* G = B + width * height;
+			uint16_t* R = G + width * height;
+
+			Mat outMatric;
+			Mat inMatric(width * height, 3, CV_32FC1);
+
+			for (i = 0; i < height * width; i++) {
+				inMatric.at<float>(i, 0) = (float)B[i];
+				inMatric.at<float>(i, 1) = (float)G[i];
+				inMatric.at<float>(i, 2) = (float)R[i];
+			}
+
+			//ofstream OutFile2("C:\\Users\\penghao6\\Desktop\\变形.txt");
+			//OutFile2 << inMatric;
+			//OutFile2.close();
+
+			outMatric = inMatric * CCM;
+
+			//ofstream OutFile3("C:\\Users\\penghao6\\Desktop\\计算结果.txt");
+			//OutFile3 << outMatric;
+			//OutFile3.close();
+
+			for (i = 0; i < height * width; i++) {
+				if (outMatric.at<float>(i, 0) > 1023)
+					outMatric.at<float>(i, 0) = 1023;
+				if (outMatric.at<float>(i, 0) < 0)
+					outMatric.at<float>(i, 0) = 0;
+				if (outMatric.at<float>(i, 1) > 1023)
+					outMatric.at<float>(i, 1) = 1023;
+				if (outMatric.at<float>(i, 1) < 0)
+					outMatric.at<float>(i, 1) = 0;
+				if (outMatric.at<float>(i, 2) > 1023)
+					outMatric.at<float>(i, 2) = 1023;
+				if (outMatric.at<float>(i, 2) < 0)
+					outMatric.at<float>(i, 2) = 0;
+				B[i] = (uint16_t)outMatric.at<float>(i, 0);
+				G[i] = (uint16_t)outMatric.at<float>(i, 1);
+				R[i] = (uint16_t)outMatric.at<float>(i, 2);
+			}
+
+			//ofstream OutFile4("C:\\Users\\penghao6\\Desktop\\反变形.txt");
+			//OutFile4 << Ori;
+			//OutFile4.close();
+
+			//ofstream OutFile5("C:\\Users\\penghao6\\Desktop\\反归一化.txt");
+			//OutFile5 <<income;
+			//OutFile5.close();
+			//CharDataSaveAsText(dst.data, "C:\\Users\\penghao6\\Desktop\\output2.txt");
 		}
-
-		uint16_t* B = static_cast<uint16_t*>(data);
-		uint16_t* G = B + width * height;
-		uint16_t* R = G + width * height;
-
-		Mat outMatric;
-		Mat inMatric(width * height, 3, CV_32FC1);
-
-		for (i = 0; i < height * width; i++) {
-			inMatric.at<float>(i, 0) = (float)B[i];
-			inMatric.at<float>(i, 1) = (float)G[i];
-			inMatric.at<float>(i, 2) = (float)R[i];
-		}
-
-		//ofstream OutFile2("C:\\Users\\penghao6\\Desktop\\变形.txt");
-		//OutFile2 << inMatric;
-		//OutFile2.close();
-
-		outMatric = inMatric * CCM;
-
-		//ofstream OutFile3("C:\\Users\\penghao6\\Desktop\\计算结果.txt");
-		//OutFile3 << outMatric;
-		//OutFile3.close();
-
-		for (i = 0; i < height * width; i++) {
-			if (outMatric.at<float>(i, 0) > 1023)
-				outMatric.at<float>(i, 0) = 1023;
-			if (outMatric.at<float>(i, 0) < 0)
-				outMatric.at<float>(i, 0) = 0;
-			if (outMatric.at<float>(i, 1) > 1023)
-				outMatric.at<float>(i, 1) = 1023;
-			if (outMatric.at<float>(i, 1) < 0)
-				outMatric.at<float>(i, 1) = 0;
-			if (outMatric.at<float>(i, 2) > 1023)
-				outMatric.at<float>(i, 2) = 1023;
-			if (outMatric.at<float>(i, 2) < 0)
-				outMatric.at<float>(i, 2) = 0;
-			B[i] = (uint16_t)outMatric.at<float>(i, 0);
-			G[i] = (uint16_t)outMatric.at<float>(i, 1);
-			R[i] = (uint16_t)outMatric.at<float>(i, 2);
-		}
-
-		//ofstream OutFile4("C:\\Users\\penghao6\\Desktop\\反变形.txt");
-		//OutFile4 << Ori;
-		//OutFile4.close();
-
-		//ofstream OutFile5("C:\\Users\\penghao6\\Desktop\\反归一化.txt");
-		//OutFile5 <<income;
-		//OutFile5.close();
-		//CharDataSaveAsText(dst.data, "C:\\Users\\penghao6\\Desktop\\output2.txt");
 	}
-	return result;
+	return rt;
 }
 
 BZResult BZ_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 	(void)CBs;
 
 	if (!data) {
-		result = BZ_INVALID_PARAM;
-		BZLoge("data is null! result:%d", result);
+		rt = BZ_INVALID_PARAM;
+		BZLoge("data is null! rt:%d", rt);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		int32_t width, height;
 		uint16_t* plut = nullptr;
 		width = pParams->info.width;
@@ -1098,7 +1100,7 @@ BZResult BZ_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 		}
 	}
 
-	return result;
+	return rt;
 }
 
 enum WAVELET_TYPE {
@@ -1571,15 +1573,15 @@ Mat getim(Mat src, int32_t WIDTH, int32_t HEIGHT,
 
 BZResult BZ_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 	(void)CBs;
 
 	if (!data) {
-		result = BZ_INVALID_PARAM;
-		BZLoge("data is null! result:%d", result);
+		rt = BZ_INVALID_PARAM;
+		BZLoge("data is null! rt:%d", rt);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		int32_t width, height;
 		int32_t strength1;
 		int32_t strength2;
@@ -1591,78 +1593,79 @@ BZResult BZ_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 		strength3 = pParams->WNR_param.L3_threshold;
 		BZLogd("width:%d height:%d", width, height);
 		BZLogd("strength:%d %d %d", strength1, strength2, strength3);
+		if (width && height) {
+			int32_t i, j;
+			Mat onechannel(height, width, CV_8U);
+			Mat onechannel2(height, width, CV_8U);
 
-		int32_t i, j;
-		Mat onechannel(height, width, CV_8U);
-		Mat onechannel2(height, width, CV_8U);
+			if (SUCCESS(rt)) {
+				//会产生严重格子现象
+				//Y通道小波
+				/*for (i = 0; i < height; i++) {
+				  for (j = 0; j < width; j++) {
+				  onechannel.data[i*width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j];
+				  }
+				  }
+				  onechannel2 = getim(onechannel, width, height, 3, Imgsizey, Imgsizex, 1, 50, 30, 20);
+				  for (i = 0; i < height; i++) {
+				  for (j = 0; j < width; j++) {
+				  static_cast<uchar*>(data)[i * 3 * width + 3 * j ]= onechannel2.data[i*width + j];
+				//YUV.data[i * 3 * width + 3 * j + 1] = onechannel2.data[i*width + j];
+				//YUV.data[i * 3 * width + 3 * j + 2] = onechannel2.data[i*width + j];
+				}
+				}*/
 
-		if (SUCCESS(result)) {
-			//会产生严重格子现象
-			//Y通道小波
-			/*for (i = 0; i < height; i++) {
-				for (j = 0; j < width; j++) {
-					onechannel.data[i*width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j];
+				//U通道小波
+				for (i = 0; i < height; i++) {
+					for (j = 0; j < width; j++) {
+						onechannel.data[i * width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j + 1];
+					}
 				}
-			}
-			onechannel2 = getim(onechannel, width, height, 3, Imgsizey, Imgsizex, 1, 50, 30, 20);
-			for (i = 0; i < height; i++) {
-				for (j = 0; j < width; j++) {
-					static_cast<uchar*>(data)[i * 3 * width + 3 * j ]= onechannel2.data[i*width + j];
-					//YUV.data[i * 3 * width + 3 * j + 1] = onechannel2.data[i*width + j];
-					//YUV.data[i * 3 * width + 3 * j + 2] = onechannel2.data[i*width + j];
+				onechannel2 = getim(onechannel, width, height, 3, 1, strength1, strength2, strength3);
+				//onechannel2 = onechannel.clone();
+				onechannel = onechannel2.clone();
+				for (i = 0; i < height; i++) {
+					for (j = 0; j < width; j++) {
+						//YUV.data[i * 3 * width + 3 * j ]= onechannel2.data[i*width + j];
+						static_cast<uchar*>(data)[i * 3 * width + 3 * j + 1] = onechannel2.data[i * width + j];
+						//YUV.data[i * 3 * width + 3 * j + 2] = onechannel2.data[i*width + j];
+					}
 				}
-			}*/
 
-			//U通道小波
-			for (i = 0; i < height; i++) {
-				for (j = 0; j < width; j++) {
-					onechannel.data[i * width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j + 1];
+				//V通道小波
+				for (i = 0; i < height; i++) {
+					for (j = 0; j < width; j++) {
+						onechannel.data[i * width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j + 2];
+					}
 				}
-			}
-			onechannel2 = getim(onechannel, width, height, 3, 1, strength1, strength2, strength3);
-			//onechannel2 = onechannel.clone();
-			onechannel = onechannel2.clone();
-			for (i = 0; i < height; i++) {
-				for (j = 0; j < width; j++) {
-					//YUV.data[i * 3 * width + 3 * j ]= onechannel2.data[i*width + j];
-					static_cast<uchar*>(data)[i * 3 * width + 3 * j + 1] = onechannel2.data[i * width + j];
-					//YUV.data[i * 3 * width + 3 * j + 2] = onechannel2.data[i*width + j];
-				}
-			}
-
-			//V通道小波
-			for (i = 0; i < height; i++) {
-				for (j = 0; j < width; j++) {
-					onechannel.data[i * width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j + 2];
-				}
-			}
-			onechannel2 = getim(onechannel, width, height, 3, 2, strength1, strength2, strength3);
-			//onechannel2 = onechannel.clone();
-			onechannel = onechannel2.clone();
-			for (i = 0; i < height; i++) {
-				for (j = 0; j < width; j++) {
-					//YUV.data[i * 3 * width + 3 * j ]= onechannel2.data[i*width + j];
-					//YUV.data[i * 3 * width + 3 * j + 1] = onechannel2.data[i*width + j];
-					static_cast<uchar*>(data)[i * 3 * width + 3 * j + 2] = onechannel2.data[i * width + j];
+				onechannel2 = getim(onechannel, width, height, 3, 2, strength1, strength2, strength3);
+				//onechannel2 = onechannel.clone();
+				onechannel = onechannel2.clone();
+				for (i = 0; i < height; i++) {
+					for (j = 0; j < width; j++) {
+						//YUV.data[i * 3 * width + 3 * j ]= onechannel2.data[i*width + j];
+						//YUV.data[i * 3 * width + 3 * j + 1] = onechannel2.data[i*width + j];
+						static_cast<uchar*>(data)[i * 3 * width + 3 * j + 2] = onechannel2.data[i * width + j];
+					}
 				}
 			}
 		}
 	}
-	return result;
+	return rt;
 }
 
 
 BZResult BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 	(void)CBs;
 
 	if (!data) {
-		result = BZ_INVALID_PARAM;
-		BZLoge("data is null! result:%d", result);
+		rt = BZ_INVALID_PARAM;
+		BZLoge("data is null! rt:%d", rt);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		int32_t width, height;
 		float alpha;
 		int32_t coreSzie;
@@ -1674,48 +1677,49 @@ BZResult BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 		delta = pParams->EE_param.delta;
 		BZLogd("width:%d height:%d", width, height);
 		BZLogd("alpha:%f coreSzie:%d delta:%d", alpha, coreSzie, delta);
-
-		Mat blurred;
-		Mat Y(height, width, CV_8UC1, Scalar(0));
-		int32_t i, j;
-		int32_t mask;
-		for (i = 0; i < height; i++) {
-			for (j = 0; j < width; j++) {
-				Y.data[i * width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j];
+		if (width && height) {
+			Mat blurred;
+			Mat Y(height, width, CV_8UC1, Scalar(0));
+			int32_t i, j;
+			int32_t mask;
+			for (i = 0; i < height; i++) {
+				for (j = 0; j < width; j++) {
+					Y.data[i * width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j];
+				}
 			}
-		}
 
-		GaussianBlur(Y, blurred, Size(coreSzie, coreSzie), delta, delta);
+			GaussianBlur(Y, blurred, Size(coreSzie, coreSzie), delta, delta);
 
-		for (i = 0; i < height; i++) {
-			for (j = 0; j < width; j++) {
-				mask = Y.data[i * width + j] - blurred.data[i * width + j];
-				mask = (int)(static_cast<uchar*>(data)[i * 3 * width + 3 * j] + (int)(alpha * mask));
-				if (mask > 255) {
-					mask = 255;
+			for (i = 0; i < height; i++) {
+				for (j = 0; j < width; j++) {
+					mask = Y.data[i * width + j] - blurred.data[i * width + j];
+					mask = (int)(static_cast<uchar*>(data)[i * 3 * width + 3 * j] + (int)(alpha * mask));
+					if (mask > 255) {
+						mask = 255;
+					}
+					else if (mask < 0) {
+						mask = 0;
+					}
+					static_cast<uchar*>(data)[i * 3 * width + 3 * j] = mask & 255;
 				}
-				else if (mask < 0) {
-					mask = 0;
-				}
-				static_cast<uchar*>(data)[i * 3 * width + 3 * j] = mask & 255;
 			}
 		}
 	}
 
-	return result;
+	return rt;
 }
 
 BZResult ReadChannels(uint16_t* data, uint16_t* pChannel1, uint16_t* pChannel2, uint16_t* pChannel3,
 		int32_t width, int32_t height, LIB_BAYER_ORDER order)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 	int32_t i, j;
 
 	if (!data || !pChannel1 || !pChannel2 || !pChannel3 || width < 0 || height < 0) {
-		result = BZ_INVALID_PARAM;
+		rt = BZ_INVALID_PARAM;
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		switch (order) {
 			case LIB_RGGB:
 			case LIB_BGGR:
@@ -1764,21 +1768,21 @@ BZResult ReadChannels(uint16_t* data, uint16_t* pChannel1, uint16_t* pChannel2, 
 			case LIB_BAYER_ORDER_NUM:
 			default:
 				BZLoge("Not support bayer order:%d", order);
-				result = BZ_FAILED;
+				rt = BZ_FAILED;
 				break;
 		}
 	}
 
-	return result;
+	return rt;
 }
 
 BZResult BZ_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 
 	if (!src || !dst) {
-		result = BZ_INVALID_PARAM;
-		BZLoge("data is null! result:%d", result);
+		rt = BZ_INVALID_PARAM;
+		BZLoge("data is null! rt:%d", rt);
 	}
 
 	int32_t width, height;
@@ -1804,23 +1808,23 @@ BZResult BZ_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 		pChannel3 = static_cast<uint16_t*>(dst) + 2 * width * height;
 		break;
 	default:
-		result = BZ_INVALID_PARAM;
-		BZLoge("Unsupported bayer order:%d result:%d", bayerOrder, result);
+		rt = BZ_INVALID_PARAM;
+		BZLoge("Unsupported bayer order:%d rt:%d", bayerOrder, rt);
 		break;
 	}
 
-	if (SUCCESS(result)) {
-		result = ReadChannels(static_cast<uint16_t*>(src), pChannel1, pChannel2, pChannel3,
+	if (SUCCESS(rt)) {
+		rt = ReadChannels(static_cast<uint16_t*>(src), pChannel1, pChannel2, pChannel3,
 				width, height, bayerOrder);
 	}
 
 #if  DUMP_NEEDED
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		DumpImgDataAsText((void*)gData, height, width, sizeof(uint16_t), DUMP_PATH);
 	}
 #endif
 
-	return result;
+	return rt;
 }
 
 void Compress10to8(uint16_t* src, unsigned char* dst, int32_t size, bool need_420_521)
@@ -1849,11 +1853,11 @@ void Compress10to8(uint16_t* src, unsigned char* dst, int32_t size, bool need_42
 
 BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 
 	if (!src || !dst) {
-		result = BZ_INVALID_PARAM;
-		BZLoge("data is null! result:%d", result);
+		rt = BZ_INVALID_PARAM;
+		BZLoge("data is null! rt:%d", rt);
 	}
 
 	int32_t width, height;
@@ -1861,81 +1865,85 @@ BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 	width = pParams->info.width;
 	height = pParams->info.height;
 	BZLogd("width:%d height:%d", width, height);
-	va_list va_param;
-	va_start(va_param, CBs);
-	enable = static_cast<bool>(va_arg(va_param, int32_t));
-	va_end(va_param);
-	BZLogd("enable:%d", enable);
-	uint16_t* bSrc = static_cast<uint16_t*>(src);
-	uint16_t* gSrc = static_cast<uint16_t*>(src) + width * height;
-	uint16_t* rSrc = static_cast<uint16_t*>(src) + 2 * width * height;
-	uint8_t* data8bit = nullptr;
-	uint8_t* b8bit = nullptr;
-	uint8_t* g8bit = nullptr;
-	uint8_t* r8bit = nullptr;
+	if (width && height) {
+		va_list va_param;
+		va_start(va_param, CBs);
+		enable = static_cast<bool>(va_arg(va_param, int32_t));
+		va_end(va_param);
+		BZLogd("enable:%d", enable);
+		uint16_t* bSrc = static_cast<uint16_t*>(src);
+		uint16_t* gSrc = static_cast<uint16_t*>(src) + width * height;
+		uint16_t* rSrc = static_cast<uint16_t*>(src) + 2 * width * height;
+		uint8_t* data8bit = nullptr;
+		uint8_t* b8bit = nullptr;
+		uint8_t* g8bit = nullptr;
+		uint8_t* r8bit = nullptr;
 
-	if (SUCCESS(result)) {
-		data8bit = new uint8_t[3 * width * height];
-		if (data8bit) {
-			memset(data8bit, 0x0, 3 * width * height);
-			b8bit = data8bit;
-			g8bit = b8bit + width * height;
-			r8bit = g8bit + width * height;
-			Compress10to8(bSrc, b8bit, width * height, true);
-			Compress10to8(gSrc, g8bit, width * height, true);
-			Compress10to8(rSrc, r8bit, width * height, true);
-		}
-		else {
-			result = BZ_MEMORY_ERROR;
-			BZLoge("cannot new buffer for 8 bits data! result:%d", result);
-		}
-	}
-
-	if (SUCCESS(result)) {
-		int32_t i, j;
-		Mat YUVdst(height, width, CV_8UC3, Scalar(0, 0, 0));
-		for (i = 0; i < height; i++) {
-			for (j = 0; j < width; j++) {
-				YUVdst.data[i * width * 3 + 3 * j] = (unsigned int)b8bit[i * width + j];
-				YUVdst.data[i * width * 3 + 3 * j + 1] = (unsigned int)g8bit[i * width + j];
-				YUVdst.data[i * width * 3 + 3 * j + 2] = (unsigned int)r8bit[i * width + j];
+		if (SUCCESS(rt)) {
+			data8bit = new uint8_t[3 * width * height];
+			if (data8bit) {
+				memset(data8bit, 0x0, 3 * width * height);
+				b8bit = data8bit;
+				g8bit = b8bit + width * height;
+				r8bit = g8bit + width * height;
+				Compress10to8(bSrc, b8bit, width * height, true);
+				Compress10to8(gSrc, g8bit, width * height, true);
+				Compress10to8(rSrc, r8bit, width * height, true);
+			}
+			else {
+				rt = BZ_MEMORY_ERROR;
+				BZLoge("cannot new buffer for 8 bits data! rt:%d", rt);
 			}
 		}
-		if (enable) {
-			cvtColor(YUVdst, YUVdst, COLOR_BGR2YCrCb, 0);
+
+		if (SUCCESS(rt)) {
+			int32_t i, j;
+			Mat YUVdst(height, width, CV_8UC3, Scalar(0, 0, 0));
+			for (i = 0; i < height; i++) {
+				for (j = 0; j < width; j++) {
+					YUVdst.data[i * width * 3 + 3 * j] = (unsigned int)b8bit[i * width + j];
+					YUVdst.data[i * width * 3 + 3 * j + 1] = (unsigned int)g8bit[i * width + j];
+					YUVdst.data[i * width * 3 + 3 * j + 2] = (unsigned int)r8bit[i * width + j];
+				}
+			}
+			if (enable) {
+				cvtColor(YUVdst, YUVdst, COLOR_BGR2YCrCb, 0);
+			}
+			memcpy(dst, YUVdst.data, 3 * width * height);
+			YUVdst.release();
 		}
-		memcpy(dst, YUVdst.data, 3 * width * height);
-		YUVdst.release();
+
+		if (data8bit) {
+			delete data8bit;
+		}
 	}
 
-	if (data8bit) {
-		delete data8bit;
-	}
-
-	return result;
+	return rt;
 }
 
 BZResult BZ_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
-	BZResult result = BZ_SUCCESS;
+	BZResult rt = BZ_SUCCESS;
 	(void)CBs;
 
 	if (!src) {
-		result = BZ_INVALID_PARAM;
-		BZLoge("data is null! result:%d", result);
+		rt = BZ_INVALID_PARAM;
+		BZLoge("data is null! rt:%d", rt);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		int32_t width, height;
 		width = pParams->info.width;
 		height = pParams->info.height;
-
-		Mat container(height, width, CV_8UC3, Scalar(0, 0, 0));
-		memcpy(container.data, src, width * height * container.channels());
-		cvtColor(container, container, COLOR_YCrCb2BGR, 0);
-		memcpy(dst, container.data, width * height * container.channels());
+		BZLogd("width:%d height:%d", width, height);
+		if (width && height) {
+			Mat container(height, width, CV_8UC3, Scalar(0, 0, 0));
+			memcpy(container.data, src, width * height * container.channels());
+			cvtColor(container, container, COLOR_YCrCb2BGR, 0);
+			memcpy(dst, container.data, width * height * container.channels());
+		}
 	}
 
-	return result;
+	return rt;
 }
 

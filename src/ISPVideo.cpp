@@ -26,126 +26,126 @@ ISPVideo::~ISPVideo()
 
 ISPResult ISPVideo::StatusTransform()
 {
-	ISPResult result = ISP_SUCCESS;
+	ISPResult rt = ISP_SUCCESS;
 
-	return result;
+	return rt;
 }
 
 ISPResult ISPVideo::Init(void* pData)
 {
-	ISPResult result = ISP_SUCCESS;
+	ISPResult rt = ISP_SUCCESS;
 
 	if (mState != VIDEO_NEW) {
-		result = ISP_STATE_ERROR;
+		rt = ISP_STATE_ERROR;
 		ISPLoge("Invalid state:%d", mState);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		if (!pData) {
 			ISPLoge("Invalid param!");
-			result = ISP_INVALID_PARAM;
+			rt = ISP_INVALID_PARAM;
 		}
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		pSrc = static_cast<Mat*>(pData);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		mState = VIDEO_INITED;
 	}
 
-	return result;
+	return rt;
 }
 
 
 ISPResult ISPVideo::CreateThread(void* pThreadParam)
 {
-	ISPResult result = ISP_SUCCESS;
+	ISPResult rt = ISP_SUCCESS;
 
 	if (mState != VIDEO_INITED) {
-		result = ISP_STATE_ERROR;
+		rt = ISP_STATE_ERROR;
 		ISPLoge("Invalid state:%d", mState);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		mThread = thread(VideoEncodeFunc, pThreadParam);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		ISPLogd("video thread start running");
 		mState = VIDEO_READY;
 	}
 
-	return result;
+	return rt;
 }
 
 ISPResult ISPVideo::DestroyThread()
 {
-	ISPResult result = ISP_SUCCESS;
+	ISPResult rt = ISP_SUCCESS;
 
 	if (mState == VIDEO_LOCK || mState == VIDEO_WAIT_FRAME_DONE) {
 		ISPLogi("Waite video thread finish", mState);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		mThread.join();
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		ISPLogd("video thread exit");
 		mState = VIDEO_INITED;
 	}
 
-	return result;
+	return rt;
 }
 
 ISPResult ISPVideo::GetSrc(Mat** ppSrc)
 {
-	ISPResult result = ISP_SUCCESS;
+	ISPResult rt = ISP_SUCCESS;
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		*ppSrc = pSrc;
 	}
 
-	return result;
+	return rt;
 }
 
 ISPResult ISPVideo::Record(VideoWriter* pRecorder)
 {
-	ISPResult result = ISP_SUCCESS;
+	ISPResult rt = ISP_SUCCESS;
 
 	if (!pRecorder) {
-		result = ISP_INVALID_PARAM;
+		rt = ISP_INVALID_PARAM;
 		ISPLoge("Input param is null");
 	}
 
-	if (SUCCESS(result))
+	if (SUCCESS(rt))
 	{
 		unique_lock <mutex> lock(mMutex);
 		mCond.wait(lock);
 		*pRecorder << *pSrc;
 	}
 
-	return result;
+	return rt;
 }
 
 ISPResult ISPVideo::Notify()
 {
-	ISPResult result = ISP_SUCCESS;
+	ISPResult rt = ISP_SUCCESS;
 
-	if (SUCCESS(result))
+	if (SUCCESS(rt))
 	{
 		unique_lock <mutex> lock(mMutex);
 		mCond.notify_one();
 	}
 
-	return result;
+	return rt;
 }
 
 void* VideoEncodeFunc(void* threadParam)
 {
-	ISPResult result = ISP_SUCCESS;
+	ISPResult rt = ISP_SUCCESS;
 	VideoThreadParam* pParam = static_cast<VideoThreadParam*>(threadParam);
 	ISPVideo* pISPVideo = nullptr;
 	FileManager* pFileMgr = nullptr;
@@ -153,30 +153,30 @@ void* VideoEncodeFunc(void* threadParam)
 	Mat* pSrc = nullptr;
 
 	if (!pParam) {
-		result = ISP_INVALID_PARAM;
+		rt = ISP_INVALID_PARAM;
 		ISPLoge("Invalid thread param!");
 	} else {
 		pISPVideo = static_cast<ISPVideo*>(pParam->pVideo);
 		pFileMgr = static_cast<FileManager*>(pParam->pFileMgr);
 		if (!pISPVideo || !pFileMgr) {
-			result = ISP_INVALID_PARAM;
+			rt = ISP_INVALID_PARAM;
 			ISPLoge("Invalid param!");
 		}
 	}
 
-	if (SUCCESS(result)) {
-		result = pFileMgr->GetOutputVideoInfo(&info);
+	if (SUCCESS(rt)) {
+		rt = pFileMgr->GetOutputVideoInfo(&info);
 	}
 
-	if (SUCCESS(result)) {
-		result = pISPVideo->GetSrc(&pSrc);
+	if (SUCCESS(rt)) {
+		rt = pISPVideo->GetSrc(&pSrc);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		VideoWriter vWriter(info.path, VideoWriter::fourcc('M', 'J', 'P', 'G'), info.fps, Size(pSrc->cols, pSrc->rows));
 		if (vWriter.isOpened()) {
 			for (int32_t frameCount = 1; frameCount <= info.frameNum; frameCount++) {
-				result = pISPVideo->Record(&vWriter);
+				rt = pISPVideo->Record(&vWriter);
 				ISPLogd("Recording F:%d (%ds)", frameCount, frameCount / info.fps);
 				if (frameCount == info.frameNum) {
 					ISPLogi("Video output path:%s", info.path);

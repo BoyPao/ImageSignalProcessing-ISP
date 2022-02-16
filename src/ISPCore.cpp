@@ -9,9 +9,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "ISPCore.h"
-#include "FileManager.h"
-#include "ParamManager.h"
-#include "ISPListManager.h"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -54,11 +51,12 @@ using namespace cv;
 #endif
 
 int main() {
-	ISPResult result = ISP_SUCCESS;
+	ISPResult rt = ISP_SUCCESS;
 
-	std::shared_ptr<ISPParamManager> pParamManager;
-	std::shared_ptr<FileManager> pFileManager;
-	std::unique_ptr<ISPListManager> pISPListMgr;
+	ISPCore core;
+	ISPParamManager* pParamManager = nullptr;
+	FileManager* pFileManager = nullptr;
+	ISPListManager* pListManager = nullptr;
 	int32_t numPixel = 0;
 	int32_t alignedW = 0;
 	int32_t bufferSize = 0;
@@ -89,14 +87,23 @@ int main() {
 	mediaInfo.video.fps			= 30;
 	mediaInfo.video.frameNum	= 30;
 
-	if (SUCCESS(result)) {
-		if (!pParamManager) {
-			pParamManager = std::make_shared<ISPParamManager>();
+	rt = core.Init();
+	if (SUCCESS(rt)) {
+		pParamManager = static_cast<ISPParamManager*>(core.GetParamManager());
+		pFileManager = static_cast<FileManager*>(core.GetFileManager());
+		pListManager = static_cast<ISPListManager*>(core.GetListManager());
+		if (!pParamManager || !pFileManager || !pListManager) {
+			rt = ISP_FAILED;
+			ISPLoge("ParamManager:%p FileManager:%p ListManager:%p",
+					pParamManager, pFileManager, pListManager);
 		}
-		result = pParamManager->SetMediaInfo(&mediaInfo);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
+		rt = pParamManager->SetMediaInfo(&mediaInfo);
+	}
+
+	if (SUCCESS(rt)) {
 		numPixel = mediaInfo.img.width * mediaInfo.img.height;
 		alignedW = ALIGNx(mediaInfo.img.width, mediaInfo.img.bitspp, CHECK_PACKAGED(mediaInfo.img.rawFormat), mediaInfo.img.stride);
 		bufferSize = alignedW * mediaInfo.img.height;
@@ -113,74 +120,62 @@ int main() {
 			memset(rawData.get(), 0x0, numPixel);
 			memset(bgrData.get(), 0x0, numPixel * 3);
 			memset(yuvData.get(), 0x0, numPixel * 3);
+			ISPLogd("buffer addr(%p %p %p %p %p)", mipiRawData.get(), rawData.get(), bgrData.get(), yuvData.get(), dst.data);
 		}
 		else {
-			result = ISP_MEMORY_ERROR;
+			rt = ISP_MEMORY_ERROR;
 			ISPLoge("Failed to alloc buffers!");
 		}
 	}
 
-	if (SUCCESS(result)) {
-		if (!pFileManager) {
-			pFileManager = std::make_shared<FileManager>();
-		}
-		result = pFileManager->Init();
-		if (SUCCESS(result)) {
-			strcpy(inputInfo.path, INPUT_PATH);
-			inputInfo.type = INPUT_FILE_TYPE_RAW;
-			result = pFileManager->SetInputInfo(inputInfo);
-		}
-		if (SUCCESS(result)) {
-			strcpy(outputInfo.imgInfo.path, IMG_OUTPUT_PATH);
-			outputInfo.imgInfo.type = OUTPUT_FILE_TYPE_BMP;
-			result = pParamManager->GetImgDimension(&outputInfo.imgInfo.width, &outputInfo.imgInfo.hight);
-			outputInfo.imgInfo.channels = dst.channels();
+	if (SUCCESS(rt)) {
+		strcpy(inputInfo.path, INPUT_PATH);
+		inputInfo.type = INPUT_FILE_TYPE_RAW;
 
-			strcpy(outputInfo.videoInfo.path, VIDEO_OUTPUT_PATH);
-			outputInfo.videoInfo.type = OUTPUT_FILE_TYPE_AVI;
-			result = pParamManager->GetVideoFPS(&outputInfo.videoInfo.fps);
-			result = pParamManager->GetVideoFrameNum(&outputInfo.videoInfo.frameNum);
-			result = pParamManager->GetImgDimension(&outputInfo.videoInfo.width, &outputInfo.videoInfo.hight);
+		strcpy(outputInfo.imgInfo.path, IMG_OUTPUT_PATH);
+		outputInfo.imgInfo.type = OUTPUT_FILE_TYPE_BMP;
+		rt = pParamManager->GetImgDimension(&outputInfo.imgInfo.width, &outputInfo.imgInfo.hight);
+		outputInfo.imgInfo.channels = dst.channels();
 
-			result = pFileManager->SetOutputInfo(outputInfo);
-		}
+		strcpy(outputInfo.videoInfo.path, VIDEO_OUTPUT_PATH);
+		outputInfo.videoInfo.type = OUTPUT_FILE_TYPE_AVI;
+		rt = pParamManager->GetVideoFPS(&outputInfo.videoInfo.fps);
+		rt = pParamManager->GetVideoFrameNum(&outputInfo.videoInfo.frameNum);
+		rt = pParamManager->GetImgDimension(&outputInfo.videoInfo.width, &outputInfo.videoInfo.hight);
+
+		rt = pFileManager->SetInputInfo(inputInfo);
+		rt = pFileManager->SetOutputInfo(outputInfo);
 	}
 
-	if (SUCCESS(result)) {
-		if (!pISPListMgr) {
-			pISPListMgr = std::make_unique<ISPListManager>();
-		}
-		result = pISPListMgr->Init(pParamManager.get());
-		if (SUCCESS(result)) {
-			result = pISPListMgr->CreateList(rawData.get(), bgrData.get(), yuvData.get(), dst.data, LIST_CFG_DEFAULT, &listId);
-		}
+	if (SUCCESS(rt)) {
+		rt = pListManager->CreateList(rawData.get(), bgrData.get(), yuvData.get(), dst.data, LIST_CFG_DEFAULT, &listId);
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		if (mediaInfo.type >= VIDEO_MEDIA && mediaInfo.type < MEDIA_TYPE_NUM) {
 			pFileManager->CreateVideo(&dst);
 		}
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		if (mediaInfo.type == IMAGE_MEDIA) {
 			frameNum = 1;
 		}
 		else if (mediaInfo.type >= VIDEO_MEDIA && mediaInfo.type < MEDIA_TYPE_NUM) {
-			result = pParamManager->GetVideoFrameNum(&frameNum);
+			rt = pParamManager->GetVideoFrameNum(&frameNum);
 		}
 
 		for (int32_t frameCount = 1; frameCount <= frameNum; frameCount++) {
 			ISPLogi("[%d]=========================== %d(%d) ==========================", listId, frameCount, frameNum);
-			if (SUCCESS(result)) {
-				result = pFileManager->ReadData(mipiRawData.get(), bufferSize);
-				if (SUCCESS(result)) {
-					result = pFileManager->Mipi10decode((void*)mipiRawData.get(), (void*)rawData.get(), &mediaInfo.img);
+			if (SUCCESS(rt)) {
+				rt = pFileManager->ReadData(mipiRawData.get(), bufferSize);
+				if (SUCCESS(rt)) {
+					rt = pFileManager->Mipi10decode((void*)mipiRawData.get(), (void*)rawData.get(), &mediaInfo.img);
 				}
 			}
 
-			if (SUCCESS(result)) {
-				if (SUCCESS(result)) {
+			if (SUCCESS(rt)) {
+				if (SUCCESS(rt)) {
 					/* ====================================================================== */
 					/* |	Process steps can be switch on/off here as you wish				| */
 					/* |	eg: ISPListMgr.EnableNodebyType(listId, PROCESS_CC);			| */
@@ -188,16 +183,16 @@ int main() {
 					/* ====================================================================== */
 				}
 
-				if (SUCCESS(result)) {
-					result = pISPListMgr->StartById(listId);
-					if (!SUCCESS(result)) {
-						ISPLoge("Failed to start list:%d %d", listId, result);
+				if (SUCCESS(rt)) {
+					rt = pListManager->StartById(listId);
+					if (!SUCCESS(rt)) {
+						ISPLoge("Failed to start list:%d %d", listId, rt);
 					}
 				}
 
 			}
 
-			if (SUCCESS(result)) {
+			if (SUCCESS(rt)) {
 				if (mediaInfo.type >= VIDEO_MEDIA && mediaInfo.type < MEDIA_TYPE_NUM) {
 					pFileManager->SaveVideoData(frameCount);
 				}
@@ -205,23 +200,19 @@ int main() {
 		}
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		if (mediaInfo.type == IMAGE_MEDIA || mediaInfo.type == IMAGE_AND_VIDEO_MEDIA) {
-			result = pFileManager->SaveImgData(dst.data);
+			rt = pFileManager->SaveImgData(dst.data);
 		}
 	}
 
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		if (mediaInfo.type >= VIDEO_MEDIA && mediaInfo.type < MEDIA_TYPE_NUM) {
-			result = pFileManager->DestroyVideo();
+			rt = pFileManager->DestroyVideo();
 		}
 	}
 
-	if (SUCCESS(result)) {
-		result = pISPListMgr->DestoryAllList();
-	}
-
-	if (SUCCESS(result)) {
+	if (SUCCESS(rt)) {
 		/* Show the result */
 		int32_t winSizey;
 		bool supportWin = false;

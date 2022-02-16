@@ -17,6 +17,12 @@
 #include <cstdarg>
 #include <string.h>
 
+#if defined __linux__
+#define LINUX_SYSTEM
+#elif defined _WIN32
+#define WIN32_SYSTEM
+#endif
+
 #define BITS_PER_WORD				8
 #define FILE_PATH_MAX_SIZE			255
 

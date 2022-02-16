@@ -17,6 +17,13 @@
 #define LSC_LUT_HEIGHT 13
 #define GAMMA_LUT_SIZE 1024
 
+#define LIB_FUNCS_NUM 2
+#define SYMBLE_SIZE_MAX 255
+
+extern "C" {
+typedef void (*LIB_VOID_FUNC_ADDR)(void*, ...);
+}
+
 enum LIB_RAW_FORMAT {
 	LIB_ANDROID_RAW10 = 0,
 	LIB_ORDINAL_RAW10,
@@ -91,11 +98,16 @@ struct LIB_PARAMS {
 	LIB_EE_PARAM EE_param;
 };
 
-struct ISP_CALLBACKS {
-	void (*ISP_Notify)(int32_t argNum, ...);
+struct ISP_UTILS_FUNCS {
+	int (*Log) (const char* str, ...);
 };
 
-struct LIB_FUNCS
+struct ISP_CALLBACKS {
+	void (*ISP_Notify) (int32_t argNum, ...);
+	ISP_UTILS_FUNCS UtilsFuncs;
+};
+
+struct LIB_OPS
 {
 	/* Bayer Process */
 	void (*LIB_BLC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
@@ -117,4 +129,4 @@ struct LIB_FUNCS
 	void (*LIB_CST_YUV2RGB)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 };
 
-void RegisterISPLibFuncs(LIB_FUNCS* pLibFuncs);
+
