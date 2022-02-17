@@ -189,7 +189,6 @@ int main() {
 						ISPLoge("Failed to start list:%d %d", listId, rt);
 					}
 				}
-
 			}
 
 			if (SUCCESS(rt)) {

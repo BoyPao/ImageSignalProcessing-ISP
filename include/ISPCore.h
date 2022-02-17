@@ -73,6 +73,7 @@ ISPResult ISPCore::Init()
 		if (!mItfWrapper) {
 			mItfWrapper = std::make_shared<InterfaceWrapper>();
 		}
+		rt = mItfWrapper->Init();
 	}
 
 	if (SUCCESS(rt)) {

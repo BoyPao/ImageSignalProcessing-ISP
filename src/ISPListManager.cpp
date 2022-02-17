@@ -32,7 +32,7 @@ ISPResult ISPListManager::Init(ISPParamManager* pPM, InterfaceWrapper* pIW)
 {
 	ISPResult rt = ISP_SUCCESS;
 
-	if (!pPM || ! pIW)
+	if (!pPM || !pIW)
 	{
 		rt = ISP_INVALID_PARAM;
 		ISPLoge("pPM is null. %d", rt);

@@ -22,6 +22,14 @@
 #define ALG_DYNAMIC_LIB_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\x64\\Debug\\libbzalg.dll"
 #endif
 
+#define CALL_OPS(ops, op, params...)		\
+				(((ops).op) ?				\
+				({							\
+					(ops).op(params);		\
+					ISP_SUCCESS;			\
+				})							\
+				: ISP_FAILED)
+
 static ISP_CALLBACKS gISPCallbacks;
 
 const char LIB_SYMBLE[LIB_FUNCS_NUM][SYMBLE_SIZE_MAX] = {
@@ -35,11 +43,6 @@ InterfaceWrapper::InterfaceWrapper()
 	mLibsOPS = { 0 };
 	mISPLibParams = { 0 };
 	pParamMgr = nullptr;
-
-	ISPResult rt = Init();
-	if (!SUCCESS(rt)) {
-		ISPLoge("Fail to init!");
-	}
 }
 
 InterfaceWrapper::~InterfaceWrapper()
@@ -303,53 +306,53 @@ ISPResult InterfaceWrapper::AlgProcess(int32_t cmd, ...)
 		switch(cmd) {
 			case ALG_CMD_BLC:
 				src = static_cast<void*>(va_arg(va, void*));
-				mLibsOPS.algOPS.LIB_BLC(src, &mISPLibParams, gISPCallbacks);;
+				rt = CALL_OPS(mLibsOPS.algOPS, LIB_BLC, src, &mISPLibParams, gISPCallbacks);
 				break;
 			case ALG_CMD_LSC:
 				src = static_cast<void*>(va_arg(va, void*));
-				mLibsOPS.algOPS.LIB_LSC(src, &mISPLibParams, gISPCallbacks);
+				rt = CALL_OPS(mLibsOPS.algOPS, LIB_LSC, src, &mISPLibParams, gISPCallbacks);
 				break;
 			case ALG_CMD_DEMOSAIC:
 				src = static_cast<void*>(va_arg(va, void*));
-				mLibsOPS.algOPS.LIB_Demosaic(src, &mISPLibParams, gISPCallbacks);
+				rt = CALL_OPS(mLibsOPS.algOPS, LIB_Demosaic, src, &mISPLibParams, gISPCallbacks);
 				break;
 			case ALG_CMD_WB:
 				src = static_cast<void*>(va_arg(va, void*));
-				mLibsOPS.algOPS.LIB_WB(src, &mISPLibParams, gISPCallbacks);
+				rt = CALL_OPS(mLibsOPS.algOPS, LIB_WB, src, &mISPLibParams, gISPCallbacks);
 				break;
 			case ALG_CMD_CC:
 				src = static_cast<void*>(va_arg(va, void*));
-				mLibsOPS.algOPS.LIB_CC(src, &mISPLibParams, gISPCallbacks);
+				rt = CALL_OPS(mLibsOPS.algOPS, LIB_CC, src, &mISPLibParams, gISPCallbacks);
 				break;
 			case ALG_CMD_GAMMA:
 				src = static_cast<void*>(va_arg(va, void*));
-				mLibsOPS.algOPS.LIB_Gamma(src, &mISPLibParams, gISPCallbacks);
+				rt = CALL_OPS(mLibsOPS.algOPS, LIB_Gamma, src, &mISPLibParams, gISPCallbacks);
 				break;
 			case ALG_CMD_WNR:
 				src = static_cast<void*>(va_arg(va, void*));
-				mLibsOPS.algOPS.LIB_WNR(src, &mISPLibParams, gISPCallbacks);
+				rt = CALL_OPS(mLibsOPS.algOPS, LIB_WNR, src, &mISPLibParams, gISPCallbacks);
 				break;
 			case ALG_CMD_EE:
 				src = static_cast<void*>(va_arg(va, void*));
-				mLibsOPS.algOPS.LIB_EE(src, &mISPLibParams, gISPCallbacks);
+				rt = CALL_OPS(mLibsOPS.algOPS, LIB_EE, src, &mISPLibParams, gISPCallbacks);
 				break;
 			case ALG_CMD_CTS_RAW2RGB:
 				src = static_cast<void*>(va_arg(va, void*));
 				dst = static_cast<void*>(va_arg(va, void*));
 				enable = static_cast<bool>(va_arg(va, int32_t));
-				mLibsOPS.algOPS.LIB_CST_RAW2RGB(src, dst, &mISPLibParams, gISPCallbacks, enable);
+				rt = CALL_OPS(mLibsOPS.algOPS, LIB_CST_RAW2RGB, src, dst, &mISPLibParams, gISPCallbacks, enable);
 				break;
 			case ALG_CMD_CTS_RGB2YUV:
 				src = static_cast<void*>(va_arg(va, void*));
 				dst = static_cast<void*>(va_arg(va, void*));
 				enable = static_cast<bool>(va_arg(va, int32_t));
-				mLibsOPS.algOPS.LIB_CST_RGB2YUV(src, dst, &mISPLibParams, gISPCallbacks, enable);
+				rt = CALL_OPS(mLibsOPS.algOPS, LIB_CST_RGB2YUV, src, dst, &mISPLibParams, gISPCallbacks, enable);
 				break;
 			case ALG_CMD_CTS_YUV2RGB:
 				src = static_cast<void*>(va_arg(va, void*));
 				dst = static_cast<void*>(va_arg(va, void*));
 				enable = static_cast<bool>(va_arg(va, int32_t));
-				mLibsOPS.algOPS.LIB_CST_YUV2RGB(src, dst, &mISPLibParams, gISPCallbacks, enable);
+				rt = CALL_OPS(mLibsOPS.algOPS, LIB_CST_YUV2RGB, src, dst, &mISPLibParams, gISPCallbacks, enable);
 				break;
 			case ALG_CMD_NUM:
 			default:
