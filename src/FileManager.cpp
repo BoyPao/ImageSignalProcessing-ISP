@@ -412,6 +412,7 @@ ISPResult FileManager::Mipi10decode(void* src, void* dst, IMG_INFO* info)
 							(((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0x3) & 0xffff) << BITS_PER_WORD);
 					}
 				}
+				break;
 			case UNPACKAGED_RAW10_MSB:
 				for (int32_t row = 0; row < info->height; row++) {
 					for (int32_t col = 0; col < alignedW; col += 2) {
