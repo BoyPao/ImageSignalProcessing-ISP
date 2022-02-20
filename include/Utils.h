@@ -6,6 +6,12 @@
  */
 
 #pragma once
+#if defined __linux__
+#define LINUX_SYSTEM
+#elif defined _WIN32
+#define WIN32_SYSTEM
+#endif
+
 /* Regular lib */
 #include <time.h>
 #include <chrono>
@@ -14,13 +20,13 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "Log.h"
 
-#if defined __linux__
-#define LINUX_SYSTEM
-#elif defined _WIN32
-#define WIN32_SYSTEM
+#ifdef LINUX_SYSTEM
+#include <unistd.h>
+#elif defined WIN32_SYSTEM
 #endif
 
 #define SYSTEM_YEAR_OFFSET			1900

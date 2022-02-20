@@ -19,7 +19,7 @@
 #include "Utils.h"
 #include "ParamManager.h"
 
-enum VIDEO_STATE{
+enum VIDEO_STATE {
 	VIDEO_NEW = 0,
 	VIDEO_INITED,
 	VIDEO_READY,

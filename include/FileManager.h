@@ -102,4 +102,6 @@ private:
 	VideoThreadParam mVTParam;
 };
 
-void DumpImgDataAsText(void* data, int32_t height, int32_t width, size_t bitWidth, char* dumpPath);
+void DumpDataInt(void* pData, ...
+		/* int32_t height, int32_t width, int32_t bitWidth, char* dumpPath */);
+

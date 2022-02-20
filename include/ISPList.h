@@ -178,28 +178,28 @@ ISPResult ISPNode<T1, T2>::Process(void* pItf)
 		ISPLogd("%s:Buffer(in:%p out:%p)", name, pInputBuffer, pOutputBuffer);
 		switch (mProperty.type) {
 		case PROCESS_BLC:
-			rt = mProperty.enable ? pIW->AlgProcess(ALG_CMD_BLC ,pInputBuffer) : ISP_SKIP;
+			rt = pIW->AlgProcess(ALG_CMD_BLC ,pInputBuffer, mProperty.enable);
 			break;
 		case PROCESS_LSC:
-			rt = mProperty.enable ? pIW->AlgProcess(ALG_CMD_LSC ,pInputBuffer) : ISP_SKIP;
+			rt = pIW->AlgProcess(ALG_CMD_LSC ,pInputBuffer, mProperty.enable);
 			break;
 		case PROCESS_Demosaic:
-			rt = mProperty.enable ? pIW->AlgProcess(ALG_CMD_DEMOSAIC ,pInputBuffer) : ISP_SKIP;
+			rt = pIW->AlgProcess(ALG_CMD_DEMOSAIC ,pInputBuffer, mProperty.enable);
 			break;
 		case PROCESS_WB:
-			rt = mProperty.enable ? pIW->AlgProcess(ALG_CMD_WB ,pInputBuffer) : ISP_SKIP;
+			rt = pIW->AlgProcess(ALG_CMD_WB ,pInputBuffer, mProperty.enable);
 			break;
 		case PROCESS_CC:
-			rt = mProperty.enable ? pIW->AlgProcess(ALG_CMD_CC ,pInputBuffer) : ISP_SKIP;
+			rt = pIW->AlgProcess(ALG_CMD_CC ,pInputBuffer, mProperty.enable);
 			break;
 		case PROCESS_GAMMA:
-			rt = mProperty.enable ? pIW->AlgProcess(ALG_CMD_GAMMA ,pInputBuffer) : ISP_SKIP;
+			rt = pIW->AlgProcess(ALG_CMD_GAMMA ,pInputBuffer, mProperty.enable);
 			break;
 		case PROCESS_WNR:
-			rt = mProperty.enable ? pIW->AlgProcess(ALG_CMD_WNR ,pInputBuffer) : ISP_SKIP;
+			rt = pIW->AlgProcess(ALG_CMD_WNR ,pInputBuffer, mProperty.enable);
 			break;
 		case PROCESS_EE:
-			rt = mProperty.enable ? pIW->AlgProcess(ALG_CMD_EE ,pInputBuffer) : ISP_SKIP;
+			rt = pIW->AlgProcess(ALG_CMD_EE ,pInputBuffer, mProperty.enable);
 			break;
 		case PROCESS_TYPE_NUM:
 		default:
@@ -208,11 +208,12 @@ ISPResult ISPNode<T1, T2>::Process(void* pItf)
 		}
 	}
 
-	if (rt == ISP_SUCCESS) {
-		ISPLogi("%s:Process finished.", name);
-	}
-	else if (rt == ISP_SKIP) {
-		ISPLogi("%s:Skiped.", name);
+	if (SUCCESS(rt)) {
+		if (mProperty.enable) {
+			ISPLogi("%s:Process finished.", name);
+		} else {
+			ISPLogi("%s:Skiped.", name);
+		}
 	}
 
 	return rt;
@@ -339,11 +340,12 @@ ISPResult ISPNecNode<T1, T2>::Process(void* pItf)
 		}
 	}
 
-	if (rt == ISP_SUCCESS) {
-		ISPLogd("%s:Process finished.", name);
-	}
-	else if (rt == ISP_SKIP) {
-		ISPLogi("%s:Skiped.", name);
+	if (SUCCESS(rt)) {
+		if (mProperty.enable) {
+			ISPLogi("%s:Process finished.", name);
+		} else {
+			ISPLogi("%s:Skiped.", name);
+		}
 	}
 
 	return rt;
@@ -388,7 +390,7 @@ struct ISP_LISTHEAD_PROPERTY {
 static ISP_LISTHEAD_PROPERTY gListHeadsConfigure = {
 	{{"HEAD",			NEC_PROCESS_HEAD,			NODE_ON},
 	 {"CST_RAW2RGB",	NEC_PROCESS_CST_RAW2RGB,	NODE_ON},
-	 {"CST_RGB2YUV",	NEC_PROCESS_CST_RGB2YUV,	NODE_ON},
+	 {"CST_RGB2YUV",	NEC_PROCESS_CST_RGB2YUV,	NODE_ON}, /* support off this node for test*/
 	 {"CST_YUV2RGB",	NEC_PROCESS_CST_YUV2RGB,	NODE_ON}}
 };
 

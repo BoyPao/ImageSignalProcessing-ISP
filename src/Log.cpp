@@ -8,7 +8,7 @@
 #include "Log.h"
 #include <stdio.h>
 
-int LogAddInfo(const char* str, ...)
+void LogAddInfo(const char* str, ...)
 {
 	char strBuffer[LOG_BUFFER_LEFT_SIZE];
 	char years[4] = { '0', '0', '0', '0' };
@@ -34,8 +34,6 @@ int LogAddInfo(const char* str, ...)
 	va_start(va, str);
 	LogPrint(strBuffer, va);
 	va_end(va);
-
-	return 0;
 }
 
 void LogPrint(const char* str, va_list va)

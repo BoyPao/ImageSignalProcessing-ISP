@@ -430,35 +430,61 @@ ISPResult FileManager::Mipi10decode(void* src, void* dst, IMG_INFO* info)
 	return rt;
 }
 
-void DumpImgDataAsText(void* data, int32_t height, int32_t width, size_t bitWidth, char* dumpPath)
+void DumpDataInt(void* pData, ...
+		/* int32_t height, int32_t width, int32_t bitWidth, char* dumpPath */)
 {
-	if (data != nullptr) {
-		if (dumpPath) {
-			ofstream OutFile(dumpPath);
-			for (int32_t i = 0; i < height; i++) {
-				OutFile << i << ": ";
-				for (int32_t j = 0; j < width; j++) {
-					switch (bitWidth) {
-						case sizeof(uint16_t) :
-							OutFile << (int)static_cast<uint16_t*>(data)[i * width + j] << ' ';
-							break;
-							case sizeof(uint8_t) :
-								OutFile << (int)static_cast<uint8_t*>(data)[i * width + j] << ' ';
-								break;
-							default:
-								ISPLoge("Dump failed. Unsopported data type");
-					}
-				}
-				OutFile << endl;
-			}
-			OutFile.close();
-			ISPLoge("Data saved as TXT finished");
-		}
-		else {
+	ISPResult rt = ISP_SUCCESS;
+	int32_t width = 0;
+	int32_t height = 0;
+	int32_t bitWidth = 0;
+	char* dumpPath = nullptr;
+	va_list va;
+
+	if (pData == nullptr) {
+		rt = ISP_INVALID_PARAM;
+		ISPLoge("Dump failed. data is nullptr");
+	}
+
+	if (SUCCESS(rt)) {
+		va_start(va, pData);
+		width = static_cast<int32_t>(va_arg(va, int32_t));
+		height = static_cast<int32_t>(va_arg(va, int32_t));
+		bitWidth = static_cast<int32_t>(va_arg(va, int32_t));
+		dumpPath = static_cast<char*>(va_arg(va, char*));
+		va_end(va);
+		if (!dumpPath) {
+		rt = ISP_INVALID_PARAM;
 			ISPLoge("dumpPath is null");
 		}
 	}
-	else {
-		ISPLoge("Dump failed. data is nullptr");
+
+	if (SUCCESS(rt)) {
+		ofstream dumpFile(dumpPath);
+		if (!dumpFile) {
+			rt = ISP_FAILED;
+			ISPLoge("Cannot create dump file:%s", dumpPath);
+		}
+
+		if(SUCCESS(rt)) {
+			for (int32_t i = 0; i < height; i++) {
+				dumpFile << i << ": ";
+				for (int32_t j = 0; j < width; j++) {
+					switch (bitWidth) {
+						case sizeof(uint16_t) :
+							dumpFile << (int)static_cast<uint16_t*>(pData)[i * width + j] << ' ';
+							break;
+						case sizeof(uint8_t) :
+							dumpFile << (int)static_cast<uint8_t*>(pData)[i * width + j] << ' ';
+							break;
+						default:
+							ISPLoge("Dump failed. Unsopported data bitWidth:%d", bitWidth);
+					}
+				}
+				dumpFile << endl;
+			}
+			ISPLogi("Data saved as int at:%s", dumpPath);
+		}
+		dumpFile.close();
 	}
 }
+

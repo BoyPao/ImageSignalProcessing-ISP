@@ -6,7 +6,7 @@
  */
 
 #include "InterfaceWrapper.h"
-#include "ParamManager.h"
+#include "FileManager.h"
 #ifdef LINUX_SYSTEM
 #include <dlfcn.h>
 #elif defined WIN32_SYSTEM
@@ -27,10 +27,11 @@
 				})							\
 				: ISP_FAILED)
 
-static ISP_CALLBACKS gISPCallbacks;
+//static ISP_CALLBACKS gISPCallbacks;
 
 const char LIB_SYMBLE[LIB_FUNCS_NUM][SYMBLE_SIZE_MAX] = {
-	"InterfaceInit",
+	"LibInit",
+	"LibDeInit",
 	"RegistCallbacks"
 };
 
@@ -201,7 +202,7 @@ ISPResult InterfaceWrapper::InterfaceDeInit(ISP_LIBS_ID libId)
 
 	switch(libId) {
 		case ISP_ALG_LIB:
-			memset(&mLibsOPS.algOPS, 0, sizeof(LIB_OPS));
+			rt = AlgInterfaceDeInit();
 			break;
 		case ISP_LIBS_NUM:
 		default:
@@ -243,11 +244,50 @@ ISPResult InterfaceWrapper::AlgInterfaceInit()
 	}
 
 	if (SUCCESS(rt)) {
-		if (funcs[1]) {
+		if (funcs[2]) {
 			//TODO: add callbacks if need
-			ISP_CALLBACKS Cbs;
-			Cbs.UtilsFuncs.Log = LogAddInfo;
-			funcs[1]((void*)&Cbs);
+			ISP_CALLBACKS CBs;
+			CBs.ISP_Notify = nullptr;
+			CBs.UtilsFuncs.Log = LogAddInfo;
+			CBs.UtilsFuncs.DumpDataInt = DumpDataInt;
+			funcs[2]((void*)&CBs);
+		} else {
+			rt = ISP_FAILED;
+			ISPLoge("Lib Func[2]:%p", funcs[2]);
+		}
+	}
+
+	return rt;
+}
+
+ISPResult InterfaceWrapper::AlgInterfaceDeInit()
+{
+	ISPResult rt = ISP_SUCCESS;
+	LIB_VOID_FUNC_ADDR funcs[LIB_FUNCS_NUM] = {nullptr};
+
+	if (!mLibs.pAlgLib) {
+		rt = ISP_FAILED;
+		ISPLoge("Wrap not init!");
+	}
+
+	if (SUCCESS(rt)) {
+		memset(&mLibsOPS.algOPS, 0, sizeof(LIB_OPS));
+	}
+
+	if (SUCCESS(rt)) {
+		for (int32_t i = 0; i < LIB_FUNCS_NUM; i++) {
+#ifdef LINUX_SYSTEM
+			funcs[i] = (LIB_VOID_FUNC_ADDR)dlsym(mLibs.pAlgLib, LIB_SYMBLE[i]);
+#elif defined WIN32_SYSTEM
+			funcs[i] = (LIB_VOID_FUNC_ADDR)GetProcAddress((HMODULE)mLibs.pAlgLib, LIB_SYMBLE[i]);
+#endif
+			ISPLogd("Lib Func[%d]:%p", i, funcs[i]);
+		}
+	}
+
+	if (SUCCESS(rt)) {
+		if (funcs[1]) {
+			funcs[1](nullptr);
 		} else {
 			rt = ISP_FAILED;
 			ISPLoge("Lib Func[1]:%p", funcs[1]);
@@ -282,9 +322,6 @@ ISPResult InterfaceWrapper::AlgProcess(int32_t cmd, ...)
 {
 	ISPResult rt = ISP_SUCCESS;
 	ISPParamManager* pPM = nullptr;
-	void* src = nullptr;
-	void* dst = nullptr;
-	bool enable = true;
 	va_list va;
 
 	pPM = static_cast<ISPParamManager*>(pParamMgr);
@@ -300,64 +337,21 @@ ISPResult InterfaceWrapper::AlgProcess(int32_t cmd, ...)
 
 	if (SUCCESS(rt)) {
 		va_start(va, cmd);
-		switch(cmd) {
-			case ALG_CMD_BLC:
-				src = static_cast<void*>(va_arg(va, void*));
-				rt = CALL_OPS(mLibsOPS.algOPS, LIB_BLC, src, &mISPLibParams, gISPCallbacks);
-				break;
-			case ALG_CMD_LSC:
-				src = static_cast<void*>(va_arg(va, void*));
-				rt = CALL_OPS(mLibsOPS.algOPS, LIB_LSC, src, &mISPLibParams, gISPCallbacks);
-				break;
-			case ALG_CMD_DEMOSAIC:
-				src = static_cast<void*>(va_arg(va, void*));
-				rt = CALL_OPS(mLibsOPS.algOPS, LIB_Demosaic, src, &mISPLibParams, gISPCallbacks);
-				break;
-			case ALG_CMD_WB:
-				src = static_cast<void*>(va_arg(va, void*));
-				rt = CALL_OPS(mLibsOPS.algOPS, LIB_WB, src, &mISPLibParams, gISPCallbacks);
-				break;
-			case ALG_CMD_CC:
-				src = static_cast<void*>(va_arg(va, void*));
-				rt = CALL_OPS(mLibsOPS.algOPS, LIB_CC, src, &mISPLibParams, gISPCallbacks);
-				break;
-			case ALG_CMD_GAMMA:
-				src = static_cast<void*>(va_arg(va, void*));
-				rt = CALL_OPS(mLibsOPS.algOPS, LIB_Gamma, src, &mISPLibParams, gISPCallbacks);
-				break;
-			case ALG_CMD_WNR:
-				src = static_cast<void*>(va_arg(va, void*));
-				rt = CALL_OPS(mLibsOPS.algOPS, LIB_WNR, src, &mISPLibParams, gISPCallbacks);
-				break;
-			case ALG_CMD_EE:
-				src = static_cast<void*>(va_arg(va, void*));
-				rt = CALL_OPS(mLibsOPS.algOPS, LIB_EE, src, &mISPLibParams, gISPCallbacks);
-				break;
-			case ALG_CMD_CTS_RAW2RGB:
-				src = static_cast<void*>(va_arg(va, void*));
-				dst = static_cast<void*>(va_arg(va, void*));
-				enable = static_cast<bool>(va_arg(va, int32_t));
-				rt = CALL_OPS(mLibsOPS.algOPS, LIB_CST_RAW2RGB, src, dst, &mISPLibParams, gISPCallbacks, enable);
-				break;
-			case ALG_CMD_CTS_RGB2YUV:
-				src = static_cast<void*>(va_arg(va, void*));
-				dst = static_cast<void*>(va_arg(va, void*));
-				enable = static_cast<bool>(va_arg(va, int32_t));
-				rt = CALL_OPS(mLibsOPS.algOPS, LIB_CST_RGB2YUV, src, dst, &mISPLibParams, gISPCallbacks, enable);
-				break;
-			case ALG_CMD_CTS_YUV2RGB:
-				src = static_cast<void*>(va_arg(va, void*));
-				dst = static_cast<void*>(va_arg(va, void*));
-				enable = static_cast<bool>(va_arg(va, int32_t));
-				rt = CALL_OPS(mLibsOPS.algOPS, LIB_CST_YUV2RGB, src, dst, &mISPLibParams, gISPCallbacks, enable);
-				break;
-			case ALG_CMD_NUM:
-			default:
-				rt = ISP_INVALID_PARAM;
-				ISPLoge("Invalid cmd:%d", cmd);
-				break;
+		LIB_MSG tmpMsg;
+		tmpMsg.cmd = (LIB_CMD)cmd;
+		tmpMsg.pSrc = static_cast<void*>(va_arg(va, void*));
+		if (cmd == ALG_CMD_CTS_RAW2RGB ||
+				cmd == ALG_CMD_CTS_RGB2YUV ||
+				cmd == ALG_CMD_CTS_YUV2RGB) {
+			tmpMsg.pDst = static_cast<void*>(va_arg(va, void*));
+		} else {
+			tmpMsg.pDst = nullptr;
 		}
+		tmpMsg.pParam = &mISPLibParams;
+		tmpMsg.enable = static_cast<bool>(va_arg(va, uint32_t));
 		va_end(va);
+
+		rt = CALL_OPS(mLibsOPS.algOPS, LIB_Event, (void*)&tmpMsg);
 	}
 
 	return rt;

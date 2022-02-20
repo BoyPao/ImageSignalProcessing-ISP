@@ -16,7 +16,7 @@
 #define LOG_BUFFER_TIME_SIZE		24		/* 24 char "xxxx-xx-xx xx:xx:xx:xxx " */
 #define LOG_BUFFER_LEFT_SIZE		LOG_BUFFER_SIZE - LOG_BUFFER_PERSERVE_SIZE - LOG_BUFFER_TIME_SIZE - sizeof(long long int)
 
-int LogAddInfo(const char* str, ...);
+void LogAddInfo(const char* str, ...);
 void LogPrint(const char* str, va_list va);
 
 enum LOG_MASK {
@@ -29,10 +29,21 @@ enum LOG_MASK {
 #define LOG_MODULE "ISP "
 #define LOG_FORMAT " %d:%s: "
 
-#define LogError(on, str, ...)		((on) ? (LogAddInfo(LOG_MODULE "E" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
-#define LogWarn(on, str, ...)		((on) ? (LogAddInfo(LOG_MODULE "W" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
-#define LogInfo(on, str, ...)		((on) ? (LogAddInfo(LOG_MODULE "I" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
-#define LogDebug(on, str, ...)		((on) ? (LogAddInfo(LOG_MODULE "D" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__)) : (0))
+#define LogError(on, str, ...)		((on) ?														\
+		({LogAddInfo(LOG_MODULE "E" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);})	\
+		: (0))
+
+#define LogWarn(on, str, ...)		((on) ?														\
+		({LogAddInfo(LOG_MODULE "W" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);})	\
+		: (0))
+
+#define LogInfo(on, str, ...)		((on) ?														\
+		({LogAddInfo(LOG_MODULE "I" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);})  \
+		: (0))
+
+#define LogDebug(on, str, ...)		((on) ?														\
+		({LogAddInfo(LOG_MODULE "D" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);})  \
+		: (0))
 
 #define ISPLoge(str, ...)	((LOG_ON) ? LogError((LOG_LEVEL & LOG_ERROR_MASK), str, ##__VA_ARGS__) : (0))
 #define ISPLogw(str, ...)	((LOG_ON) ? LogWarn((LOG_LEVEL & LOG_WARN_MASK), str, ##__VA_ARGS__) : (0))

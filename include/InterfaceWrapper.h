@@ -56,12 +56,15 @@ class InterfaceWrapper {
 		ISPResult ISPLibConfig(void* pPM, ...);
 		ISPResult AlgProcess(int32_t cmd, ...);
 
+		ISPResult NotifyMain();
+
 	private:
 		ISPResult LoadLib(ISP_LIBS_ID libId, const char* path);
 		ISPResult ReleaseLib(ISP_LIBS_ID libId);
 		ISPResult InterfaceInit(ISP_LIBS_ID libId);
 		ISPResult InterfaceDeInit(ISP_LIBS_ID libId);
 		ISPResult AlgInterfaceInit();
+		ISPResult AlgInterfaceDeInit();
 		ISP_LIBS mLibs;
 		ISP_LIBS_OPS mLibsOPS;
 		LIB_PARAMS mISPLibParams;

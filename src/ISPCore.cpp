@@ -15,7 +15,6 @@
 
 /* For img display with UI window */
 #ifdef LINUX_SYSTEM
-#include <unistd.h>
 #include <sys/ioctl.h>
 #include <termios.h>
 #endif

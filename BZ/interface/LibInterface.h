@@ -14,7 +14,7 @@
 #define LSC_LUT_HEIGHT 13
 #define GAMMA_LUT_SIZE 1024
 
-#define LIB_FUNCS_NUM 2
+#define LIB_FUNCS_NUM 3
 #define SYMBLE_SIZE_MAX 255
 
 extern "C" {
@@ -96,7 +96,8 @@ struct LIB_PARAMS {
 };
 
 struct ISP_UTILS_FUNCS {
-	int (*Log) (const char* str, ...);
+	void (*Log) (const char* str, ...);
+	void (*DumpDataInt) (void* pData, ...);
 };
 
 struct ISP_CALLBACKS {
@@ -104,26 +105,51 @@ struct ISP_CALLBACKS {
 	ISP_UTILS_FUNCS UtilsFuncs;
 };
 
+enum LIB_CMD {
+	LIB_CMD_BLC = 0,
+	LIB_CMD_LSC,
+	LIB_CMD_DEMOSAIC,
+	LIB_CMD_WB,
+	LIB_CMD_CC,
+	LIB_CMD_GAMMA,
+	LIB_CMD_WNR,
+	LIB_CMD_EE,
+	LIB_CMD_RAW2RGB,
+	LIB_CMD_RGB2YUV,
+	LIB_CMD_YUV2RGB,
+	LIB_CMD_NUM,
+};
+
+struct LIB_MSG {
+	LIB_CMD cmd;
+	void* pSrc;
+	void* pDst;
+	LIB_PARAMS* pParam;
+	bool enable;
+};
+
 struct LIB_OPS
 {
-	/* Bayer Process */
-	void (*LIB_BLC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-	void (*LIB_LSC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+//	/* Bayer Process */
+//	void (*LIB_BLC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+//	void (*LIB_LSC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+//
+//	/* RGB Process */
+//	void (*LIB_Demosaic)	(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+//	void (*LIB_WB)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+//	void (*LIB_CC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+//	void (*LIB_Gamma)		(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+//
+//	/* YUVProcess */
+//	void (*LIB_WNR)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+//	void (*LIB_EE)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+//
+//	/* CST */
+//	void (*LIB_CST_RAW2RGB)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+//	void (*LIB_CST_RGB2YUV)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+//	void (*LIB_CST_YUV2RGB)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
 
-	/* RGB Process */
-	void (*LIB_Demosaic)	(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-	void (*LIB_WB)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-	void (*LIB_CC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-	void (*LIB_Gamma)		(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-
-	/* YUVProcess */
-	void (*LIB_WNR)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-	void (*LIB_EE)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-
-	/* CST */
-	void (*LIB_CST_RAW2RGB)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-	void (*LIB_CST_RGB2YUV)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-	void (*LIB_CST_YUV2RGB)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
+	int32_t (*LIB_Event)	(void* msg);
 };
 
 
