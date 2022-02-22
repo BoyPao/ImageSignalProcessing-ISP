@@ -51,7 +51,7 @@ Queue<T>::Queue(int32_t size)
 	memset((void*)mBuffer.get(), 0, sizeof(T) * mSize);
 	mFIndex = 0;
 	mBIndex = 0;
-	ISPLogd("Queue size:%d index(%d,%d)", mSize, mFIndex.load(), mBIndex.load());
+	ILOGD("Queue size:%d index(%d,%d)", mSize, mFIndex.load(), mBIndex.load());
 }
 
 template <typename T>
@@ -73,7 +73,7 @@ void Queue<T>::PushBack(T* element)
 		memcpy((void*)mBuffer.get(), (void*)element, sizeof(T));
 		mBIndex = (mBIndex.load() + 1) % mSize;
 	} else {
-		ISPLogw("Queue(%d: %d, %d) is full", mSize, mFIndex.load(), mBIndex.load());
+		ILOGW("Queue(%d: %d, %d) is full", mSize, mFIndex.load(), mBIndex.load());
 	}
 }
 
@@ -86,9 +86,9 @@ void Queue<T>::PopFront(T* element)
 			memset((void*)(mBuffer.get() + mFIndex.load()), 0, sizeof(T));
 			mFIndex = (mFIndex.load() + 1) % mSize;
 		} else {
-			ISPLogw("Queue(%d: %d, %d) is empty", mSize, mFIndex.load(), mBIndex.load());
+			ILOGW("Queue(%d: %d, %d) is empty", mSize, mFIndex.load(), mBIndex.load());
 		}
 	} else {
-		ISPLoge("element is nullptr!");
+		ILOGE("element is nullptr!");
 	}
 }

@@ -6,7 +6,6 @@
  */
 
 #include "Algorithm.h"
-#include "BoZhi.h"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -49,7 +48,7 @@ void WrapBlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs
 
 	if (!pParams) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("pParams is null!");
+		BLOGE("pParams is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -61,7 +60,7 @@ void WrapBlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs
 		if (enable) {
 			rt = BZ_BlackLevelCorrection(data, pParams, CBs);
 			if (!SUCCESS(rt)) {
-				BZLoge("Failed! rt:%d", rt);
+				BLOGE("Failed! rt:%d", rt);
 			}
 		}
 	}
@@ -73,7 +72,7 @@ void WrapLensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 
 	if (!pParams) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("pParams is null!");
+		BLOGE("pParams is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -85,7 +84,7 @@ void WrapLensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 		if (enable) {
 			rt = BZ_LensShadingCorrection(data, pParams, CBs);
 			if (!SUCCESS(rt)) {
-				BZLoge("Failed! rt:%d", rt);
+				BLOGE("Failed! rt:%d", rt);
 			}
 		}
 	}
@@ -98,7 +97,7 @@ void WrapDemosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 
 	if (!pParams) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("pParams is null!");
+		BLOGE("pParams is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -110,7 +109,7 @@ void WrapDemosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 		if (enable) {
 			rt = BZ_Demosaic(data, pParams, CBs);
 			if (!SUCCESS(rt)) {
-				BZLoge("Failed! rt:%d", rt);
+				BLOGE("Failed! rt:%d", rt);
 			}
 		}
 	}
@@ -122,7 +121,7 @@ void WrapWhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 
 	if (!pParams) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("pParams is null!");
+		BLOGE("pParams is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -134,7 +133,7 @@ void WrapWhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 		if (enable) {
 			rt = BZ_WhiteBalance(data, pParams, CBs);
 			if (!SUCCESS(rt)) {
-				BZLoge("Failed! rt:%d", rt);
+				BLOGE("Failed! rt:%d", rt);
 			}
 		}
 	}
@@ -146,7 +145,7 @@ void WrapColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 
 	if (!pParams) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("pParams is null!");
+		BLOGE("pParams is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -158,7 +157,7 @@ void WrapColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 		if (enable) {
 			rt = BZ_ColorCorrection(data, pParams, CBs);
 			if (!SUCCESS(rt)) {
-				BZLoge("Failed! rt:%d", rt);
+				BLOGE("Failed! rt:%d", rt);
 			}
 		}
 	}
@@ -170,7 +169,7 @@ void WrapGammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 
 	if (!pParams) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("pParams is null!");
+		BLOGE("pParams is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -182,7 +181,7 @@ void WrapGammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 		if (enable) {
 			rt = BZ_GammaCorrection(data, pParams, CBs);
 			if (!SUCCESS(rt)) {
-				BZLoge("Failed! rt:%d", rt);
+				BLOGE("Failed! rt:%d", rt);
 			}
 		}
 	}
@@ -195,7 +194,7 @@ void WrapWaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 
 	if (!pParams) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("pParams is null!");
+		BLOGE("pParams is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -207,7 +206,7 @@ void WrapWaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 		if (enable) {
 			rt = BZ_WaveletNR(data, pParams, CBs);
 			if (!SUCCESS(rt)) {
-				BZLoge("Failed! rt:%d", rt);
+				BLOGE("Failed! rt:%d", rt);
 			}
 		}
 	}
@@ -219,7 +218,7 @@ void WrapEdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 
 	if (!pParams) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("pParams is null!");
+		BLOGE("pParams is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -231,7 +230,7 @@ void WrapEdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 		if (enable) {
 			rt = BZ_EdgeEnhancement(data, pParams, CBs);
 			if (!SUCCESS(rt)) {
-				BZLoge("Failed! rt:%d", rt);
+				BLOGE("Failed! rt:%d", rt);
 			}
 		}
 	}
@@ -244,7 +243,7 @@ void WrapCST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 
 	if (!pParams) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("pParams is null!");
+		BLOGE("pParams is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -255,7 +254,7 @@ void WrapCST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 		va_end(va);
 		rt = BZ_CST_RAW2RGB(src, dst, pParams, CBs, enable);
 		if (!SUCCESS(rt)) {
-			BZLoge("Failed! rt:%d", rt);
+			BLOGE("Failed! rt:%d", rt);
 		}
 	}
 }
@@ -266,7 +265,7 @@ void WrapCST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 
 	if (!pParams) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("pParams is null!");
+		BLOGE("pParams is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -277,7 +276,7 @@ void WrapCST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 		va_end(va);
 		rt = BZ_CST_RGB2YUV(src, dst, pParams, CBs, enable);
 		if (!SUCCESS(rt)) {
-			BZLoge("Failed! rt:%d", rt);
+			BLOGE("Failed! rt:%d", rt);
 		}
 	}
 }
@@ -288,7 +287,7 @@ void WrapCST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 
 	if (!pParams) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("pParams is null!");
+		BLOGE("pParams is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -299,7 +298,7 @@ void WrapCST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 		va_end(va);
 		rt = BZ_CST_YUV2RGB(src, dst, pParams, CBs, enable);
 		if (!SUCCESS(rt)) {
-			BZLoge("Failed! rt:%d", rt);
+			BLOGE("Failed! rt:%d", rt);
 		}
 	}
 }
@@ -396,7 +395,7 @@ BZResult BZ_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS 
 
 	if (!data) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("data is null! rt:%d", rt);
+		BLOGE("data is null! rt:%d", rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -406,8 +405,8 @@ BZResult BZ_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS 
 		width = pParams->info.width;
 		height = pParams->info.height;
 		offset = pParams->BLC_param.offset;
-		BZLogd("width:%d height:%d", width, height);
-		BZLogd("offset:%d", offset);
+		BLOGDA("width:%d height:%d", width, height);
+		BLOGDA("offset:%d", offset);
 		for (int32_t i = 0; i < width * height; i++) {
 			temp = static_cast<uint16_t*>(data)[i];
 			temp -= offset;
@@ -437,7 +436,7 @@ BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS
 
 	if (!data) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("data is null! rt:%d", rt);
+		BLOGE("data is null! rt:%d", rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -452,7 +451,7 @@ BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS
 		width = pParams->info.width;
 		height = pParams->info.height;
 		bayerOrder = pParams->info.bayerOrder;
-		BZLogd("width:%d height:%d type:%d", width, height, bayerOrder);
+		BLOGDA("width:%d height:%d type:%d", width, height, bayerOrder);
 		switch (bayerOrder)
 		{
 		case LIB_RGGB:
@@ -481,7 +480,7 @@ BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS
 			break;
 		default:
 			rt = BZ_INVALID_PARAM;
-			BZLoge("Unsupported bayer order:%d rt:%d", bayerOrder, rt);
+			BLOGE("Unsupported bayer order:%d rt:%d", bayerOrder, rt);
 			break;
 		}
 
@@ -717,12 +716,12 @@ BZResult DemosaicInterpolation(uint16_t* pch1, uint16_t* pch2, uint16_t* pch3,
 
 	if (!pch1 || !pch2 || !pch3) {
 		rt = BZ_FAILED;
-		BZLoge("Invalid input %d", rt);
+		BLOGE("Invalid input %d", rt);
 	}
 
 	if (width % 2 || height % 2) {
 		rt = BZ_FAILED;
-		BZLoge("Unsupported ord width/height %dx%d", width, height);
+		BLOGE("Unsupported ord width/height %dx%d", width, height);
 	}
 
 	if (SUCCESS(rt)) {
@@ -967,7 +966,7 @@ BZResult DemosaicInterpolation(uint16_t* pch1, uint16_t* pch2, uint16_t* pch3,
 				break;
 			case LIB_BAYER_ORDER_NUM:
 			default:
-				BZLoge("Unsupported bayer order:%d", rt);
+				BLOGE("Unsupported bayer order:%d", rt);
 				break;
 		}
 	}
@@ -982,7 +981,7 @@ BZResult BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 
 	if (!data) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("data is null! rt:%d", rt);
+		BLOGE("data is null! rt:%d", rt);
 	}
 
 	int32_t width, height;
@@ -990,7 +989,7 @@ BZResult BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	width = pParams->info.width;
 	height = pParams->info.height;
 	bayerOrder = pParams->info.bayerOrder;
-	BZLogd("width:%d height:%d type:%d", width, height, bayerOrder);
+	BLOGDA("width:%d height:%d type:%d", width, height, bayerOrder);
 	uint16_t* pChannel1 = nullptr;
 	uint16_t* pChannel2 = nullptr;
 	uint16_t* pChannel3 = nullptr;
@@ -1009,7 +1008,7 @@ BZResult BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 		break;
 	default:
 		rt = BZ_INVALID_PARAM;
-		BZLoge("Unsupported bayer order:%d rt:%d", bayerOrder, rt);
+		BLOGE("Unsupported bayer order:%d rt:%d", bayerOrder, rt);
 		break;
 	}
 	if (SUCCESS(rt)) {
@@ -1030,7 +1029,7 @@ BZResult BZ_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 
 	if (!data) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("data is null! rt:%d", rt);
+		BLOGE("data is null! rt:%d", rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1041,8 +1040,8 @@ BZResult BZ_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 		rGain = pParams->WB_param.rGain;
 		gGain = pParams->WB_param.gGain;
 		bGain = pParams->WB_param.bGain;
-		BZLogd("width:%d height:%d", width, height);
-		BZLogd("Gain(r/g/b):%f %f %f", rGain, gGain, bGain);
+		BLOGDA("width:%d height:%d", width, height);
+		BLOGDA("Gain(r/g/b):%f %f %f", rGain, gGain, bGain);
 
 		uint16_t* B = static_cast<uint16_t*>(data);
 		uint16_t* G = B + width * height;
@@ -1068,7 +1067,7 @@ BZResult BZ_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 
 	if (!data) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("data is null! rt:%d", rt);
+		BLOGE("data is null! rt:%d", rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1078,10 +1077,10 @@ BZResult BZ_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 		width = pParams->info.width;
 		height = pParams->info.height;
 		pCcm = pParams->CC_param.CCM;
-		BZLogd("width:%d height:%d", width, height);
+		BLOGDA("width:%d height:%d", width, height);
 		if (width && height) {
 			for (i = 0; i < CCM_HEIGHT; i++) {
-				BZLogd("CCM[%d]:%f CCM[%d]:%f CCM[%d]:%f", i * CCM_WIDTH, pCcm[i * CCM_WIDTH],
+				BLOGDA("CCM[%d]:%f CCM[%d]:%f CCM[%d]:%f", i * CCM_WIDTH, pCcm[i * CCM_WIDTH],
 						i * CCM_WIDTH + 1, pCcm[i * CCM_WIDTH + 1],
 						i * CCM_WIDTH + 2, pCcm[i * CCM_WIDTH + 2]);
 			}
@@ -1154,7 +1153,7 @@ BZResult BZ_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 
 	if (!data) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("data is null! rt:%d", rt);
+		BLOGE("data is null! rt:%d", rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1163,7 +1162,7 @@ BZResult BZ_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 		width = pParams->info.width;
 		height = pParams->info.height;
 		plut = pParams->Gamma_param.lut;
-		BZLogd("width:%d height:%d", width, height);
+		BLOGDA("width:%d height:%d", width, height);
 
 		uint16_t* B = static_cast<uint16_t*>(data);
 		uint16_t* G = B + width * height;
@@ -1655,7 +1654,7 @@ BZResult BZ_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 
 	if (!data) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("data is null! rt:%d", rt);
+		BLOGE("data is null! rt:%d", rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1668,8 +1667,8 @@ BZResult BZ_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 		strength1 = pParams->WNR_param.L1_threshold;
 		strength2 = pParams->WNR_param.L2_threshold;
 		strength3 = pParams->WNR_param.L3_threshold;
-		BZLogd("width:%d height:%d", width, height);
-		BZLogd("strength:%d %d %d", strength1, strength2, strength3);
+		BLOGDA("width:%d height:%d", width, height);
+		BLOGDA("strength:%d %d %d", strength1, strength2, strength3);
 		if (width && height) {
 			int32_t i, j;
 			Mat onechannel(height, width, CV_8U);
@@ -1739,7 +1738,7 @@ BZResult BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 
 	if (!data) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("data is null! rt:%d", rt);
+		BLOGE("data is null! rt:%d", rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1752,8 +1751,8 @@ BZResult BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 		alpha = pParams->EE_param.alpha;
 		coreSzie = pParams->EE_param.coreSize;
 		delta = pParams->EE_param.delta;
-		BZLogd("width:%d height:%d", width, height);
-		BZLogd("alpha:%f coreSzie:%d delta:%d", alpha, coreSzie, delta);
+		BLOGDA("width:%d height:%d", width, height);
+		BLOGDA("alpha:%f coreSzie:%d delta:%d", alpha, coreSzie, delta);
 		if (width && height) {
 			Mat blurred;
 			Mat Y(height, width, CV_8UC1, Scalar(0));
@@ -1844,7 +1843,7 @@ BZResult ReadChannels(uint16_t* data, uint16_t* pChannel1, uint16_t* pChannel2, 
 				break;
 			case LIB_BAYER_ORDER_NUM:
 			default:
-				BZLoge("Not support bayer order:%d", order);
+				BLOGE("Not support bayer order:%d", order);
 				rt = BZ_FAILED;
 				break;
 		}
@@ -1859,7 +1858,7 @@ BZResult BZ_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 
 	if (!src || !dst) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("data is null! rt:%d", rt);
+		BLOGE("data is null! rt:%d", rt);
 	}
 
 	int32_t width, height;
@@ -1867,7 +1866,7 @@ BZResult BZ_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 	width = pParams->info.width;
 	height = pParams->info.height;
 	bayerOrder = pParams->info.bayerOrder;
-	BZLogd("width:%d height:%d type:%d", width, height, bayerOrder);
+	BLOGDA("width:%d height:%d type:%d", width, height, bayerOrder);
 	uint16_t* pChannel1 = nullptr;
 	uint16_t* pChannel2 = nullptr;
 	uint16_t* pChannel3 = nullptr;
@@ -1886,7 +1885,7 @@ BZResult BZ_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 		break;
 	default:
 		rt = BZ_INVALID_PARAM;
-		BZLoge("Unsupported bayer order:%d rt:%d", bayerOrder, rt);
+		BLOGE("Unsupported bayer order:%d rt:%d", bayerOrder, rt);
 		break;
 	}
 
@@ -1898,7 +1897,7 @@ BZResult BZ_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 #if DUMP_NEEDED
 	if (SUCCESS(rt)) {
 		if (gBZ->mISPCBs.UtilsFuncs.DumpDataInt) {
-			BZLogd("Raw dump as int");
+			BLOGDA("Raw dump as int");
 			gBZ->mISPCBs.UtilsFuncs.DumpDataInt((void*)src, width, height, (int32_t)sizeof(uint16_t), DUMP_PATH);
 		}
 	}
@@ -1937,20 +1936,20 @@ BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 
 	if (!src || !dst) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("data is null! rt:%d", rt);
+		BLOGE("data is null! rt:%d", rt);
 	}
 
 	int32_t width, height;
 	bool enable = true;
 	width = pParams->info.width;
 	height = pParams->info.height;
-	BZLogd("width:%d height:%d", width, height);
+	BLOGDA("width:%d height:%d", width, height);
 	if (width && height) {
 		va_list va_param;
 		va_start(va_param, CBs);
 		enable = static_cast<bool>(va_arg(va_param, int32_t));
 		va_end(va_param);
-		BZLogd("enable:%d", enable);
+		BLOGDA("enable:%d", enable);
 		uint16_t* bSrc = static_cast<uint16_t*>(src);
 		uint16_t* gSrc = static_cast<uint16_t*>(src) + width * height;
 		uint16_t* rSrc = static_cast<uint16_t*>(src) + 2 * width * height;
@@ -1972,7 +1971,7 @@ BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 			}
 			else {
 				rt = BZ_MEMORY_ERROR;
-				BZLoge("cannot new buffer for 8 bits data! rt:%d", rt);
+				BLOGE("cannot new buffer for 8 bits data! rt:%d", rt);
 			}
 		}
 
@@ -2008,14 +2007,14 @@ BZResult BZ_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 
 	if (!src) {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("data is null! rt:%d", rt);
+		BLOGE("data is null! rt:%d", rt);
 	}
 
 	if (SUCCESS(rt)) {
 		int32_t width, height;
 		width = pParams->info.width;
 		height = pParams->info.height;
-		BZLogd("width:%d height:%d", width, height);
+		BLOGDA("width:%d height:%d", width, height);
 		if (width && height) {
 			Mat container(height, width, CV_8UC3, Scalar(0, 0, 0));
 			memcpy(container.data, src, width * height * container.channels());

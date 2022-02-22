@@ -42,7 +42,7 @@ ISPResult ISPParamManager::SetMediaInfo(MEDIA_INFO* info)
 
 	if (!info) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Input is null! %d", rt);
+		ILOGE("Input is null! %d", rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -65,7 +65,7 @@ ISPResult ISPParamManager::SetImgInfo(IMG_INFO* info)
 	}
 	else {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Input is null! %d", rt);
+		ILOGE("Input is null! %d", rt);
 	}
 
 	return rt;
@@ -80,7 +80,7 @@ ISPResult ISPParamManager::SetVideoInfo(VIDEO_INFO* info)
 	}
 	else {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Input is null! %d", rt);
+		ILOGE("Input is null! %d", rt);
 	}
 
 	return rt;
@@ -92,7 +92,7 @@ ISPResult ISPParamManager::GetImgDimension(int32_t* width, int32_t* height)
 
 	if (mState != PM_SELECTED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("Invalid param manager state:%d", mState);
+		ILOGE("Invalid param manager state:%d", mState);
 	}
 
 	if (SUCCESS(rt)) {
@@ -102,7 +102,7 @@ ISPResult ISPParamManager::GetImgDimension(int32_t* width, int32_t* height)
 		}
 		else {
 			rt = ISP_INVALID_PARAM;
-			ISPLoge("Input is null! %d", rt);
+			ILOGE("Input is null! %d", rt);
 		}
 	}
 
@@ -115,7 +115,7 @@ ISPResult ISPParamManager::GetVideoFPS(int32_t* fps)
 
 	if (mState != PM_SELECTED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("Invalid param manager state:%d", mState);
+		ILOGE("Invalid param manager state:%d", mState);
 	}
 
 	if (SUCCESS(rt)) {
@@ -124,7 +124,7 @@ ISPResult ISPParamManager::GetVideoFPS(int32_t* fps)
 		}
 		else {
 			rt = ISP_INVALID_PARAM;
-			ISPLoge("Input is null! %d", rt);
+			ILOGE("Input is null! %d", rt);
 		}
 	}
 
@@ -137,7 +137,7 @@ ISPResult ISPParamManager::GetVideoFrameNum(int32_t* num)
 
 	if (mState != PM_SELECTED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("Invalid param manager state:%d", mState);
+		ILOGE("Invalid param manager state:%d", mState);
 	}
 
 	if (SUCCESS(rt)) {
@@ -146,7 +146,7 @@ ISPResult ISPParamManager::GetVideoFrameNum(int32_t* num)
 		}
 		else {
 			rt = ISP_INVALID_PARAM;
-			ISPLoge("Input is null! %d", rt);
+			ILOGE("Input is null! %d", rt);
 		}
 	}
 
@@ -159,7 +159,7 @@ ISPResult ISPParamManager::SelectParams(int32_t paramIndex)
 
 	if (paramIndex >= PARAM_INDEX_NUM) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Invaled param index:%d. %d", paramIndex, rt);
+		ILOGE("Invaled param index:%d. %d", paramIndex, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -183,7 +183,7 @@ ISPResult ISPParamManager::GetImgInfo(void* pParams)
 	param = static_cast<LIB_PARAMS*>(pParams);
 	if (!param) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Input is null!");
+		ILOGE("Input is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -204,7 +204,7 @@ ISPResult ISPParamManager::GetParamByCMD(void* pParams, int32_t cmd)
 
 	if (!pParams) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Input is null!");
+		ILOGE("Input is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -241,7 +241,7 @@ ISPResult ISPParamManager::GetParamByCMD(void* pParams, int32_t cmd)
 			case ALG_CMD_NUM:
 			default:
 				rt = ISP_INVALID_PARAM;
-				ISPLoge("Invalid cmd:%d", cmd);
+				ILOGE("Invalid cmd:%d", cmd);
 				break;
 		}
 	}
@@ -257,7 +257,7 @@ ISPResult ISPParamManager::GetBLCParam(void* pParams)
 	param = static_cast<LIB_PARAMS*>(pParams);
 	if (!param) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Input is null!");
+		ILOGE("Input is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -281,7 +281,7 @@ ISPResult ISPParamManager::GetLSCParam(void* pParams)
 	param = static_cast<LIB_PARAMS*>(pParams);
 	if (!param) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Input is null!");
+		ILOGE("Input is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -303,7 +303,7 @@ ISPResult ISPParamManager::GetWBParam(void* pParams)
 	param = static_cast<LIB_PARAMS*>(pParams);
 	if (!param) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Input is null!");
+		ILOGE("Input is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -323,7 +323,7 @@ ISPResult ISPParamManager::GetCCParam(void* pParams)
 	param = static_cast<LIB_PARAMS*>(pParams);
 	if (!param) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Input is null!");
+		ILOGE("Input is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -344,7 +344,7 @@ ISPResult ISPParamManager::GetGAMMAParam(void* pParams)
 	param = static_cast<LIB_PARAMS*>(pParams);
 	if (!param) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Input is null!");
+		ILOGE("Input is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -362,7 +362,7 @@ ISPResult ISPParamManager::GetWNRParam(void* pParams)
 	param = static_cast<LIB_PARAMS*>(pParams);
 	if (!param) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Input is null!");
+		ILOGE("Input is null!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -382,7 +382,7 @@ ISPResult ISPParamManager::GetEEParam(void* pParams)
 	param = static_cast<LIB_PARAMS*>(pParams);
 	if (!param) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Input is null!");
+		ILOGE("Input is null!");
 	}
 
 	if (SUCCESS(rt)) {

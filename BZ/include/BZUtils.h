@@ -7,7 +7,6 @@
 
 #pragma once
 /* Regular lib */
-#include <time.h>
 #include <chrono>
 #include <stdint.h>
 #include <math.h>

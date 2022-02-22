@@ -163,19 +163,19 @@ ISPResult ISPNode<T1, T2>::Process(void* pItf)
 
 	if (!mInited) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("Node is not inited!");
+		ILOGE("Node is not inited!");
 	}
 
 	if (SUCCESS(rt)) {
 		pIW = static_cast<InterfaceWrapper*>(pItf);
 		if (!pIW) {
 			rt = ISP_INVALID_PARAM;
-			ISPLoge("Invalid input!");
+			ILOGE("Invalid input!");
 		}
 	}
 
 	if (SUCCESS(rt)) {
-		ISPLogd("%s:Buffer(in:%p out:%p)", name, pInputBuffer, pOutputBuffer);
+		ILOGDL("%s:Buffer(in:%p out:%p)", name, pInputBuffer, pOutputBuffer);
 		switch (mProperty.type) {
 		case PROCESS_BLC:
 			rt = pIW->AlgProcess(ALG_CMD_BLC ,pInputBuffer, mProperty.enable);
@@ -210,9 +210,9 @@ ISPResult ISPNode<T1, T2>::Process(void* pItf)
 
 	if (SUCCESS(rt)) {
 		if (mProperty.enable) {
-			ISPLogi("%s:Process finished.", name);
+			ILOGI("%s:Process finished.", name);
 		} else {
-			ISPLogi("%s:Skiped.", name);
+			ILOGI("%s:Skiped.", name);
 		}
 	}
 
@@ -307,19 +307,19 @@ ISPResult ISPNecNode<T1, T2>::Process(void* pItf)
 
 	if (!this->mInited) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("Node is not inited!");
+		ILOGE("Node is not inited!");
 	}
 
 	if (SUCCESS(rt)) {
 		pIW = static_cast<InterfaceWrapper*>(pItf);
 		if (!pIW) {
 			rt = ISP_INVALID_PARAM;
-			ISPLoge("Invalid input!");
+			ILOGE("Invalid input!");
 		}
 	}
 
 	if (SUCCESS(rt)) {
-		ISPLogd("%s:Buffer(in:%p out:%p)", name, this->pInputBuffer, this->pOutputBuffer);
+		ILOGDL("%s:Buffer(in:%p out:%p)", name, this->pInputBuffer, this->pOutputBuffer);
 		switch (mProperty.type) {
 		case NEC_PROCESS_HEAD:
 			// currentlly nothing to be done here.
@@ -342,9 +342,9 @@ ISPResult ISPNecNode<T1, T2>::Process(void* pItf)
 
 	if (SUCCESS(rt)) {
 		if (mProperty.enable) {
-			ISPLogi("%s:Process finished.", name);
+			ILOGI("%s:Process finished.", name);
 		} else {
-			ISPLogi("%s:Skiped.", name);
+			ILOGI("%s:Skiped.", name);
 		}
 	}
 
@@ -358,7 +358,7 @@ ISPResult ISPNecNode<T1, T2>::Disable()
 
 	char name[NODE_NAME_MAX_SZIE];
 	this->GetNodeName(name);
-	ISPLogw("Try to disable necessary node:%s", name);
+	ILOGW("Try to disable necessary node:%s", name);
 	mProperty.enable = NODE_OFF;
 
 	return rt;
@@ -538,7 +538,7 @@ ISPList<T1, T2, T3, T4>::~ISPList()
 
 	pItfWrapper = nullptr;
 
-	ISPLogd("List(%d) Node num:%d", mId, mNodeNum);
+	ILOGDL("List(%d) Node num:%d", mId, mNodeNum);
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
@@ -565,7 +565,7 @@ ISPResult ISPList<T1, T2, T3, T4>::StateTransform(STATE_TRANS_ORIENTATION orient
 			mState = ISP_LIST_CONSTRUCTED;
 			break;
 		default:
-			ISPLogw("Undefined forward state transform! state:%d", currentState);
+			ILOGW("Undefined forward state transform! state:%d", currentState);
 			break;
 		}
 	}
@@ -578,17 +578,17 @@ ISPResult ISPList<T1, T2, T3, T4>::StateTransform(STATE_TRANS_ORIENTATION orient
 			mState = ISP_LIST_INITED;
 			break;
 		default:
-			ISPLogw("Undefined backward state transform! state:%d", currentState);
+			ILOGW("Undefined backward state transform! state:%d", currentState);
 			break;
 		}
 	}
 	else if (orientation != STATE_TRANS_TO_SELF) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Invaled orientation:%d %d", orientation, rt);
+		ILOGE("Invaled orientation:%d %d", orientation, rt);
 	}
 
 	if (SUCCESS(rt)) {
-		ISPLogd("State: %d -> %d", currentState, mState);
+		ILOGDL("State: %d -> %d", currentState, mState);
 	}
 
 	return rt;
@@ -601,12 +601,12 @@ ISPResult ISPList<T1, T2, T3, T4>::Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T
 
 	if (mState != ISP_LIST_NEW) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (!pRawBuf || !pRgbBuf || !pYuvBuf || !pPostBuf || !pIW) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Failed to init list(%d), pBuffer or PM is null! rt:%d", mId, rt);
+		ILOGE("Failed to init list(%d), pBuffer or PM is null! rt:%d", mId, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -634,7 +634,7 @@ ISPResult ISPList<T1, T2, T3, T4>::SetListConfig(ISP_LIST_PROPERTY* pCfg)
 
 	if (mState != ISP_LIST_INITED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -643,7 +643,7 @@ ISPResult ISPList<T1, T2, T3, T4>::SetListConfig(ISP_LIST_PROPERTY* pCfg)
 		}
 		else {
 			rt = ISP_INVALID_PARAM;
-			ISPLoge("pCfg is null! %d", rt);
+			ILOGE("pCfg is null! %d", rt);
 		}
 	}
 
@@ -671,7 +671,7 @@ ISPResult ISPList<T1, T2, T3, T4>::FindNodePropertyIndex(PROCESS_TYPE type, int3
 	}
 	else {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("input is null! %d", rt);
+		ILOGE("input is null! %d", rt);
 	}
 
 	return rt;
@@ -694,7 +694,7 @@ ISPResult ISPList<T1, T2, T3, T4>::FindNecNodePropertyIndex(NEC_PROCESS_TYPE typ
 	}
 	else {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("input is null! %d", rt);
+		ILOGE("input is null! %d", rt);
 	}
 
 	return rt;
@@ -707,7 +707,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreatISPList()
 
 	if (mState != ISP_LIST_CONFIGED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -730,7 +730,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreatISPList()
 		rt = CreatePostList();
 	}
 
-	ISPLogd("List(%d) current node num:%d", mId, mNodeNum);
+	ILOGDL("List(%d) current node num:%d", mId, mNodeNum);
 
 	if (SUCCESS(rt)) {
 		rt = StateTransform(STATE_TRANS_FORWARD);
@@ -747,13 +747,13 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateNecList()
 
 	if (mState != ISP_LIST_CONFIGED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (mRawHead || mRgbHead || mYuvHead || mPostHead)
 	{
 		rt = ISP_STATE_ERROR;
-		ISPLoge("List(%d) create new list failed! Old head exits! rt:%d", mId, rt);
+		ILOGE("List(%d) create new list failed! Old head exits! rt:%d", mId, rt);
 	}
 
 	//Head node create
@@ -766,7 +766,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateNecList()
 		}
 		else {
 			rt = ISP_MEMORY_ERROR;
-			ISPLoge("New node failed! %d", rt);
+			ILOGE("New node failed! %d", rt);
 		}
 	}
 
@@ -780,7 +780,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateNecList()
 		}
 		else {
 			rt = ISP_MEMORY_ERROR;
-			ISPLoge("New node failed! %d", rt);
+			ILOGE("New node failed! %d", rt);
 		}
 	}
 
@@ -794,7 +794,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateNecList()
 		}
 		else {
 			rt = ISP_MEMORY_ERROR;
-			ISPLoge("New node failed! %d", rt);
+			ILOGE("New node failed! %d", rt);
 		}
 	}
 
@@ -808,11 +808,11 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateNecList()
 		}
 		else {
 			rt = ISP_MEMORY_ERROR;
-			ISPLoge("New node failed! %d", rt);
+			ILOGE("New node failed! %d", rt);
 		}
 	}
 
-	ISPLogd("List(%d) current node num:%d", mId, mNodeNum);
+	ILOGDL("List(%d) current node num:%d", mId, mNodeNum);
 
 	return rt;
 }
@@ -828,7 +828,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateRawList()
 
 	if (mState != ISP_LIST_CONFIGED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -851,12 +851,12 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateRawList()
 				}
 				else {
 					rt = ISP_MEMORY_ERROR;
-					ISPLoge("Failed to new node! rt:%d", rt);
+					ILOGE("Failed to new node! rt:%d", rt);
 					break;
 				}
 			}
 			else {
-				ISPLogw("Not find node type:%d", newNodeType);
+				ILOGW("Not find node type:%d", newNodeType);
 			}
 		}
 	}
@@ -866,7 +866,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateRawList()
 		ISPNode<T1, T1>* pNode = mRawHead;
 		while (pNode) {
 			pNode->GetNodeName(name);
-			ISPLogd("List(%d) node:%s", mId, name);
+			ILOGDL("List(%d) node:%s", mId, name);
 			pNode = pNode->pNext;
 		}
 	}
@@ -882,7 +882,7 @@ ISPResult ISPList<T1, T2, T3, T4>::AddNodeToRawTail(ISPNode<T1, T1>* pNode)
 
 	if (mState != ISP_LIST_CONFIGED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -913,7 +913,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateRgbList()
 
 	if (mState != ISP_LIST_CONFIGED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -936,12 +936,12 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateRgbList()
 				}
 				else {
 					rt = ISP_MEMORY_ERROR;
-					ISPLoge("Failed to new node! rt:%d", rt);
+					ILOGE("Failed to new node! rt:%d", rt);
 					break;
 				}
 			}
 			else {
-				ISPLogw("Not find node type:%d", newNodeType);
+				ILOGW("Not find node type:%d", newNodeType);
 			}
 		}
 	}
@@ -949,11 +949,11 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateRgbList()
 	if (SUCCESS(rt)) {
 		char name[NODE_NAME_MAX_SZIE] = { '0' };
 		mRgbHead->GetNodeName(name);
-		ISPLogd("List(%d) node:%s", mId, name);
+		ILOGDL("List(%d) node:%s", mId, name);
 		ISPNode<T2, T2>* pNode = mRgbHead->pNext;
 		while (pNode) {
 			pNode->GetNodeName(name);
-			ISPLogd("List(%d) node:%s", mId, name);
+			ILOGDL("List(%d) node:%s", mId, name);
 			pNode = pNode->pNext;
 		}
 	}
@@ -969,7 +969,7 @@ ISPResult ISPList<T1, T2, T3, T4>::AddNodeToRgbTail(ISPNode<T2, T2>* pNode)
 
 	if (mState != ISP_LIST_CONFIGED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1004,7 +1004,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateYuvList()
 
 	if (mState != ISP_LIST_CONFIGED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1028,12 +1028,12 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateYuvList()
 				}
 				else {
 					rt = ISP_MEMORY_ERROR;
-					ISPLoge("Failed to new node! rt:%d", rt);
+					ILOGE("Failed to new node! rt:%d", rt);
 					break;
 				}
 			}
 			else {
-				ISPLogw("Not find node type:%d", newNodeType);
+				ILOGW("Not find node type:%d", newNodeType);
 			}
 		}
 	}
@@ -1041,11 +1041,11 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateYuvList()
 	if (SUCCESS(rt)) {
 		char name[NODE_NAME_MAX_SZIE] = { '0' };
 		mYuvHead->GetNodeName(name);
-		ISPLogd("List(%d) node:%s", mId, name);
+		ILOGDL("List(%d) node:%s", mId, name);
 		ISPNode<T3, T3>* pNode = mYuvHead->pNext;
 		while (pNode) {
 			pNode->GetNodeName(name);
-			ISPLogd("List(%d) node:%s", mId, name);
+			ILOGDL("List(%d) node:%s", mId, name);
 			pNode = pNode->pNext;
 		}
 	}
@@ -1061,7 +1061,7 @@ ISPResult ISPList<T1, T2, T3, T4>::AddNodeToYuvTail(ISPNode<T3, T3>* pNode)
 
 	if (mState != ISP_LIST_CONFIGED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1096,7 +1096,7 @@ ISPResult ISPList<T1, T2, T3, T4>::CreatePostList()
 
 	if (mState != ISP_LIST_CONFIGED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1119,12 +1119,12 @@ ISPResult ISPList<T1, T2, T3, T4>::CreatePostList()
 				}
 				else {
 					rt = ISP_MEMORY_ERROR;
-					ISPLoge("Failed to new node! rt:%d", rt);
+					ILOGE("Failed to new node! rt:%d", rt);
 					break;
 				}
 			}
 			else if (sizeof(PostListConfigure)/sizeof(PROCESS_TYPE) != 1) { //Special logic for post list
-				ISPLogw("Not find node type:%d", newNodeType);
+				ILOGW("Not find node type:%d", newNodeType);
 			}
 		}
 	}
@@ -1132,11 +1132,11 @@ ISPResult ISPList<T1, T2, T3, T4>::CreatePostList()
 	if (SUCCESS(rt)) {
 		char name[NODE_NAME_MAX_SZIE] = { '0' };
 		mPostHead->GetNodeName(name);
-		ISPLogd("List(%d) node:%s", mId, name);
+		ILOGDL("List(%d) node:%s", mId, name);
 		ISPNode<T4, T4>* pNode = mPostHead->pNext;
 		while (pNode) {
 			pNode->GetNodeName(name);
-			ISPLogd("List(%d) node:%s", mId, name);
+			ILOGDL("List(%d) node:%s", mId, name);
 			pNode = pNode->pNext;
 		}
 	}
@@ -1152,7 +1152,7 @@ ISPResult ISPList<T1, T2, T3, T4>::AddNodeToPostTail(ISPNode<T4, T4>* pNode)
 
 	if (mState != ISP_LIST_CONFIGED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1184,7 +1184,7 @@ ISPResult ISPList<T1, T2, T3, T4>::Process()
 
 	if (mState != ISP_LIST_CONSTRUCTED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1200,14 +1200,14 @@ ISPResult ISPList<T1, T2, T3, T4>::Process()
 			else {
 				char name[NODE_NAME_MAX_SZIE] = { '\0' };
 				pNode->GetNodeName(name);
-				ISPLoge("List(%d) %s node process failed! rt:%d", mId, name, rt);
+				ILOGE("List(%d) %s node process failed! rt:%d", mId, name, rt);
 				break;
 			}
 		}
 	}
 
 	if (SUCCESS(rt)) {
-		ISPLogd(">>>>> List(%d) Raw process finished! >>>>>", mId);
+		ILOGDL(">>>>> List(%d) Raw process finished! >>>>>", mId);
 		rt = TriggerRgbProcess();
 	}
 
@@ -1221,7 +1221,7 @@ ISPResult ISPList<T1, T2, T3, T4>::TriggerRgbProcess()
 
 	if (mState != ISP_LIST_RUNNING) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1238,7 +1238,7 @@ ISPResult ISPList<T1, T2, T3, T4>::RgbProcess()
 
 	if (mState != ISP_LIST_RUNNING) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1255,14 +1255,14 @@ ISPResult ISPList<T1, T2, T3, T4>::RgbProcess()
 			else {
 				char name[NODE_NAME_MAX_SZIE] = { '\0' };
 				pNode->GetNodeName(name);
-				ISPLoge("List(%d) %s node process failed! rt:%d", mId, name, rt);
+				ILOGE("List(%d) %s node process failed! rt:%d", mId, name, rt);
 				break;
 			}
 		}
 	}
 
 	if (SUCCESS(rt)) {
-		ISPLogd(">>>>> List(%d) Rgb process finished! >>>>>", mId);
+		ILOGDL(">>>>> List(%d) Rgb process finished! >>>>>", mId);
 		rt = TriggerYuvProcess();
 	}
 
@@ -1276,7 +1276,7 @@ ISPResult ISPList<T1, T2, T3, T4>::TriggerYuvProcess()
 
 	if (mState != ISP_LIST_RUNNING) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1293,7 +1293,7 @@ ISPResult ISPList<T1, T2, T3, T4>::YuvProcess()
 
 	if (mState != ISP_LIST_RUNNING) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1310,14 +1310,14 @@ ISPResult ISPList<T1, T2, T3, T4>::YuvProcess()
 			else {
 				char name[NODE_NAME_MAX_SZIE] = { '\0' };
 				pNode->GetNodeName(name);
-				ISPLoge("List(%d) %s node process failed! rt:%d", mId, name, rt);
+				ILOGE("List(%d) %s node process failed! rt:%d", mId, name, rt);
 				break;
 			}
 		}
 	}
 
 	if (SUCCESS(rt)) {
-		ISPLogd(">>>>> List(%d) Yuv process finished! >>>>>", mId);
+		ILOGDL(">>>>> List(%d) Yuv process finished! >>>>>", mId);
 		rt = TriggerPostProcess();
 	}
 
@@ -1331,7 +1331,7 @@ ISPResult ISPList<T1, T2, T3, T4>::TriggerPostProcess()
 
 	if (mState != ISP_LIST_RUNNING) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1348,7 +1348,7 @@ ISPResult ISPList<T1, T2, T3, T4>::PostProcess()
 
 	if (mState != ISP_LIST_RUNNING) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1365,14 +1365,14 @@ ISPResult ISPList<T1, T2, T3, T4>::PostProcess()
 			else {
 				char name[NODE_NAME_MAX_SZIE] = { '\0' };
 				pNode->GetNodeName(name);
-				ISPLoge("List(%d) %s node process failed! rt:%d", mId, name, rt);
+				ILOGE("List(%d) %s node process failed! rt:%d", mId, name, rt);
 				break;
 			}
 		}
 	}
 
 	if (SUCCESS(rt)) {
-		ISPLogd(">>>>> List(%d) Post process finished! >>>>>", mId);
+		ILOGDL(">>>>> List(%d) Post process finished! >>>>>", mId);
 		rt = StateTransform(STATE_TRANS_FORWARD);
 	}
 
@@ -1387,7 +1387,7 @@ ISPResult ISPList<T1, T2, T3, T4>::EnableNodebyType(int32_t type)
 
 	if (mState != ISP_LIST_CONSTRUCTED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1459,7 +1459,7 @@ ISPResult ISPList<T1, T2, T3, T4>::DisableNodebyType(int32_t type)
 
 	if (mState != ISP_LIST_CONSTRUCTED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1530,7 +1530,7 @@ ISPResult ISPList<T1, T2, T3, T4>::EnableNecNodebyType(int32_t type)
 
 	if (mState != ISP_LIST_CONSTRUCTED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -1558,7 +1558,7 @@ ISPResult ISPList<T1, T2, T3, T4>::DisableNecNodebyType(int32_t type)
 
 	if (mState != ISP_LIST_CONSTRUCTED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("func called in invaled state:%d %d", mState, rt);
+		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
 	if (SUCCESS(rt)) {

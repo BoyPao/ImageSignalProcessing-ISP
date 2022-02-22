@@ -88,7 +88,7 @@ int main() {
 		pListManager = static_cast<ISPListManager*>(core.GetListManager());
 		if (!pParamManager || !pFileManager || !pListManager) {
 			rt = ISP_FAILED;
-			ISPLoge("ParamManager:%p FileManager:%p ListManager:%p",
+			ILOGE("ParamManager:%p FileManager:%p ListManager:%p",
 					pParamManager, pFileManager, pListManager);
 		}
 	}
@@ -101,8 +101,8 @@ int main() {
 		numPixel = mediaInfo.img.width * mediaInfo.img.height;
 		alignedW = ALIGNx(mediaInfo.img.width, mediaInfo.img.bitspp, CHECK_PACKAGED(mediaInfo.img.rawFormat), mediaInfo.img.stride);
 		bufferSize = alignedW * mediaInfo.img.height;
-		ISPLogi("Image size:%dx%d pixelNum:%d", mediaInfo.img.width, mediaInfo.img.height, numPixel);
-		ISPLogi("Align (%d,%d) bufferSize:%d", alignedW, mediaInfo.img.height, bufferSize);
+		ILOGI("Image size:%dx%d pixelNum:%d", mediaInfo.img.width, mediaInfo.img.height, numPixel);
+		ILOGI("Align (%d,%d) bufferSize:%d", alignedW, mediaInfo.img.height, bufferSize);
 
 		mipiRawData = std::shared_ptr<uint8_t>(new uint8_t[bufferSize], [] (uint8_t *p) { delete[] p; });
 		rawData		= std::shared_ptr<uint16_t>(new uint16_t[numPixel], [] (uint16_t *p) { delete[] p; });
@@ -114,11 +114,11 @@ int main() {
 			memset(rawData.get(), 0x0, numPixel);
 			memset(bgrData.get(), 0x0, numPixel * 3);
 			memset(yuvData.get(), 0x0, numPixel * 3);
-			ISPLogd("buffer addr(%p %p %p %p %p)", mipiRawData.get(), rawData.get(), bgrData.get(), yuvData.get(), dst.data);
+			ILOGDC("buffer addr(%p %p %p %p %p)", mipiRawData.get(), rawData.get(), bgrData.get(), yuvData.get(), dst.data);
 		}
 		else {
 			rt = ISP_MEMORY_ERROR;
-			ISPLoge("Failed to alloc buffers!");
+			ILOGE("Failed to alloc buffers!");
 		}
 	}
 
@@ -160,7 +160,7 @@ int main() {
 		}
 
 		for (int32_t frameCount = 1; frameCount <= frameNum; frameCount++) {
-			ISPLogi("[%d]=========================== %d(%d) ==========================", listId, frameCount, frameNum);
+			ILOGI("[%d]=========================== %d(%d) ==========================", listId, frameCount, frameNum);
 			if (SUCCESS(rt)) {
 				rt = pFileManager->ReadData(mipiRawData.get(), bufferSize);
 				if (SUCCESS(rt)) {
@@ -180,7 +180,7 @@ int main() {
 				if (SUCCESS(rt)) {
 					rt = pListManager->StartById(listId);
 					if (!SUCCESS(rt)) {
-						ISPLoge("Failed to start list:%d %d", listId, rt);
+						ILOGE("Failed to start list:%d %d", listId, rt);
 					}
 				}
 			}
@@ -213,7 +213,7 @@ int main() {
 		winsize winSize;
 		ioctl(STDIN_FILENO, TIOCGWINSZ, &winSize);
 		if (!winSize.ws_row) {
-			ISPLogw("Cannot get terminal size(%d,%d)! Skip img show", winSize.ws_col, winSize.ws_row);
+			ILOGW("Cannot get terminal size(%d,%d)! Skip img show", winSize.ws_col, winSize.ws_row);
 		}
 		else {
 			winSizey = winSize.ws_row;

@@ -5,8 +5,8 @@
  * Copyright (c) 2019 Peng Hao <635945005@qq.com>
  */
 
-#include "BoZhi.h"
 #include "Algorithm.h"
+#include "BZLog.h"
 
 static BoZhi* gBZ = nullptr;
 
@@ -16,7 +16,7 @@ int32_t WrapEvent(void* msg)
 
 	if (!gBZ) {
 		rt = BZ_FAILED;
-		BZLoge("Cannot find BZ!");
+		BLOGE("Cannot find BZ!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -25,7 +25,7 @@ int32_t WrapEvent(void* msg)
 			rt = gBZ->ExecuteCMD();
 		} else {
 			rt = BZ_FAILED;
-			BZLoge("message is null!");
+			BLOGE("message is null!");
 		}
 	}
 
@@ -42,7 +42,7 @@ int32_t WrapGetOPS(void* pOPS)
 		pLibOPS->LIB_Event = &WrapEvent;
 	} else {
 		rt = BZ_INVALID_PARAM;
-		BZLoge("Input is nullptr!");
+		BLOGE("Input is nullptr!");
 	}
 
 	return (int32_t)rt;
@@ -51,20 +51,14 @@ int32_t WrapGetOPS(void* pOPS)
 int32_t WrapRegistCallbacks(void* pCBs)
 {
 	BZResult rt = BZ_SUCCESS;
-	ISP_CALLBACKS* pISPCBs = static_cast<ISP_CALLBACKS*>(pCBs);
 
 	if (!gBZ) {
 		rt = BZ_FAILED;
-		BZLoge("Cannot find BZ!");
+		BLOGE("Cannot find BZ!");
 	}
 
 	if (SUCCESS(rt)) {
-		if (pISPCBs) {
-			memcpy(&gBZ->mISPCBs, pISPCBs, sizeof(ISP_CALLBACKS));
-		} else {
-			rt = BZ_INVALID_PARAM;
-			BZLoge("Input is nullptr!");
-		}
+		rt = gBZ->RegisterCallbacks(pCBs);
 	}
 
 	return (int32_t)rt;
@@ -76,12 +70,12 @@ int32_t WrapLibInit(void* pOPS)
 
 	if (gBZ) {
 		rt = BZ_FAILED;
-		BZLoge("BZ has been inited!");
+		BLOGE("BZ has been inited!");
 	} else {
 		gBZ = new BoZhi;
 		if (!gBZ) {
 			rt = BZ_MEMORY_ERROR;
-			BZLoge("Create BZ failed!");
+			BLOGE("Create BZ failed!");
 		} else {
 			rt = gBZ->Init();
 		}
@@ -100,7 +94,7 @@ int32_t WrapLibDeInit()
 
 	if (!gBZ) {
 		rt = BZ_FAILED;
-		BZLoge("BZ not inited!");
+		BLOGE("BZ not inited!");
 	} else {
 		rt = gBZ->DeInit();
 		delete gBZ;
@@ -110,10 +104,14 @@ int32_t WrapLibDeInit()
 	return (int32_t)rt;
 }
 
+void* WrapGetBoZhi()
+{
+	return (void*)gBZ;
+}
+
 BoZhi::BoZhi()
 {
 	mISPCBs = { 0 };
-	BZLogd("state %d -> %d", mState, BZ_STATE_NEW);
 	mState = BZ_STATE_NEW;
 }
 
@@ -128,7 +126,7 @@ BZResult BoZhi::Init()
 
 	if (mState != BZ_STATE_NEW) {
 		rt = BZ_STATE_ERROR;
-		BZLoge("Invalid state:%d", mState);
+		BLOGE("Invalid state:%d", mState);
 	}
 
 	if (SUCCESS(rt)) {
@@ -136,7 +134,7 @@ BZResult BoZhi::Init()
 	}
 
 	if (SUCCESS(rt)) {
-		BZLogd("state %d -> %d", mState, BZ_STATE_INITED);
+		BLOGDC("state %d -> %d", mState, BZ_STATE_INITED);
 		mState = BZ_STATE_INITED;
 	}
 
@@ -149,7 +147,7 @@ BZResult BoZhi::DeInit()
 
 	if (SUCCESS(rt)) {
 		memset(&mMsg, 0 , sizeof(LIB_MSG));
-		BZLogd("state %d -> %d", mState, BZ_STATE_NEW);
+		BLOGDC("state %d -> %d", mState, BZ_STATE_NEW);
 		mState = BZ_STATE_NEW;
 	}
 
@@ -161,7 +159,7 @@ BZResult BoZhi::ExecuteCMD()
 	BZResult rt = BZ_SUCCESS;
 	bool enable = mMsg.enable;
 
-	BZLogd("cmd:%d on:%d", mMsg.cmd, enable);
+	BLOGDC("cmd:%d on:%d", mMsg.cmd, enable);
 	ISP_CALLBACKS tempCbs;
 	switch(mMsg.cmd) {
 		case LIB_CMD_BLC:
@@ -199,9 +197,29 @@ BZResult BoZhi::ExecuteCMD()
 			break;
 		case LIB_CMD_NUM:
 		default:
-			BZLogw("Nothing todo for cmd:%d", mMsg.cmd);
+			BLOGW("Nothing todo for cmd:%d", mMsg.cmd);
 			break;
 	}
 
 	return rt;
+}
+
+BZResult BoZhi::RegisterCallbacks(void *pCBs)
+{
+	BZResult rt = BZ_SUCCESS;
+	ISP_CALLBACKS* pISPCBs = static_cast<ISP_CALLBACKS*>(pCBs);
+
+	if (pISPCBs) {
+		memcpy(&mISPCBs, pISPCBs, sizeof(ISP_CALLBACKS));
+	} else {
+		rt = BZ_INVALID_PARAM;
+		BLOGE("Input is nullptr!");
+	}
+
+	return rt;
+}
+
+ISP_CALLBACKS const* BoZhi::GetCallbacks()
+{
+	return &mISPCBs;
 }

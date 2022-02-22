@@ -34,12 +34,12 @@ ISPResult ISPVideo::Init(void* pData)
 
 	if (mState != VIDEO_NEW) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("Invalid state:%d", mState);
+		ILOGE("Invalid state:%d", mState);
 	}
 
 	if (SUCCESS(rt)) {
 		if (!pData) {
-			ISPLoge("Invalid param!");
+			ILOGE("Invalid param!");
 			rt = ISP_INVALID_PARAM;
 		}
 	}
@@ -62,7 +62,7 @@ ISPResult ISPVideo::CreateThread(void* pThreadParam)
 
 	if (mState != VIDEO_INITED) {
 		rt = ISP_STATE_ERROR;
-		ISPLoge("Invalid state:%d", mState);
+		ILOGE("Invalid state:%d", mState);
 	}
 
 	if (SUCCESS(rt)) {
@@ -70,7 +70,7 @@ ISPResult ISPVideo::CreateThread(void* pThreadParam)
 	}
 
 	if (SUCCESS(rt)) {
-		ISPLogd("video thread start running");
+		ILOGD("video thread start running");
 		mState = VIDEO_READY;
 	}
 
@@ -82,7 +82,7 @@ ISPResult ISPVideo::DestroyThread()
 	ISPResult rt = ISP_SUCCESS;
 
 	if (mState == VIDEO_LOCK || mState == VIDEO_WAIT_FRAME_DONE) {
-		ISPLogi("Waite video thread finish", mState);
+		ILOGI("Waite video thread finish", mState);
 	}
 
 	if (SUCCESS(rt)) {
@@ -90,7 +90,7 @@ ISPResult ISPVideo::DestroyThread()
 	}
 
 	if (SUCCESS(rt)) {
-		ISPLogd("video thread exit");
+		ILOGD("video thread exit");
 		mState = VIDEO_INITED;
 	}
 
@@ -114,7 +114,7 @@ ISPResult ISPVideo::Record(VideoWriter* pRecorder)
 
 	if (!pRecorder) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Input param is null");
+		ILOGE("Input param is null");
 	}
 
 	if (SUCCESS(rt))
@@ -151,13 +151,13 @@ void* VideoEncodeFunc(void* threadParam)
 
 	if (!pParam) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Invalid thread param!");
+		ILOGE("Invalid thread param!");
 	} else {
 		pISPVideo = static_cast<ISPVideo*>(pParam->pVideo);
 		pFileMgr = static_cast<FileManager*>(pParam->pFileMgr);
 		if (!pISPVideo || !pFileMgr) {
 			rt = ISP_INVALID_PARAM;
-			ISPLoge("Invalid param!");
+			ILOGE("Invalid param!");
 		}
 	}
 
@@ -174,18 +174,18 @@ void* VideoEncodeFunc(void* threadParam)
 		if (vWriter.isOpened()) {
 			for (int32_t frameCount = 1; frameCount <= info.frameNum; frameCount++) {
 				rt = pISPVideo->Record(&vWriter);
-				ISPLogd("Recording F:%d (%ds)", frameCount, frameCount / info.fps);
+				ILOGD("Recording F:%d (%ds)", frameCount, frameCount / info.fps);
 				if (frameCount == info.frameNum) {
-					ISPLogi("Video output path:%s", info.path);
+					ILOGI("Video output path:%s", info.path);
 				}
 			}
 		}
 		else {
-			ISPLoge("Failed to initialize VideoWriter!");
+			ILOGE("Failed to initialize VideoWriter!");
 		}
 	}
 	else {
-		ISPLoge("Video func not init!");
+		ILOGE("Video func not init!");
 	}
 
 	return 0;

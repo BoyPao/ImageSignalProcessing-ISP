@@ -19,13 +19,8 @@
 #define ALG_DYNAMIC_LIB_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\x64\\Debug\\libbzalg.dll"
 #endif
 
-#define CALL_OPS(ops, op, params...)		\
-				(((ops).op) ?				\
-				({							\
-					(ops).op(params);		\
-					ISP_SUCCESS;			\
-				})							\
-				: ISP_FAILED)
+#define CALL_OPS(ops, op, ...)		\
+				(((ops).op) ? (ISPResult)(ops).op(__VA_ARGS__) : ISP_FAILED)
 
 //static ISP_CALLBACKS gISPCallbacks;
 
@@ -50,7 +45,7 @@ InterfaceWrapper::~InterfaceWrapper()
 	rt = DeInit();
 
 	if (!SUCCESS(rt)) {
-		ISPLoge("Fail to deinit!");
+		ILOGE("Fail to deinit!");
 	} else {
 		memset((void*)&mISPLibParams, 0, sizeof(LIB_PARAMS));
 		pParamMgr = nullptr;
@@ -65,7 +60,7 @@ ISPResult InterfaceWrapper::Init()
 	if (SUCCESS(rt)) {
 		rt = InterfaceInit(ISP_ALG_LIB);
 	} else {
-		ISPLoge("Failed to load lib");
+		ILOGE("Failed to load lib");
 	}
 	/* TODO: load libs if need */
 
@@ -79,7 +74,7 @@ ISPResult InterfaceWrapper::DeInit()
 	for (int32_t index = ISP_ALG_LIB; index < ISP_LIBS_NUM; index++) {
 		rt = InterfaceDeInit((ISP_LIBS_ID)index);
 		if (!SUCCESS(rt)) {
-			ISPLoge("Failed to deinit interface:%d", index);
+			ILOGE("Failed to deinit interface:%d", index);
 			break;
 		}
 	}
@@ -87,7 +82,7 @@ ISPResult InterfaceWrapper::DeInit()
 	for (int32_t index = ISP_ALG_LIB; index < ISP_LIBS_NUM; index++) {
 		rt = ReleaseLib((ISP_LIBS_ID)index);
 		if (!SUCCESS(rt)) {
-			ISPLoge("Failed to release lib:%d", index);
+			ILOGE("Failed to release lib:%d", index);
 			break;
 		}
 	}
@@ -108,7 +103,7 @@ ISPResult InterfaceWrapper::LoadLib(ISP_LIBS_ID libId, const char* path)
 		case ISP_LIBS_NUM:
 		default:
 			rt = ISP_INVALID_PARAM;
-			ISPLoge("Invalid lib id:%d", libId);
+			ILOGE("Invalid lib id:%d", libId);
 	}
 
 	if (pLib) {
@@ -124,7 +119,7 @@ ISPResult InterfaceWrapper::LoadLib(ISP_LIBS_ID libId, const char* path)
 		if (length >= FILE_PATH_MAX_SIZE - 1)
 		{
 			rt = ISP_INVALID_PARAM;
-			ISPLoge("Invalid lib path length:%d", length);
+			ILOGE("Invalid lib path length:%d", length);
 		}
 
 		if (SUCCESS(rt)) {
@@ -135,10 +130,10 @@ ISPResult InterfaceWrapper::LoadLib(ISP_LIBS_ID libId, const char* path)
 		}
 #endif
 		if (*pLib) {
-			ISPLogd("Load lib:%d %s", libId, path);
+			ILOGDI("Load lib:%d %s", libId, path);
 		} else {
 			rt = ISP_FAILED;
-			ISPLoge("Faild to open lib:%s", path);
+			ILOGE("Faild to open lib:%s", path);
 		}
 	}
 
@@ -158,13 +153,13 @@ ISPResult InterfaceWrapper::ReleaseLib(ISP_LIBS_ID libId)
 		case ISP_LIBS_NUM:
 		default:
 			rt = ISP_INVALID_PARAM;
-			ISPLoge("Invalid lib id:%d", libId);
+			ILOGE("Invalid lib id:%d", libId);
 	}
 
 	if (pLib) {
 		if (!(*pLib)) {
 			rt = ISP_FAILED;
-			ISPLoge("Lib not load:%d", libId);
+			ILOGE("Lib not load:%d", libId);
 		} else {
 #ifdef LINUX_SYSTEM
 			dlclose(*pLib);
@@ -172,7 +167,7 @@ ISPResult InterfaceWrapper::ReleaseLib(ISP_LIBS_ID libId)
 			FreeLibrary((HMODULE)*pLib);
 #endif
 			*pLib = nullptr;
-			ISPLogd("Release lib:%d", libId);
+			ILOGDI("Release lib:%d", libId);
 		}
 	}
 
@@ -190,7 +185,7 @@ ISPResult InterfaceWrapper::InterfaceInit(ISP_LIBS_ID libId)
 		case ISP_LIBS_NUM:
 		default:
 			rt = ISP_INVALID_PARAM;
-			ISPLoge("Invalid lib id:%d", libId);
+			ILOGE("Invalid lib id:%d", libId);
 	}
 
 	return rt;
@@ -207,7 +202,7 @@ ISPResult InterfaceWrapper::InterfaceDeInit(ISP_LIBS_ID libId)
 		case ISP_LIBS_NUM:
 		default:
 			rt = ISP_INVALID_PARAM;
-			ISPLoge("Invalid lib id:%d", libId);
+			ILOGE("Invalid lib id:%d", libId);
 	}
 
 	return rt;
@@ -220,7 +215,7 @@ ISPResult InterfaceWrapper::AlgInterfaceInit()
 
 	if (!mLibs.pAlgLib) {
 		rt = ISP_FAILED;
-		ISPLoge("Wrap not init!");
+		ILOGE("Wrap not init!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -230,7 +225,7 @@ ISPResult InterfaceWrapper::AlgInterfaceInit()
 #elif defined WIN32_SYSTEM
 			funcs[i] = (LIB_VOID_FUNC_ADDR)GetProcAddress((HMODULE)mLibs.pAlgLib, LIB_SYMBLE[i]);
 #endif
-			ISPLogd("Lib Func[%d]:%p", i, funcs[i]);
+			ILOGDI("Lib Func[%d]:%p", i, funcs[i]);
 		}
 	}
 
@@ -239,7 +234,7 @@ ISPResult InterfaceWrapper::AlgInterfaceInit()
 			funcs[0]((void*)&mLibsOPS.algOPS);
 		} else {
 			rt = ISP_FAILED;
-			ISPLoge("Lib Func[0]:%p", funcs[0]);
+			ILOGE("Lib Func[0]:%p", funcs[0]);
 		}
 	}
 
@@ -248,12 +243,12 @@ ISPResult InterfaceWrapper::AlgInterfaceInit()
 			//TODO: add callbacks if need
 			ISP_CALLBACKS CBs;
 			CBs.ISP_Notify = nullptr;
-			CBs.UtilsFuncs.Log = LogAddInfo;
+			CBs.UtilsFuncs.Log = LogBase;
 			CBs.UtilsFuncs.DumpDataInt = DumpDataInt;
 			funcs[2]((void*)&CBs);
 		} else {
 			rt = ISP_FAILED;
-			ISPLoge("Lib Func[2]:%p", funcs[2]);
+			ILOGE("Lib Func[2]:%p", funcs[2]);
 		}
 	}
 
@@ -267,7 +262,7 @@ ISPResult InterfaceWrapper::AlgInterfaceDeInit()
 
 	if (!mLibs.pAlgLib) {
 		rt = ISP_FAILED;
-		ISPLoge("Wrap not init!");
+		ILOGE("Wrap not init!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -281,7 +276,7 @@ ISPResult InterfaceWrapper::AlgInterfaceDeInit()
 #elif defined WIN32_SYSTEM
 			funcs[i] = (LIB_VOID_FUNC_ADDR)GetProcAddress((HMODULE)mLibs.pAlgLib, LIB_SYMBLE[i]);
 #endif
-			ISPLogd("Lib Func[%d]:%p", i, funcs[i]);
+			ILOGDI("Lib Func[%d]:%p", i, funcs[i]);
 		}
 	}
 
@@ -290,7 +285,7 @@ ISPResult InterfaceWrapper::AlgInterfaceDeInit()
 			funcs[1](nullptr);
 		} else {
 			rt = ISP_FAILED;
-			ISPLoge("Lib Func[1]:%p", funcs[1]);
+			ILOGE("Lib Func[1]:%p", funcs[1]);
 		}
 	}
 
@@ -304,14 +299,14 @@ ISPResult InterfaceWrapper::ISPLibConfig(void* pPM, ...)
 	pParamMgr = pPM;
 	if (!pParamMgr) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("ParamManager is null! rt:%d", rt);
+		ILOGE("ParamManager is null! rt:%d", rt);
 	}
 
 	if (SUCCESS(rt)) {
 		ISPParamManager* tmpPM = static_cast<ISPParamManager*>(pParamMgr);
 		rt = tmpPM->GetImgInfo(&mISPLibParams);
 		if (!SUCCESS(rt)) {
-			ISPLoge("Get image info failed. rt:%d", rt);
+			ILOGE("Get image info failed. rt:%d", rt);
 		}
 	}
 
@@ -328,7 +323,7 @@ ISPResult InterfaceWrapper::AlgProcess(int32_t cmd, ...)
 
 	if (!pPM) {
 		rt = ISP_FAILED;
-		ISPLoge("Itf not congfig!");
+		ILOGE("Itf not congfig!");
 	}
 
 	if (SUCCESS(rt)) {

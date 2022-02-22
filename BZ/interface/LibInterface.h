@@ -130,25 +130,6 @@ struct LIB_MSG {
 
 struct LIB_OPS
 {
-//	/* Bayer Process */
-//	void (*LIB_BLC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-//	void (*LIB_LSC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-//
-//	/* RGB Process */
-//	void (*LIB_Demosaic)	(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-//	void (*LIB_WB)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-//	void (*LIB_CC)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-//	void (*LIB_Gamma)		(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-//
-//	/* YUVProcess */
-//	void (*LIB_WNR)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-//	void (*LIB_EE)			(void* data, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-//
-//	/* CST */
-//	void (*LIB_CST_RAW2RGB)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-//	void (*LIB_CST_RGB2YUV)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-//	void (*LIB_CST_YUV2RGB)	(void* src, void* dst, LIB_PARAMS* params, ISP_CALLBACKS CBs, ...);
-
 	int32_t (*LIB_Event)	(void* msg);
 };
 

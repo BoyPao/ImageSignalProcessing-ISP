@@ -50,7 +50,7 @@ ISPResult ISPCore::Init()
 
 	if (mState != CORE_IDLE) {
 		rt = ISP_FAILED;
-		ISPLoge("Invalid core state:%d", mState);
+		ILOGE("Invalid core state:%d", mState);
 	}
 
 	if(SUCCESS(rt)) {

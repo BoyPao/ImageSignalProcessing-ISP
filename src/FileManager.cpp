@@ -85,7 +85,7 @@ ISPResult FileManager::GetOutputVideoInfo(OutputVideoInfo* pInfo)
 
 	if (!pInfo) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Invalid input!");
+		ILOGE("Invalid input!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -106,7 +106,7 @@ ISPResult FileManager::ReadData(uint8_t* buffer, int32_t bufferSize)
 		case INPUT_FILE_TYPE_NUM:
 		default:
 			rt = ISP_FAILED;
-			ISPLoge("Not support input type:%d", mInputInfo.type);
+			ILOGE("Not support input type:%d", mInputInfo.type);
 			break;
 	}
 	return rt;
@@ -121,25 +121,25 @@ ISPResult FileManager::ReadRawData(uint8_t* buffer, int32_t bufferSize)
 	}
 
 	if (SUCCESS(rt)) {
-		ISPLogi("Raw input path:%s", mInputInfo.path);
+		ILOGI("Raw input path:%s", mInputInfo.path);
 		ifstream inputFile(mInputInfo.path, ios::in | ios::binary);
 		if (inputFile.fail()) {
 			rt = ISP_FAILED;
-			ISPLoge("Open RAW failed! path:%s rt:%d", mInputInfo.path, rt);
+			ILOGE("Open RAW failed! path:%s rt:%d", mInputInfo.path, rt);
 		}
 
 		if (SUCCESS(rt)) {
 			inputFile.seekg(0, ios::end);
 			streampos fileSize = inputFile.tellg();
 			mInputInfo.size = (int32_t)fileSize;
-			ISPLogd("File size:%d", mInputInfo.size);
+			ILOGDF("File size:%d", mInputInfo.size);
 			inputFile.seekg(0, ios::beg);
 
 			if (bufferSize >= mInputInfo.size) {
 				inputFile.read((char*)buffer, mInputInfo.size);
 			}
 			else {
-				ISPLogw("File size:%d > buffer size:%d! rt:%d",
+				ILOGW("File size:%d > buffer size:%d! rt:%d",
 						mInputInfo.size, bufferSize, rt);
 				inputFile.read((char*)buffer, bufferSize);
 			}
@@ -161,7 +161,7 @@ ISPResult FileManager::SaveImgData(uint8_t* srcData)
 		case OUTPUT_FILE_TYPE_NUM:
 		default:
 			rt = ISP_FAILED;
-			ISPLoge("Not support output type:%d", mInputInfo.type);
+			ILOGE("Not support output type:%d", mInputInfo.type);
 			break;
 	}
 	return rt;
@@ -172,7 +172,7 @@ ISPResult FileManager::SaveBMPData(uint8_t* srcData, int32_t channels)
 	ISPResult rt = ISP_SUCCESS;
 	if (mState == Uninited) {
 		rt = ISP_FAILED;
-		ISPLoge("ImageFile didnot init");
+		ILOGE("ImageFile didnot init");
 	}
 
 	if(SUCCESS(rt)) {
@@ -185,7 +185,7 @@ ISPResult FileManager::SaveBMPData(uint8_t* srcData, int32_t channels)
 			WriteBMP(BMPdata, channels);
 		}
 		else {
-			ISPLoge("SetBMP failed. rt:&d", rt);
+			ILOGE("SetBMP failed. rt:&d", rt);
 		}
 		delete[] BMPdata;
 	}
@@ -200,7 +200,7 @@ ISPResult FileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
 
 	if(channels != 3 && channels != 1) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Invalid BMP output channnels:%d", channels);
+		ILOGE("Invalid BMP output channnels:%d", channels);
 		//TODO: does it need to be support?
 	}
 
@@ -237,7 +237,7 @@ void FileManager::WriteBMP(BYTE* data, int32_t channels)
 	BITMAPINFOHEADER headerinfo;
 	int32_t tempSize;
 
-	ISPLogd("BYTE:%d WORD:%d DWORD:%d LONG:%d", sizeof(BYTE), sizeof(WORD), sizeof(DWORD), sizeof(LONG));
+	ILOGDF("BYTE:%d WORD:%d DWORD:%d LONG:%d", sizeof(BYTE), sizeof(WORD), sizeof(DWORD), sizeof(LONG));
 	memset(&header, 0, sizeof(BITMAPFILEHEADER));
 	memset(&headerinfo, 0, sizeof(BITMAPINFOHEADER));
 	headerinfo.biSize = sizeof(BITMAPINFOHEADER);
@@ -261,7 +261,7 @@ void FileManager::WriteBMP(BYTE* data, int32_t channels)
 #ifdef LINUX_SYSTEM
 	header.bfOffBits[0] = (tempSize % 0x10000) & 0xffff;
 	header.bfOffBits[1] = (tempSize / 0x10000) & 0xffff;
-	ISPLogd("ch:%d head:%d headinfo:%d bfOffBits:%d(%x %x)",
+	ILOGDF("ch:%d head:%d headinfo:%d bfOffBits:%d(%x %x)",
 			channels, sizeof(BITMAPFILEHEADER), sizeof(BITMAPINFOHEADER),
 			tempSize, header.bfOffBits[1], header.bfOffBits[0]);
 #elif defined WIN32_SYSTEM
@@ -272,16 +272,16 @@ void FileManager::WriteBMP(BYTE* data, int32_t channels)
 #ifdef LINUX_SYSTEM
 	header.bfSize[0] = (tempSize % 0x10000) & 0xffff;
 	header.bfSize[1] = (tempSize / 0x10000) & 0xffff;
-	ISPLogd("biSizeImage:%d bfSize:%d(%x %x)", headerinfo.biSizeImage,
+	ILOGDF("biSizeImage:%d bfSize:%d(%x %x)", headerinfo.biSizeImage,
 			tempSize, header.bfSize[1], header.bfSize[0]);
 #elif defined WIN32_SYSTEM
 	header.bfSize = tempSize;
 #endif
 
-	ISPLogi("BMP output path:%s", mOutputInfo.imgInfo.path);
+	ILOGI("BMP output path:%s", mOutputInfo.imgInfo.path);
 	ofstream outputFile(mOutputInfo.imgInfo.path, ios::binary);
 	if (outputFile.fail()) {
-		ISPLoge("Cannot open ouput file:%s", mOutputInfo.imgInfo.path);
+		ILOGE("Cannot open ouput file:%s", mOutputInfo.imgInfo.path);
 	}
 	else {
 		outputFile.write((char*)& header, sizeof(BITMAPFILEHEADER));
@@ -315,7 +315,7 @@ ISPResult FileManager::CreateVideo(void* dst)
 		mVTParam.pFileMgr = this;
 		rt = mVideo->CreateThread((void*)&mVTParam);
 	}
-	ISPLogi("Video fps:%d total frame:%d",
+	ILOGI("Video fps:%d total frame:%d",
 			mOutputInfo.videoInfo.fps, mOutputInfo.videoInfo.frameNum);
 
 	return rt;
@@ -326,7 +326,7 @@ ISPResult FileManager::SaveVideoData(int32_t frameCount)
 	ISPResult rt = ISP_SUCCESS;
 
 	rt = mVideo->Notify();
-	ISPLogd("Notify F:%d", frameCount);
+	ILOGDF("Notify F:%d", frameCount);
 
 	return rt;
 }
@@ -421,10 +421,10 @@ ISPResult FileManager::Mipi10decode(void* src, void* dst, IMG_INFO* info)
 				break;
 			case RAW_FORMAT_NUM:
 			default:
-				ISPLoge("Not support raw type:%d", info->rawFormat);
+				ILOGE("Not support raw type:%d", info->rawFormat);
 				break;
 		}
-		ISPLogi("finished");
+		ILOGI("finished");
 	}
 
 	return rt;
@@ -442,7 +442,7 @@ void DumpDataInt(void* pData, ...
 
 	if (pData == nullptr) {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Dump failed. data is nullptr");
+		ILOGE("Dump failed. data is nullptr");
 	}
 
 	if (SUCCESS(rt)) {
@@ -454,7 +454,7 @@ void DumpDataInt(void* pData, ...
 		va_end(va);
 		if (!dumpPath) {
 		rt = ISP_INVALID_PARAM;
-			ISPLoge("dumpPath is null");
+			ILOGE("dumpPath is null");
 		}
 	}
 
@@ -462,7 +462,7 @@ void DumpDataInt(void* pData, ...
 		ofstream dumpFile(dumpPath);
 		if (!dumpFile) {
 			rt = ISP_FAILED;
-			ISPLoge("Cannot create dump file:%s", dumpPath);
+			ILOGE("Cannot create dump file:%s", dumpPath);
 		}
 
 		if(SUCCESS(rt)) {
@@ -477,12 +477,12 @@ void DumpDataInt(void* pData, ...
 							dumpFile << (int)static_cast<uint8_t*>(pData)[i * width + j] << ' ';
 							break;
 						default:
-							ISPLoge("Dump failed. Unsopported data bitWidth:%d", bitWidth);
+							ILOGE("Dump failed. Unsopported data bitWidth:%d", bitWidth);
 					}
 				}
 				dumpFile << endl;
 			}
-			ISPLogi("Data saved as int at:%s", dumpPath);
+			ILOGI("Data saved as int at:%s", dumpPath);
 		}
 		dumpFile.close();
 	}

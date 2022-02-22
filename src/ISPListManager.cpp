@@ -32,7 +32,7 @@ ISPResult ISPListManager::Init(ISPParamManager* pPM, InterfaceWrapper* pIW)
 	if (!pPM || !pIW)
 	{
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("pPM is null. %d", rt);
+		ILOGE("pPM is null. %d", rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -56,7 +56,7 @@ ISPResult ISPListManager::CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pY
 	if (cfgIndex >= LIST_CFG_NUM)
 	{
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Invaled cfgIndex:%d %d", cfgIndex, rt);
+		ILOGE("Invaled cfgIndex:%d %d", cfgIndex, rt);
 	}
 
 	if (SUCCESS(rt)) {
@@ -82,7 +82,7 @@ ISPResult ISPListManager::CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pY
 		}
 		else {
 			rt = ISP_MEMORY_ERROR;
-			ISPLoge("Faile to new ISPList, %d", rt);
+			ILOGE("Faile to new ISPList, %d", rt);
 		}
 	}
 
@@ -114,7 +114,7 @@ ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* ISPListManager::FindListById(int3
 		pIspList = mListMap.find(id)->second;
 	}
 	else {
-		ISPLoge("Invaled index:%d", id);
+		ILOGE("Invaled index:%d", id);
 	}
 
 	return pIspList;
@@ -134,7 +134,7 @@ ISPResult ISPListManager::DestoryAllList()
 		}
 		else {
 			rt = ISP_FAILED;
-			ISPLoge("key:%d -> list is null!!!", mListMap.begin()->first);
+			ILOGE("key:%d -> list is null!!!", mListMap.begin()->first);
 		}
 	}
 
@@ -157,7 +157,7 @@ ISPResult ISPListManager::DestoryListbyId(int32_t id)
 	}
 	else {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Invaled index:%d. %d", id, rt);
+		ILOGE("Invaled index:%d. %d", id, rt);
 	}
 
 	return rt;
@@ -170,7 +170,7 @@ ISPResult ISPListManager::StartById(int32_t id)
 
 	if (!pItfWrapper) {
 		rt = ISP_FAILED;
-		ISPLoge("itf not init!");
+		ILOGE("itf not init!");
 	}
 
 	if (SUCCESS(rt)) {
@@ -183,7 +183,7 @@ ISPResult ISPListManager::StartById(int32_t id)
 		}
 		else {
 			rt = ISP_INVALID_PARAM;
-			ISPLoge("Invaled index:%d. %d", id, rt);
+			ILOGE("Invaled index:%d. %d", id, rt);
 		}
 	}
 
@@ -201,7 +201,7 @@ ISPResult ISPListManager::EnableNodebyType(int32_t id, PROCESS_TYPE type)
 	}
 	else {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Invaled index:%d. %d", id, rt);
+		ILOGE("Invaled index:%d. %d", id, rt);
 	}
 
 	return rt;
@@ -218,7 +218,7 @@ ISPResult ISPListManager::DisableNodebyType(int32_t id, PROCESS_TYPE type)
 	}
 	else {
 		rt = ISP_INVALID_PARAM;
-		ISPLoge("Invaled index:%d. %d", id, rt);
+		ILOGE("Invaled index:%d. %d", id, rt);
 	}
 
 	return rt;

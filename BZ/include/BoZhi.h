@@ -10,8 +10,8 @@
 #include <atomic>
 #include <condition_variable>
 
-#include "BZLog.h"
 #include "LibInterface.h"
+#include "BZUtils.h"
 
 enum BZ_STATE {
 	BZ_STATE_NEW = 0,
@@ -26,15 +26,17 @@ public:
 
 	BZResult Init();
 	BZResult DeInit();
+	BZResult RegisterCallbacks(void *pCBs);
+	ISP_CALLBACKS const* GetCallbacks();
 	BZResult ExecuteCMD();
-
-	ISP_CALLBACKS mISPCBs;
 	LIB_MSG mMsg;
 
 private:
+	ISP_CALLBACKS mISPCBs;
 	BZ_STATE mState;
 };
 
 int32_t WrapLibInit(void* pOPS);
 int32_t WrapLibDeInit();
 int32_t WrapRegistCallbacks(void* pOPS);
+void* WrapGetBoZhi();
