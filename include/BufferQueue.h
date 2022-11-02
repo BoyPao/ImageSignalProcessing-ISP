@@ -14,10 +14,31 @@
 
 #define BUF_QUEUE_MAX_SIZE 10
 
+#define MEM_MAX_BLOCK_NUM		8
+#define MEM_L0_BLOCK_BYTE_SIZE	(1024 * 256)
+#define MEM_L1_BLOCK_BYTE_SIZE	(1024 * 1024 * 2)
+#define MEM_L2_BLOCK_BYTE_SIZE	(1024 * 1024 * 16)
+#define MEM_L3_BLOCK_BYTE_SIZE	(1024 * 1024 * 128)
+
+enum MEM_BLOCK_LEVEL {
+	MEM_BLOCK_L0 = 0,
+	MEM_BLOCK_L1,
+	MEM_BLOCK_L2,
+	MEM_BLOCK_L3,
+	MEM_BLOCK_NUM
+};
+
 struct Buffer {
 	void* pAddr;
 	int32_t size;
 	mutex lock;
+};
+
+class MemoryPool {
+	public:
+
+
+	private:
 };
 
 template <typename T>

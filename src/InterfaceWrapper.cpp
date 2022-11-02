@@ -19,8 +19,13 @@
 #define ALG_DYNAMIC_LIB_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\x64\\Debug\\libbzalg.dll"
 #endif
 
-#define CALL_OPS(ops, op, ...)		\
-				(((ops).op) ? (ISPResult)(ops).op(__VA_ARGS__) : ISP_FAILED)
+#define CALL_OPS(ops, op, params...)		\
+				(((ops).op) ?				\
+				({							\
+					(ops).op(params);		\
+					ISP_SUCCESS;			\
+				})							\
+				: ISP_FAILED)
 
 //static ISP_CALLBACKS gISPCallbacks;
 

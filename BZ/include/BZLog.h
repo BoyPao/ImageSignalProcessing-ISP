@@ -38,47 +38,29 @@ enum BZ_DBG_MASK {
 #define LOG_MODULE " BZ "
 #define LOG_FORMAT " %d:%s: "
 
-#define BZLogBase(type, on, str, ...)																\
-	do {																							\
-		if (LOG_ON) {																				\
-			if (on) {																				\
-				if (WrapGetBoZhi()) {																\
-					if(static_cast<BoZhi*>(WrapGetBoZhi())->GetCallbacks()->UtilsFuncs.Log) {		\
-						static_cast<BoZhi*>(WrapGetBoZhi())->GetCallbacks()->UtilsFuncs.Log(        \
-								LOG_MODULE type LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); \
-					} else {																		\
-						LogBase(LOG_MODULE type LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__);	\
-					}																				\
-				} else {																			\
-					LogBase(LOG_MODULE type LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__);		\
-				}																					\
-			}																						\
-		}																							\
-	} while(0)
+#define LogWrap(str, ...) (																					\
+		{																									\
+			if (WrapGetBoZhi()) {																			\
+				if(static_cast<BoZhi*>(WrapGetBoZhi())->GetCallbacks()->UtilsFuncs.Log) {					\
+					static_cast<BoZhi*>(WrapGetBoZhi())->GetCallbacks()->UtilsFuncs.Log(str, ##__VA_ARGS__);\
+				} else {																					\
+					LogBase(str, ##__VA_ARGS__);															\
+				}																							\
+			} else {																						\
+					LogBase(str, ##__VA_ARGS__);															\
+			}																								\
+		})
 
-#define BLOGE(str, ...) BZLogBase("E", (LOG_LEVEL & LOG_ERROR_MASK), str, ##__VA_ARGS__)
-#define BLOGW(str, ...) BZLogBase("W", (LOG_LEVEL & LOG_WARN_MASK), str, ##__VA_ARGS__)
-#define BLOGI(str, ...) BZLogBase("I", (LOG_LEVEL & LOG_INFO_MASK), str, ##__VA_ARGS__)
-#define BLOGD(str, ...)	BZLogBase("D", (LOG_LEVEL & LOG_DEBUG_MASK), str, ##__VA_ARGS__)
+#define BZLogError(on, str, ...)	((on) ? ({LogWrap(LOG_MODULE "E" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);}) : (0))
+#define BZLogWarn(on, str, ...)		((on) ? ({LogWrap(LOG_MODULE "W" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);}) : (0))
+#define BZLogInfo(on, str, ...)		((on) ? ({LogWrap(LOG_MODULE "I" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);}) : (0))
+#define BZLogDebug(on, str, ...)	((on) ? ({LogWrap(LOG_MODULE "D" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);}) : (0))
 
-#define BLOGDC(str, ...)					\
-	do{										\
-		if (DBG_LEVEL & DBG_CORE_MASK) {	\
-			BLOGD(str, ##__VA_ARGS__);		\
-		}									\
-	} while(0)
+#define BLOGE(str, ...)	((LOG_ON) ? BZLogError((LOG_LEVEL & LOG_ERROR_MASK), str, ##__VA_ARGS__) : (0))
+#define BLOGW(str, ...)	((LOG_ON) ? BZLogWarn((LOG_LEVEL & LOG_WARN_MASK), str, ##__VA_ARGS__) : (0))
+#define BLOGI(str, ...)	((LOG_ON) ? BZLogInfo((LOG_LEVEL & LOG_INFO_MASK), str, ##__VA_ARGS__) : (0))
+#define BLOGD(str, ...)	((LOG_ON) ? BZLogDebug((LOG_LEVEL & LOG_DEBUG_MASK), str, ##__VA_ARGS__) : (0))
 
-#define BLOGDI(str, ...)					\
-	do{										\
-		if (DBG_LEVEL & DBG_INTF_MASK) {	\
-			BLOGD(str, ##__VA_ARGS__);		\
-		}									\
-	} while(0)
-
-#define BLOGDA(str, ...)					\
-	do{										\
-		if (DBG_LEVEL & DBG_ALGO_MASK) {	\
-			BLOGD(str, ##__VA_ARGS__);		\
-		}									\
-	} while(0)
-
+#define BLOGDC(str, ...) ((DBG_LEVEL & DBG_CORE_MASK) ? ({BLOGD(str, ##__VA_ARGS__); (0);}) : (0))
+#define BLOGDI(str, ...) ((DBG_LEVEL & DBG_INTF_MASK) ? ({BLOGD(str, ##__VA_ARGS__); (0);}) : (0))
+#define BLOGDA(str, ...) ((DBG_LEVEL & DBG_ALGO_MASK) ? ({BLOGD(str, ##__VA_ARGS__); (0);}) : (0))

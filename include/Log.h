@@ -40,45 +40,28 @@ enum ISP_DBG_MASK {
 #define LOG_MODULE "ISP "
 #define LOG_FORMAT " %d:%s: "
 
-#define ISPLogBase(type, on, str, ...)														\
-	do {																					\
-		if (LOG_ON) {																		\
-			if (on) {																		\
-				LogBase(LOG_MODULE type LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__);	\
-			}																				\
-		}																					\
-	} while(0)
+#define ISPLogError(on, str, ...)		((on) ?														\
+		({LogBase(LOG_MODULE "E" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);})	\
+		: (0))
 
-#define ILOGE(str, ...) ISPLogBase("E", (LOG_LEVEL & LOG_ERROR_MASK), str, ##__VA_ARGS__)
-#define ILOGW(str, ...) ISPLogBase("W", (LOG_LEVEL & LOG_WARN_MASK), str, ##__VA_ARGS__)
-#define ILOGI(str, ...) ISPLogBase("I", (LOG_LEVEL & LOG_INFO_MASK), str, ##__VA_ARGS__)
-#define ILOGD(str, ...)	ISPLogBase("D", (LOG_LEVEL & LOG_DEBUG_MASK), str, ##__VA_ARGS__)
+#define ISPLogWarn(on, str, ...)		((on) ?														\
+		({LogBase(LOG_MODULE "W" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);})	\
+		: (0))
 
-#define ILOGDC(str, ...)					\
-	do{										\
-		if (DBG_LEVEL & DBG_CORE_MASK) {	\
-			ILOGD(str, ##__VA_ARGS__);		\
-		}									\
-	} while(0)
+#define ISPLogInfo(on, str, ...)		((on) ?														\
+		({LogBase(LOG_MODULE "I" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);})  \
+		: (0))
 
-#define ILOGDF(str, ...)					\
-	do{										\
-		if (DBG_LEVEL & DBG_FILE_MASK) {	\
-			ILOGD(str, ##__VA_ARGS__);		\
-		}									\
-	} while(0)
+#define ISPLogDebug(on, str, ...)		((on) ?														\
+		({LogBase(LOG_MODULE "D" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);})  \
+		: (0))
 
-#define ILOGDL(str, ...)					\
-	do{										\
-		if (DBG_LEVEL & DBG_LIST_MASK) {	\
-			ILOGD(str, ##__VA_ARGS__);		\
-		}									\
-	} while(0)
+#define ILOGE(str, ...)	((LOG_ON) ? ISPLogError((LOG_LEVEL & LOG_ERROR_MASK), str, ##__VA_ARGS__) : (0))
+#define ILOGW(str, ...)	((LOG_ON) ? ISPLogWarn((LOG_LEVEL & LOG_WARN_MASK), str, ##__VA_ARGS__) : (0))
+#define ILOGI(str, ...)	((LOG_ON) ? ISPLogInfo((LOG_LEVEL & LOG_INFO_MASK), str, ##__VA_ARGS__) : (0))
+#define ILOGD(str, ...)	((LOG_ON) ? ISPLogDebug((LOG_LEVEL & LOG_DEBUG_MASK), str, ##__VA_ARGS__) : (0))
 
-#define ILOGDI(str, ...)					\
-	do{										\
-		if (DBG_LEVEL & DBG_INTF_MASK) {	\
-			ILOGD(str, ##__VA_ARGS__);		\
-		}									\
-	} while(0)
-
+#define ILOGDC(str, ...)	((DBG_LEVEL & DBG_CORE_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
+#define ILOGDF(str, ...)	((DBG_LEVEL & DBG_FILE_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
+#define ILOGDL(str, ...)	((DBG_LEVEL & DBG_LIST_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
+#define ILOGDI(str, ...)	((DBG_LEVEL & DBG_INTF_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
