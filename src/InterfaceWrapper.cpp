@@ -14,7 +14,7 @@
 #endif
 
 #ifdef LINUX_SYSTEM
-#define ALG_DYNAMIC_LIB_PATH "/home/penghao/HAO/test_project/ISP/ISP/lib/libbzalg.so"
+#define ALG_DYNAMIC_LIB_PATH "/home2/penghao/test_project/ISP/ISP/lib/libbzalg.so"
 #elif defined WIN32_SYSTEM
 #define ALG_DYNAMIC_LIB_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\x64\\Debug\\libbzalg.dll"
 #endif

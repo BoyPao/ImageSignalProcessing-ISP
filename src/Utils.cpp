@@ -9,12 +9,23 @@
 
 using namespace std;
 
-char TimeInt2Char(int32_t i)
+char Int2Char(int32_t i)
 {
 	char result = 'x';
 
 	if (i >= 0 && i <= 9) {
 		result = '0' + i;
+	}
+
+	return result;
+}
+
+int32_t Char2Int(char c)
+{
+	int32_t result = -1;
+
+	if (c >= '0' && c <= '9') {
+		result = c - '0';
 	}
 
 	return result;
@@ -26,18 +37,18 @@ void getTimeChar(char* hours, char* minutes, char* seconds, char* milliseconds)
 
 	getTimeInt(&h, &m, &s, &ms);
 
-	*hours = TimeInt2Char(h / 10);
-	*(hours + 1) = TimeInt2Char(h % 10);
+	*hours = Int2Char(h / 10);
+	*(hours + 1) = Int2Char(h % 10);
 
-	*minutes = TimeInt2Char(m / 10);
-	*(minutes + 1) = TimeInt2Char(m % 10);
+	*minutes = Int2Char(m / 10);
+	*(minutes + 1) = Int2Char(m % 10);
 
-	*seconds = TimeInt2Char(s / 10);
-	*(seconds + 1) = TimeInt2Char(s % 10);
+	*seconds = Int2Char(s / 10);
+	*(seconds + 1) = Int2Char(s % 10);
 
-	*milliseconds = TimeInt2Char(ms / 100);
-	*(milliseconds + 1) = TimeInt2Char(ms / 10 % 10);
-	*(milliseconds + 2) = TimeInt2Char(ms % 10);
+	*milliseconds = Int2Char(ms / 100);
+	*(milliseconds + 1) = Int2Char(ms / 10 % 10);
+	*(milliseconds + 2) = Int2Char(ms % 10);
 }
 
 void getTimeInt(int32_t* hours, int32_t* minutes, int32_t* seconds, int32_t* milliseconds)
@@ -84,27 +95,51 @@ void getTimeWithDateChar(char* years, char* months, char* days, char* hours, cha
 
 	getTimeWithDateInt(&dy, &dm, &dd, &th, &tm, &ts, &tms);
 
-	*years = TimeInt2Char(dy / 1000);
-	*(years + 1) = TimeInt2Char(dy / 100 % 10);
-	*(years + 2) = TimeInt2Char(dy / 10 % 10);
-	*(years + 3) = TimeInt2Char(dy % 10);
+	*years = Int2Char(dy / 1000);
+	*(years + 1) = Int2Char(dy / 100 % 10);
+	*(years + 2) = Int2Char(dy / 10 % 10);
+	*(years + 3) = Int2Char(dy % 10);
 
-	*months = TimeInt2Char(dm / 10);
-	*(months + 1) = TimeInt2Char(dm % 10);
+	*months = Int2Char(dm / 10);
+	*(months + 1) = Int2Char(dm % 10);
 
-	*months = TimeInt2Char(dm / 10);
-	*(months + 1) = TimeInt2Char(dm % 10);
+	*months = Int2Char(dm / 10);
+	*(months + 1) = Int2Char(dm % 10);
 
-	*days = TimeInt2Char(dd / 10);
-	*(days + 1) = TimeInt2Char(dd % 10);
+	*days = Int2Char(dd / 10);
+	*(days + 1) = Int2Char(dd % 10);
 
-	*minutes = TimeInt2Char(tm / 10);
-	*(minutes + 1) = TimeInt2Char(tm % 10);
+	*minutes = Int2Char(tm / 10);
+	*(minutes + 1) = Int2Char(tm % 10);
 
-	*seconds = TimeInt2Char(ts / 10);
-	*(seconds + 1) = TimeInt2Char(ts % 10);
+	*seconds = Int2Char(ts / 10);
+	*(seconds + 1) = Int2Char(ts % 10);
 
-	*milliseconds = TimeInt2Char(tms / 100);
-	*(milliseconds + 1) = TimeInt2Char(tms / 10 % 10);
-	*(milliseconds + 2) = TimeInt2Char(tms % 10);
+	*milliseconds = Int2Char(tms / 100);
+	*(milliseconds + 1) = Int2Char(tms / 10 % 10);
+	*(milliseconds + 2) = Int2Char(tms % 10);
+}
+
+
+int32_t CharNum2IntNum(char* pC)
+{
+	int32_t rt = 0;
+	int32_t len = 0;
+
+	if (!pC)
+		return -1;
+
+	while(pC[len] != '\0') {
+		len++;
+	}
+
+	for(int32_t i = len - 1; i >= 0; i--) {
+		if (Char2Int(pC[i]) == -1) {
+			return -1;
+		} else {
+			rt += Char2Int(pC[i]) * pow(10, (len - 1 - i));
+		}
+	}
+
+	return rt;
 }

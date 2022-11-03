@@ -27,13 +27,13 @@ using namespace cv;
 
 /* Set raw path here */
 #ifdef LINUX_SYSTEM
-#define INPUT_PATH "/home/penghao/HAO/test_project/ISP/ISP/res/1MCC_IMG_20181229_001526_1.raw"
+#define INPUT_PATH "/home2/penghao/test_project/ISP/ISP/res/1MCC_IMG_20181229_001526_1.raw"
 //#define INPUT_PATH "/home/penghao/HAO/test_project/ISP/ISP/res/20210103062220_packaged_4000x3000_0.raw"
 //#define INPUT_PATH "/home/penghao/HAO/test_project/ISP/ISP/res/PD_4096x768.raw"
 //#define INPUT_PATH "/home/penghao/HAO/test_project/ISP/ISP/res/4000_3000_unpackaged_GRBG.raw"
 //#define INPUT_PATH "/home/penghao/HAO/test_project/ISP/ISP/res/4000_3000_unpackaged_MSB_GRBG.raw"
-#define IMG_OUTPUT_PATH "/home/penghao/HAO/test_project/ISP/ISP/res/out/img_output.bmp"
-#define VIDEO_OUTPUT_PATH "/home/penghao/HAO/test_project/ISP/ISP/res/out/video_output.avi"
+#define IMG_OUTPUT_PATH "/home2/penghao/test_project/ISP/ISP/res/out/img_output.bmp"
+#define VIDEO_OUTPUT_PATH "/home2/penghao/test_project/ISP/ISP/res/out/video_output.avi"
 #elif defined WIN32_SYSTEM
 #define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\1MCC_IMG_20181229_001526_1.raw"
 //#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\20210103062220_packaged_4000x3000_0.raw"

@@ -11,6 +11,7 @@
 #define LOG_ON 1
 #define LOG_LEVEL (0x1 + 0x2 + 0x4)
 #define DBG_LEVEL (0x1)
+#define LOG_FOR_RELEASE
 
 #define LOG_BUFFER_SIZE				256
 #define LOG_BUFFER_PERSERVE_SIZE	2		/* 2 preserve for \0 and \n */
@@ -35,8 +36,15 @@ enum BZ_DBG_MASK {
 	DBG_ALGO_MASK = DBG_BASE_MASK << 2,
 };
 
-#define LOG_MODULE " BZ "
+#ifdef LOG_FOR_RELEASE
+#define LOG_FORMAT " | "
+#define LOG_FMT_PARAM
+#else
 #define LOG_FORMAT " %d:%s: "
+#define LOG_FMT_PARAM , __LINE__, __func__
+#endif
+
+#define LOG_MODULE " BZ "
 
 #define LogWrap(str, ...) (																					\
 		{																									\
@@ -51,10 +59,10 @@ enum BZ_DBG_MASK {
 			}																								\
 		})
 
-#define BZLogError(on, str, ...)	((on) ? ({LogWrap(LOG_MODULE "E" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);}) : (0))
-#define BZLogWarn(on, str, ...)		((on) ? ({LogWrap(LOG_MODULE "W" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);}) : (0))
-#define BZLogInfo(on, str, ...)		((on) ? ({LogWrap(LOG_MODULE "I" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);}) : (0))
-#define BZLogDebug(on, str, ...)	((on) ? ({LogWrap(LOG_MODULE "D" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);}) : (0))
+#define BZLogError(on, str, ...)	((on) ? ({LogWrap(LOG_MODULE "E" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__); (0);}) : (0))
+#define BZLogWarn(on, str, ...)		((on) ? ({LogWrap(LOG_MODULE "W" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__); (0);}) : (0))
+#define BZLogInfo(on, str, ...)		((on) ? ({LogWrap(LOG_MODULE "I" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__); (0);}) : (0))
+#define BZLogDebug(on, str, ...)	((on) ? ({LogWrap(LOG_MODULE "D" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__); (0);}) : (0))
 
 #define BLOGE(str, ...)	((LOG_ON) ? BZLogError((LOG_LEVEL & LOG_ERROR_MASK), str, ##__VA_ARGS__) : (0))
 #define BLOGW(str, ...)	((LOG_ON) ? BZLogWarn((LOG_LEVEL & LOG_WARN_MASK), str, ##__VA_ARGS__) : (0))

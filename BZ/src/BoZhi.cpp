@@ -223,3 +223,4 @@ ISP_CALLBACKS const* BoZhi::GetCallbacks()
 {
 	return &mISPCBs;
 }
+

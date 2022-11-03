@@ -11,6 +11,7 @@
 #define LOG_ON 1
 #define LOG_LEVEL (0x1 + 0x2 + 0x4)
 #define DBG_LEVEL (0x1)
+#define LOG_FOR_RELEASE
 
 #define LOG_BUFFER_SIZE				256
 #define LOG_BUFFER_PERSERVE_SIZE	2		/* 2 preserve for \0 and \n */
@@ -37,23 +38,30 @@ enum ISP_DBG_MASK {
 	DBG_INTF_MASK = DBG_BASE_MASK << 3,
 };
 
-#define LOG_MODULE "ISP "
+#ifdef LOG_FOR_RELEASE
+#define LOG_FORMAT " | "
+#define LOG_FMT_PARAM
+#else
 #define LOG_FORMAT " %d:%s: "
+#define LOG_FMT_PARAM , __LINE__, __func__
+#endif
 
-#define ISPLogError(on, str, ...)		((on) ?														\
-		({LogBase(LOG_MODULE "E" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);})	\
+#define LOG_MODULE "ISP "
+
+#define ISPLogError(on, str, ...)		((on) ?											\
+		({LogBase(LOG_MODULE "E" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__); (0);})	\
 		: (0))
 
-#define ISPLogWarn(on, str, ...)		((on) ?														\
-		({LogBase(LOG_MODULE "W" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);})	\
+#define ISPLogWarn(on, str, ...)		((on) ?											\
+		({LogBase(LOG_MODULE "W" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__); (0);})	\
 		: (0))
 
-#define ISPLogInfo(on, str, ...)		((on) ?														\
-		({LogBase(LOG_MODULE "I" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);})  \
+#define ISPLogInfo(on, str, ...)		((on) ?											\
+		({LogBase(LOG_MODULE "I" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__); (0);})	\
 		: (0))
 
-#define ISPLogDebug(on, str, ...)		((on) ?														\
-		({LogBase(LOG_MODULE "D" LOG_FORMAT str, __LINE__, __func__, ##__VA_ARGS__); (0);})  \
+#define ISPLogDebug(on, str, ...)		((on) ?											\
+		({LogBase(LOG_MODULE "D" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__); (0);})	\
 		: (0))
 
 #define ILOGE(str, ...)	((LOG_ON) ? ISPLogError((LOG_LEVEL & LOG_ERROR_MASK), str, ##__VA_ARGS__) : (0))
