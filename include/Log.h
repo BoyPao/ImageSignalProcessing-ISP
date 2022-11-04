@@ -9,8 +9,8 @@
 #include "Utils.h"
 
 #define LOG_ON 1
-#define LOG_LEVEL (0x1 + 0x2 + 0x4)
-#define DBG_LEVEL (0x1)
+#define LOG_LEVEL (0x1 + 0x2 + 0x4 + 0x8)
+#define DBG_LEVEL (0x1 + 0x10)
 #define LOG_FOR_RELEASE
 
 #define LOG_BUFFER_SIZE				256
@@ -36,6 +36,7 @@ enum ISP_DBG_MASK {
 	DBG_FILE_MASK = DBG_BASE_MASK << 1,
 	DBG_LIST_MASK = DBG_BASE_MASK << 2,
 	DBG_INTF_MASK = DBG_BASE_MASK << 3,
+	DBG_MEMY_MASK = DBG_BASE_MASK << 4,
 };
 
 #ifdef LOG_FOR_RELEASE
@@ -73,3 +74,4 @@ enum ISP_DBG_MASK {
 #define ILOGDF(str, ...)	((DBG_LEVEL & DBG_FILE_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
 #define ILOGDL(str, ...)	((DBG_LEVEL & DBG_LIST_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
 #define ILOGDI(str, ...)	((DBG_LEVEL & DBG_INTF_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
+#define ILOGDM(str, ...)	((DBG_LEVEL & DBG_MEMY_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))

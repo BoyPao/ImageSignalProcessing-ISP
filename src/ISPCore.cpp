@@ -51,13 +51,14 @@ int main() {
 	ISPParamManager* pParamManager = nullptr;
 	FileManager* pFileManager = nullptr;
 	ISPListManager* pListManager = nullptr;
+	MemoryPool<char>* pBufferManager = nullptr;
 	int32_t numPixel = 0;
 	int32_t alignedW = 0;
 	int32_t bufferSize = 0;
-	std::shared_ptr<uint8_t> mipiRawData;
-	std::shared_ptr<uint16_t> rawData;
-	std::shared_ptr<uint16_t> bgrData;
-	std::shared_ptr<uint8_t> yuvData;
+	void* mipiRawData;
+	void* rawData;
+	void* bgrData;
+	void* yuvData;
 	Mat dst;
 	InputInfo inputInfo = { 0 };
 	OutputInfo outputInfo = { 0 };
@@ -86,10 +87,11 @@ int main() {
 		pParamManager = static_cast<ISPParamManager*>(core.GetParamManager());
 		pFileManager = static_cast<FileManager*>(core.GetFileManager());
 		pListManager = static_cast<ISPListManager*>(core.GetListManager());
-		if (!pParamManager || !pFileManager || !pListManager) {
+		pBufferManager = static_cast<MemoryPool<char>*>(core.GetBufferManager());
+		if (!pParamManager || !pFileManager || !pListManager || !pBufferManager) {
 			rt = ISP_FAILED;
-			ILOGE("ParamManager:%p FileManager:%p ListManager:%p",
-					pParamManager, pFileManager, pListManager);
+			ILOGE("ParamManager:%p FileManager:%p ListManager:%p BufferManager:%p",
+					pParamManager, pFileManager, pListManager, pBufferManager);
 		}
 	}
 
@@ -104,17 +106,17 @@ int main() {
 		ILOGI("Image size:%dx%d pixelNum:%d", mediaInfo.img.width, mediaInfo.img.height, numPixel);
 		ILOGI("Align (%d,%d) bufferSize:%d", alignedW, mediaInfo.img.height, bufferSize);
 
-		mipiRawData = std::shared_ptr<uint8_t>(new uint8_t[bufferSize], [] (uint8_t *p) { delete[] p; });
-		rawData		= std::shared_ptr<uint16_t>(new uint16_t[numPixel], [] (uint16_t *p) { delete[] p; });
-		bgrData		= std::shared_ptr<uint16_t>(new uint16_t[numPixel * 3], [] (uint16_t *p) { delete[] p; });
-		yuvData		= std::shared_ptr<uint8_t>(new uint8_t[numPixel * 3], [] (uint8_t *p) { delete[] p; });
+		mipiRawData = static_cast<void*>(pBufferManager->RequireBuffer(bufferSize));
+		rawData		= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * 2));
+		bgrData		= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * 3 * 2));
+		yuvData		= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * 3));
 		dst			= Mat(mediaInfo.img.height, mediaInfo.img.width, CV_8UC3, Scalar(0, 0, 0));
 		if (mipiRawData && rawData && bgrData && yuvData && !dst.empty()) {
-			memset(mipiRawData.get(), 0x0, bufferSize);
-			memset(rawData.get(), 0x0, numPixel);
-			memset(bgrData.get(), 0x0, numPixel * 3);
-			memset(yuvData.get(), 0x0, numPixel * 3);
-			ILOGDC("buffer addr(%p %p %p %p %p)", mipiRawData.get(), rawData.get(), bgrData.get(), yuvData.get(), dst.data);
+			memset((uint8_t*)mipiRawData, 0x0, bufferSize);
+			memset((uint16_t*)rawData, 0x0, numPixel);
+			memset((uint16_t*)bgrData, 0x0, numPixel * 3);
+			memset((uint8_t*)yuvData, 0x0, numPixel * 3);
+			ILOGDC("buffer addr(%p %p %p %p %p)", mipiRawData, rawData, bgrData, yuvData, dst.data);
 		}
 		else {
 			rt = ISP_MEMORY_ERROR;
@@ -142,7 +144,7 @@ int main() {
 	}
 
 	if (SUCCESS(rt)) {
-		rt = pListManager->CreateList(rawData.get(), bgrData.get(), yuvData.get(), dst.data, LIST_CFG_DEFAULT, &listId);
+		rt = pListManager->CreateList((uint16_t*)rawData, (uint16_t*)bgrData, (uint8_t*)yuvData, dst.data, LIST_CFG_DEFAULT, &listId);
 	}
 
 	if (SUCCESS(rt)) {
@@ -162,9 +164,9 @@ int main() {
 		for (int32_t frameCount = 1; frameCount <= frameNum; frameCount++) {
 			ILOGI("[%d]=========================== %d(%d) ==========================", listId, frameCount, frameNum);
 			if (SUCCESS(rt)) {
-				rt = pFileManager->ReadData(mipiRawData.get(), bufferSize);
+				rt = pFileManager->ReadData((uint8_t*)mipiRawData, bufferSize);
 				if (SUCCESS(rt)) {
-					rt = pFileManager->Mipi10decode((void*)mipiRawData.get(), (void*)rawData.get(), &mediaInfo.img);
+					rt = pFileManager->Mipi10decode((void*)mipiRawData, (void*)rawData, &mediaInfo.img);
 				}
 			}
 

@@ -11,6 +11,7 @@
 #include "FileManager.h"
 #include "ParamManager.h"
 #include "ISPListManager.h"
+#include "BufferManager.h"
 
 enum CORE_STATE {
 	CORE_IDLE = 0,
@@ -27,14 +28,14 @@ class ISPCore {
 		void* GetParamManager();
 		void* GetFileManager();
 		void* GetListManager();
+		void* GetBufferManager();
 
 	private:
 		std::shared_ptr<ISPParamManager> mParamMgr;
 		std::shared_ptr<FileManager> mFileMgr;
 		std::shared_ptr<InterfaceWrapper> mItfWrapper;
 		std::shared_ptr<ISPListManager> mListMgr;
-		//TODO: manage buffer
-		//std::shared_ptr<BufferManager> mBufferMgr;
+		std::shared_ptr<MemoryPool<char>> mBufferMgr;
 		CORE_STATE mState;
 };
 
@@ -79,6 +80,12 @@ ISPResult ISPCore::Init()
 		}
 		rt = mListMgr->Init(mParamMgr.get(), mItfWrapper.get());
 	}
+	
+	if (SUCCESS(rt)) {
+		if (!mBufferMgr) {
+			mBufferMgr = std::make_shared<MemoryPool<char>>();
+		}
+	}
 
 	if (SUCCESS(rt)) {
 		mState = CORE_INITED;
@@ -100,4 +107,9 @@ void* ISPCore::GetFileManager()
 void* ISPCore::GetListManager()
 {
 	return (mState == CORE_INITED) ? (void*) mListMgr.get() : nullptr;
+}
+
+void* ISPCore::GetBufferManager()
+{
+	return (mState == CORE_INITED) ? (void*) mBufferMgr.get() : nullptr;
 }
