@@ -27,7 +27,9 @@ using namespace cv;
 
 /* Set raw path here */
 #ifdef LINUX_SYSTEM
-#define INPUT_PATH "/home2/penghao/test_project/ISP/ISP/res/1MCC_IMG_20181229_001526_1.raw"
+//#define INPUT_PATH "/home2/penghao/test_project/ISP/ISP/res/1MCC_IMG_20181229_001526_1.raw"
+//#define INPUT_PATH "/home2/penghao/test_project/ISP/ISP/res/SS0VC0_V110_I0_SBGGR10P_4032x3024.raw"
+#define INPUT_PATH "/home2/penghao/test_project/ISP/ISP/res/CAM0_P210_BAYER_pBAA_4032X3024.raw"
 //#define INPUT_PATH "/home/penghao/HAO/test_project/ISP/ISP/res/20210103062220_packaged_4000x3000_0.raw"
 //#define INPUT_PATH "/home/penghao/HAO/test_project/ISP/ISP/res/PD_4096x768.raw"
 //#define INPUT_PATH "/home/penghao/HAO/test_project/ISP/ISP/res/4000_3000_unpackaged_GRBG.raw"
@@ -71,10 +73,10 @@ int main() {
 //	mediaInfo.type = IMAGE_AND_VIDEO_MEDIA;
 
 	/* Set raw info here */
-	mediaInfo.img.width			= 1920;
-	mediaInfo.img.height		= 1080;
+	mediaInfo.img.width			= 4032;
+	mediaInfo.img.height		= 3024;
 	mediaInfo.img.bitspp		= 10;
-	mediaInfo.img.stride		= 0;
+	mediaInfo.img.stride		= 32;
 	mediaInfo.img.rawFormat		= ANDROID_RAW10;
 	mediaInfo.img.bayerOrder	= BGGR;
 

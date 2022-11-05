@@ -424,7 +424,7 @@ ISPResult FileManager::Mipi10decode(void* src, void* dst, IMG_INFO* info)
 				ILOGE("Not support raw type:%d", info->rawFormat);
 				break;
 		}
-		ILOGI("finished");
+		ILOGI("MIPI decode finished");
 	}
 
 	return rt;

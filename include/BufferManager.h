@@ -7,6 +7,9 @@
 #include <vector>
 #include <list>
 #include "Utils.h"
+
+#define DBG_MEMORY 0
+
 #define MEM_BLK_L0_MAX_NUM 16
 #define MEM_BLK_L1_MAX_NUM 8
 #define MEM_BLK_L2_MAX_NUM 2
@@ -142,6 +145,8 @@ ISPResult MemoryPool<T>::ReleaseBlock(int32_t level, u_int32_t index)
 
 			while(mUsageInfo[level][index].busyList.begin() !=
 					mUsageInfo[level][index].busyList.end()) {
+				auto seg = mUsageInfo[level][index].busyList.end();
+				ILOGDM("%u is reverted", (--seg)->size);
 				mUsageInfo[level][index].busyList.pop_back();
 			}
 
@@ -149,7 +154,7 @@ ISPResult MemoryPool<T>::ReleaseBlock(int32_t level, u_int32_t index)
 			mUsageInfo[level][index].blockSize = 0;
 			mUsageInfo[level][index].busySize = 0;
 			mUsageInfo[level].erase(mUsageInfo[level].begin() + index);
-			ILOGDM("Level:%d index:%d released. Rest:%u", level, index, mUsageInfo[level].size());
+			ILOGDM("L%d B%d: released. Rest:%u", level, index, mUsageInfo[level].size());
 		} else {
 			rt = ISP_FAILED;
 			ILOGE("Fatal ERROR!");
@@ -285,7 +290,9 @@ T* MemoryPool<T>::RequireBuffer(size_t size)
 
 	if (SUCCESS(rt)) {
 		ILOGDM("%u is required", size);
+#if DBG_MEMORY
 		rt = PrintPool();
+#endif
 	}
 
 	return pBuffer;
@@ -364,7 +371,9 @@ T* MemoryPool<T>::RevertBuffer(T* pBuffer)
 
 	if (SUCCESS(rt)) {
 		ILOGDM("%u is reverted", size);
+#if DBG_MEMORY
 		rt = PrintPool();
+#endif
 	}
 
 	return pBuffer;
