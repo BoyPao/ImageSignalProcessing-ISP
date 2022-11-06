@@ -1,9 +1,9 @@
 // License: GPL-3.0-or-later
 /*
- * BoZhi common fuctions implementation.
+ * I/O helper.
  *
  * Copyright (c) 2019 Peng Hao <635945005@qq.com>
  */
 
-#include "BZUtils.h"
+#include "IOHelper.h"
 
