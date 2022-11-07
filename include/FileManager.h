@@ -10,11 +10,14 @@
 
 #include "Utils.h"
 #include "ISPVideo.h"
+#include "IOHelper.h"
 #ifdef LINUX_SYSTEM
 #include "BMP.h"
 #elif defined WIN32_SYSTEM
 #include <windows.h>
 #endif
+
+#define OUTPUT_FILE_TYPE_SIZE 4 /* size of 'bmp\0'/'avi\0' is 4 */
 
 class FileManager;
 
@@ -67,7 +70,7 @@ struct VideoThreadParam {
 	FileManager* pFileMgr;
 };
 
-class FileManager {
+class FileManager:public IOHelper {
 public:
 	FileManager();
 	~FileManager();
@@ -88,18 +91,24 @@ public:
 	ISPResult SaveVideoData(int32_t frameCount);
 	ISPResult DestroyVideo();
 	ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info);
+	int32_t Input(IO_INFO in);
+	ISPResult GetIOInfo(void* pInfo);
 
 private:
 	ISPResult ReadRawData(uint8_t* buffer, int32_t bufferSize);
 	ISPResult SaveBMPData(uint8_t* srcData, int32_t channels);
 	ISPResult SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData);
 	void WriteBMP(BYTE* data, int32_t channels);
+	void HelpMenu();
+	void SupportInfo();
+	int32_t CheckInput(IO_INFO ioInfo);
 
 	InputInfo mInputInfo;
 	OutputInfo mOutputInfo;
 	ISPState mState = Uninited;
 	std::unique_ptr<ISPVideo> mVideo;
 	VideoThreadParam mVTParam;
+	int32_t IOInfoFlag; /* 0: Dynamic info  1: Static info*/
 };
 
 void DumpDataInt(void* pData, ...

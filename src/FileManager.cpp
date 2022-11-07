@@ -6,11 +6,44 @@
  */
 
 #include "FileManager.h"
+#include <linux/videodev2.h>
+
+#define MIN_IO_PARAM_CNT 4
+
+struct ImgFmtInfo {
+	uint32_t fmt;
+	uint32_t bitWidth;
+	uint32_t cspace;
+	uint32_t order;
+	uint32_t dpt;
+	char info[20];
+};
+
+const ImgFmtInfo gSupportedFmt[] = {
+	{V4L2_PIX_FMT_SBGGR8,	8,	CS_Bayer,	BO_BGGR,	DPT_NUM,		"Raw8-bggr"				},
+	{V4L2_PIX_FMT_SGBRG8,	8,	CS_Bayer,	BO_GBRG,	DPT_NUM,		"Raw8-gbrg"				},
+	{V4L2_PIX_FMT_SGRBG8,	8,	CS_Bayer,	BO_GRBG,	DPT_NUM,		"Raw8-grbg"				},
+	{V4L2_PIX_FMT_SRGGB8,	8,	CS_Bayer,	BO_RGGB,	DPT_NUM,		"Raw8-rggb"				},
+	{V4L2_PIX_FMT_SBGGR10,	10, CS_Bayer,	BO_BGGR,	DPT_Unpackaged, "Raw10-bggr"		   	},
+	{V4L2_PIX_FMT_SGBRG10,	10, CS_Bayer,	BO_GBRG,	DPT_Unpackaged, "Raw10-gbrg"		   	},
+	{V4L2_PIX_FMT_SGRBG10,	10, CS_Bayer,	BO_GRBG,	DPT_Unpackaged, "Raw10-grbg"		   	},
+	{V4L2_PIX_FMT_SRGGB10,	10, CS_Bayer,	BO_RGGB,	DPT_Unpackaged, "Raw10-rggb"		   	},
+	{V4L2_PIX_FMT_SBGGR10P, 10, CS_Bayer,	BO_BGGR,	DPT_Packaged,	"Raw10-bggr-packed"  	},
+	{V4L2_PIX_FMT_SGBRG10P, 10, CS_Bayer,	BO_GBRG,	DPT_Packaged,	"Raw10-gbrg-packed"  	},
+	{V4L2_PIX_FMT_SGRBG10P, 10, CS_Bayer,	BO_GRBG,	DPT_Packaged,	"Raw10-grbg-packed"  	},
+	{V4L2_PIX_FMT_SRGGB10P, 10, CS_Bayer,	BO_RGGB,	DPT_Packaged,	"Raw10-rggb-packed"  	},
+	{V4L2_PIX_FMT_SBGGR12P, 12, CS_Bayer,	BO_BGGR,	DPT_Packaged,	"Raw12-bggr-packed"  	},
+	{V4L2_PIX_FMT_SGBRG12P, 12, CS_Bayer,	BO_GBRG,	DPT_Packaged,	"Raw12-gbrg-packed"  	},
+	{V4L2_PIX_FMT_SGRBG12P, 12, CS_Bayer,	BO_GRBG,	DPT_Packaged,	"Raw12-grbg-packed"  	},
+	{V4L2_PIX_FMT_SRGGB12P, 12, CS_Bayer,	BO_RGGB,	DPT_Packaged,	"Raw12-rggb-packed"  	},
+};
 
 FileManager::FileManager()
 {
 	memset(&mInputInfo, 0, sizeof(InputInfo));
 	memset(&mOutputInfo, 0, sizeof(OutputInfo));
+	IOInfoFlag = 0;
+
 	mState = Uninited;
 }
 
@@ -18,6 +51,7 @@ FileManager::~FileManager()
 {
 	memset(&mInputInfo, 0, sizeof(InputInfo));
 	memset(&mOutputInfo, 0, sizeof(OutputInfo));
+
 	mState = Uninited;
 }
 
@@ -26,6 +60,12 @@ ISPResult FileManager::Init()
 	ISPResult rt = ISP_SUCCESS;
 
 	mVTParam = { 0 };
+	if(!pDynamicInfo) {
+		rt = ISP_STATE_ERROR;
+		ILOGE("IO info buffer is null %d", rt);
+	} else {
+		memset(pDynamicInfo, 0, sizeof(MEDIA_INFO));
+	}
 
 	mState = Inited;
 
@@ -37,6 +77,12 @@ ISPResult FileManager::DeInit()
 	ISPResult rt = ISP_SUCCESS;
 
 	mVTParam = { 0 };
+	if(!pDynamicInfo) {
+		rt = ISP_STATE_ERROR;
+		ILOGE("IO info buffer is null %d", rt);
+	} else {
+		memset(pDynamicInfo, 0, sizeof(MEDIA_INFO));
+	}
 
 	mState = Uninited;
 
@@ -48,6 +94,8 @@ ISPResult FileManager::SetInputInfo(InputInfo info)
 	ISPResult rt = ISP_SUCCESS;
 
 	memcpy(&mInputInfo, &info, sizeof(InputInfo));
+	strcat(mInputInfo.path, INPUT_PATH);
+	strcat(mInputInfo.path, INPUT_NAME);
 
 	return rt;
 }
@@ -57,6 +105,10 @@ ISPResult FileManager::SetOutputInfo(OutputInfo info)
 	ISPResult rt = ISP_SUCCESS;
 
 	memcpy(&mOutputInfo, &info, sizeof(OutputInfo));
+	strcat(mOutputInfo.imgInfo.path, OUTPUT_PATH);
+	strcat(mOutputInfo.imgInfo.path, OUTPUT_IMG_NAME);
+	strcat(mOutputInfo.videoInfo.path, OUTPUT_PATH);
+	strcat(mOutputInfo.videoInfo.path, OUTPUT_VIDEO_NAME);
 
 	return rt;
 }
@@ -421,10 +473,13 @@ ISPResult FileManager::Mipi10decode(void* src, void* dst, IMG_INFO* info)
 				break;
 			case RAW_FORMAT_NUM:
 			default:
+				rt = ISP_INVALID_PARAM;
 				ILOGE("Not support raw type:%d", info->rawFormat);
 				break;
 		}
-		ILOGI("MIPI decode finished");
+		if (SUCCESS(rt)) {
+			ILOGI("MIPI decode finished");
+		}
 	}
 
 	return rt;
@@ -488,3 +543,325 @@ void DumpDataInt(void* pData, ...
 	}
 }
 
+ISPResult CheckFilePath(char* pPath, void* pIn, void* pOut)
+{
+	ISPResult rt = ISP_SUCCESS;
+
+	if (!pPath || !pIn || !pOut) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Null input %d", rt);
+	}
+
+	if (SUCCESS(rt)) {
+		if (!access(pPath, F_OK)) {
+			if (!access(pPath, R_OK)) {
+				ILOGI("File: %s", pPath);
+			} else {
+				rt = ISP_FAILED;
+				ILOGE("Lack of read right for %s", pPath);
+			}
+		} else {
+			rt = ISP_FAILED;
+			ILOGE("File not exit. %s", pPath);
+		}
+	}
+
+	if (SUCCESS(rt)) {
+		int32_t len = 0, dotIndex = 0;
+		while(pPath[len] != '\0') {
+			len++;
+		}
+		if (len >= FILE_PATH_MAX_SIZE) {
+			rt = ISP_INVALID_PARAM;
+			ILOGE("Input file path size:%d > %d", len, FILE_PATH_MAX_SIZE);
+		}
+		if (SUCCESS(rt)) {
+			dotIndex = len;
+			while(pPath[dotIndex] != '.' && dotIndex > 0) {
+				dotIndex--;
+			}
+			if (dotIndex + OUTPUT_FILE_TYPE_SIZE >= FILE_PATH_MAX_SIZE) {
+				rt = ISP_INVALID_PARAM;
+				ILOGE("Output file path size:%d > %d", dotIndex + 4, FILE_PATH_MAX_SIZE);
+			}
+		}
+		if (SUCCESS(rt)) {
+			memcpy(static_cast<InputInfo*>(pIn)->path, pPath, len);
+			memcpy(static_cast<OutputInfo*>(pOut)->imgInfo.path, pPath, dotIndex + 1);
+			memcpy(static_cast<OutputInfo*>(pOut)->imgInfo.path + dotIndex + 1, "bmp\0", OUTPUT_FILE_TYPE_SIZE);
+			memcpy(static_cast<OutputInfo*>(pOut)->videoInfo.path, pPath, dotIndex + 1);
+			memcpy(static_cast<OutputInfo*>(pOut)->videoInfo.path + dotIndex + 1, "avi\0", OUTPUT_FILE_TYPE_SIZE);
+		}
+	}
+
+	return rt;
+}
+
+ISPResult CheckImgSize(char* pCharW, char* pCharH, void* pInfo)
+{
+	ISPResult rt = ISP_SUCCESS;
+
+	if (!pCharW || !pCharH || !pInfo) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Input is null");
+	}
+
+	if (SUCCESS(rt)) {
+		int32_t w, h;
+		w = CharNum2IntNum(pCharW);
+		h = CharNum2IntNum(pCharH);
+
+		if (w < 0 || h < 0) {
+			rt = ISP_INVALID_PARAM;
+			ILOGE("Invalid Size: %sx%s", pCharW, pCharH);
+		} else {
+			static_cast<MEDIA_INFO*>(pInfo)->img.width = w;
+			static_cast<MEDIA_INFO*>(pInfo)->img.height = h;
+			ILOGI("Size: %dx%d", w, h);
+		}
+	}
+
+	return rt;
+}
+
+ISPResult CheckImgFmt(char* pCharFmt, void* pInfo)
+{
+	ISPResult rt = ISP_SUCCESS;
+	uint32_t len = 0;
+	uint32_t fmt = 0x0;
+
+	if (!pCharFmt || !pInfo) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Input is null");
+	}
+
+	if (SUCCESS(rt)) {
+		while(pCharFmt[len] != '\0') {
+			len++;
+		}
+		if (len + 1 < 4) {
+			rt = ISP_INVALID_PARAM;
+			ILOGE("Invalid format:%s", pCharFmt);
+		}
+	}
+
+	if (SUCCESS(rt)) {
+		fmt = len == 4 ?
+			v4l2_fourcc(pCharFmt[0], pCharFmt[1], pCharFmt[2], pCharFmt[3]) :
+			v4l2_fourcc(pCharFmt[0], pCharFmt[1], pCharFmt[2], ' ');
+		for (int32_t i = sizeof(gSupportedFmt)/sizeof(ImgFmtInfo) - 1; i >= 0; i--) {
+			if (gSupportedFmt[i].fmt == fmt) {
+				ILOGI("Format: %s (%c%c%c%c)", gSupportedFmt[i].info,
+						fmt, fmt >> 8, fmt >> 16, fmt >> 24);
+				static_cast<MEDIA_INFO*>(pInfo)->img.bitspp = gSupportedFmt[i].bitWidth;
+				static_cast<MEDIA_INFO*>(pInfo)->img.bayerOrder = gSupportedFmt[i].order;
+				static_cast<MEDIA_INFO*>(pInfo)->img.stride = 0; /* 0 as default */
+				if (fmt == V4L2_PIX_FMT_SBGGR10P ||
+						fmt == V4L2_PIX_FMT_SGBRG10P ||
+						fmt == V4L2_PIX_FMT_SGRBG10P ||
+						fmt == V4L2_PIX_FMT_SRGGB10P) {
+					static_cast<MEDIA_INFO*>(pInfo)->img.rawFormat = ANDROID_RAW10;
+				/* TODO: find v4l2 fmt for ORDINAL_RAW10 */
+//				} else if (fmt == ??)
+//					static_cast<MEDIA_INFO*>(pInfo)->img.rawFormat = ORDINAL_RAW10;
+				} else if (fmt == V4L2_PIX_FMT_SBGGR10 ||
+						fmt == V4L2_PIX_FMT_SGBRG10 ||
+						fmt == V4L2_PIX_FMT_SGRBG10 ||
+						fmt == V4L2_PIX_FMT_SRGGB10) {
+					static_cast<MEDIA_INFO*>(pInfo)->img.rawFormat = UNPACKAGED_RAW10_LSB;
+				} else {
+					static_cast<MEDIA_INFO*>(pInfo)->img.rawFormat = RAW_FORMAT_NUM;
+				}
+				break;
+			} else if (i == 0) {
+				rt = ISP_INVALID_PARAM;
+				ILOGE("Not support format:%s(0x%x)", pCharFmt, fmt);
+			}
+		}
+	}
+
+	return rt;
+}
+
+ISPResult CheckImgStride(char* pCharStride, void* pInfo)
+{
+	ISPResult rt = ISP_SUCCESS;
+
+	if (!pCharStride || !pInfo) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Input is null");
+	}
+
+	if (SUCCESS(rt)) {
+		int32_t stride;
+		stride = CharNum2IntNum(pCharStride);
+
+		if (stride < 0 || stride % 2 != 0) {
+			rt = ISP_INVALID_PARAM;
+			ILOGE("Invalid stride: %s", pCharStride);
+		} else {
+			static_cast<MEDIA_INFO*>(pInfo)->img.stride = stride;
+			ILOGI("stride: %u", stride);
+		}
+	}
+
+	return rt;
+}
+
+int FileManager::Input(IO_INFO in)
+{
+	ISPResult rt = ISP_SUCCESS;
+
+	ISPResult checkResult = (ISPResult)CheckInput(in);
+	if (checkResult == ISP_FAILED) {
+		IOInfoFlag = 1;
+		ILOGI("Use default I/O config");
+	} else {
+		rt = checkResult;
+	}
+
+	return rt;
+}
+
+int FileManager::CheckInput(IO_INFO ioInfo)
+{
+	ISPResult rt = ISP_SUCCESS;
+	MEDIA_INFO* pInfo = static_cast<MEDIA_INFO*>(pDynamicInfo);
+
+	if (!pInfo) {
+		rt = ISP_STATE_ERROR;
+		ILOGE("IO buffer is null! %d", rt);
+	}
+
+	for (int32_t i = 0; i < (ioInfo.argc < MAX_IO_PARAM_CNT ? ioInfo.argc : MAX_IO_PARAM_CNT); i++) {
+		if (ioInfo.argc <= 1) {
+			rt = ISP_FAILED;
+			break;
+		}
+		if (!ioInfo.argv[i]) {
+			rt = ISP_INVALID_PARAM;
+			ILOGE("Null param[%d]", i);
+			break;
+		}
+
+		if (SUCCESS(rt)) {
+			if (i == 1) {
+				if (!strcmp(ioInfo.argv[i], "-h") || !strcmp(ioInfo.argv[i], "-help")) {
+					HelpMenu();
+					rt = ISP_SKIP;
+					break;
+				}
+				if (!strcmp(ioInfo.argv[i], "-l") || !strcmp(ioInfo.argv[i], "-list")) {
+					SupportInfo();
+					rt = ISP_SKIP;
+					break;
+				}
+
+				if (ioInfo.argc - 1 < MIN_IO_PARAM_CNT) {
+					rt = ISP_INVALID_PARAM;
+					ILOGE("Insufficient param num:%d < expected param num:%d", ioInfo.argc - 1, MIN_IO_PARAM_CNT);
+					break;
+				}
+				rt = CheckFilePath(ioInfo.argv[i], &mInputInfo, &mOutputInfo);
+			}
+		}
+
+		if (SUCCESS(rt)) {
+			if (i == 3) {
+				rt = CheckImgSize(ioInfo.argv[i-1], ioInfo.argv[i], pDynamicInfo);
+			}
+		}
+		if (SUCCESS(rt)) {
+			if (i == 4) {
+				rt = CheckImgFmt(ioInfo.argv[i], pDynamicInfo);
+			}
+		}
+		if (SUCCESS(rt)) {
+			if (i == 5) {
+				rt = CheckImgStride(ioInfo.argv[i], pDynamicInfo);
+			}
+		}
+	}
+
+	return rt;
+}
+
+void FileManager::SupportInfo()
+{
+	ILOGI("==================================================================");
+	ILOGI(" Support Format List");
+	ILOGI("==================================================================");
+	ILOGI(" %-25s \t| %-10s \t| %s", "Image Format", "Bit Width", "FMT Param");
+	ILOGI("------------------------------------------------------------------");
+		for (uint32_t i = 0; i < sizeof(gSupportedFmt)/sizeof(ImgFmtInfo); i++) {
+			if (i > 0 && (
+					gSupportedFmt[i].bitWidth !=
+					gSupportedFmt[i-1].bitWidth ||
+					gSupportedFmt[i].cspace !=
+					gSupportedFmt[i-1].cspace ||
+					gSupportedFmt[i].dpt !=
+					gSupportedFmt[i-1].dpt
+					)) {
+	ILOGI("------------------------------------------------------------------");
+			}
+			ILOGI(" %-25s \t| %-10u \t| %c%c%c%c"
+#ifndef LOG_FOR_RELEASE
+			"(0x%-4x)"
+#endif
+				  , gSupportedFmt[i].info,
+					gSupportedFmt[i].bitWidth,
+					gSupportedFmt[i].fmt,
+					gSupportedFmt[i].fmt >> 8,
+					gSupportedFmt[i].fmt >> 16,
+					gSupportedFmt[i].fmt >> 24
+#ifndef LOG_FOR_RELEASE
+				  , gSupportedFmt[i].fmt
+#endif
+					);
+		}
+	ILOGI("------------------------------------------------------------------");
+	ILOGI(" \t");
+}
+
+void FileManager::HelpMenu()
+{
+	ILOGI("==================================================================");
+	ILOGI(" ISP v%d.%d", VERSION, SUB_VERSION);
+	ILOGI(" Copyright (c) 2019 Peng Hao <635945005@qq.com>");
+	ILOGI("==================================================================");
+	ILOGI(" ISP User Guide:");
+	ILOGI(" 1. To get help, use cmd: ./v -h or ./v -help");
+	ILOGI(" 2. To check format list, use cmd: ./v -l or ./v -list");
+	ILOGI(" 3. To view an image, use cmd like this: ./v $path $width $height $fmt ($stride)");
+	ILOGI(" \tpath\t: Target image path, like: /usr/bin/example.yuv");
+	ILOGI(" \twidth\t: Image width, like: 640");
+	ILOGI(" \theight\t: Image height, like: 480");
+	ILOGI(" \tfmt\t: Image format, like: NV21. Please check <FMT Param> column in format list.");
+	ILOGI(" \tstride\t: Optional param. If need, set stride for image");
+	ILOGI(" \t");
+}
+
+ISPResult FileManager::GetIOInfo(void* pInfo)
+{
+	ISPResult rt = ISP_SUCCESS;
+
+	if (!pInfo) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Null input! %d", rt);
+	}
+
+	if (SUCCESS(rt)) {
+		switch(IOInfoFlag) {
+			case 0:
+				memcpy(pInfo, pDynamicInfo, sizeof(MEDIA_INFO));
+				break;
+			case 1:
+				memcpy(pInfo, pStaticInfo, sizeof(MEDIA_INFO));
+				break;
+			default:
+				ILOGE("Invalid I/O flag:%d", IOInfoFlag);
+				break;
+		}
+	}
+	return rt;
+}

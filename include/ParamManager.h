@@ -56,12 +56,25 @@ enum RAW_FORMAT {
 	RAW_FORMAT_NUM
 };
 
-enum BAYER_ORDER {
-	RGGB = 0,
-	BGGR,
-	GRBG,
-	GBRG,
-	BAYER_ORDER_NUM
+enum ColorSpace {
+	CS_Bayer = 0,
+	CS_YUV,
+	CS_RGB,
+	CS_NUM
+};
+
+enum DataPackageType {
+	DPT_Packaged = 0,
+	DPT_Unpackaged,
+	DPT_NUM
+};
+
+enum BayerOrder {
+	BO_BGGR = 0,
+	BO_GBRG,
+	BO_GRBG,
+	BO_RGGB,
+	BO_NUM
 };
 
 struct IMG_INFO
@@ -71,7 +84,7 @@ struct IMG_INFO
 	int32_t bitspp;
 	int32_t stride;
 	RAW_FORMAT rawFormat;
-	BAYER_ORDER bayerOrder;
+	int32_t bayerOrder;
 };
 
 struct VIDEO_INFO

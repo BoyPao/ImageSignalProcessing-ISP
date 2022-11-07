@@ -25,28 +25,18 @@ using namespace cv;
 #define RESNAME "Result"
 #define TMPNAME "Temp"
 
-/* Set raw path here */
-#ifdef LINUX_SYSTEM
-//#define INPUT_PATH "/home2/penghao/test_project/ISP/ISP/res/1MCC_IMG_20181229_001526_1.raw"
-//#define INPUT_PATH "/home2/penghao/test_project/ISP/ISP/res/SS0VC0_V110_I0_SBGGR10P_4032x3024.raw"
-#define INPUT_PATH "/home2/penghao/test_project/ISP/ISP/res/CAM0_P210_BAYER_pBAA_4032X3024.raw"
-//#define INPUT_PATH "/home/penghao/HAO/test_project/ISP/ISP/res/20210103062220_packaged_4000x3000_0.raw"
-//#define INPUT_PATH "/home/penghao/HAO/test_project/ISP/ISP/res/PD_4096x768.raw"
-//#define INPUT_PATH "/home/penghao/HAO/test_project/ISP/ISP/res/4000_3000_unpackaged_GRBG.raw"
-//#define INPUT_PATH "/home/penghao/HAO/test_project/ISP/ISP/res/4000_3000_unpackaged_MSB_GRBG.raw"
-#define IMG_OUTPUT_PATH "/home2/penghao/test_project/ISP/ISP/res/out/img_output.bmp"
-#define VIDEO_OUTPUT_PATH "/home2/penghao/test_project/ISP/ISP/res/out/video_output.avi"
-#elif defined WIN32_SYSTEM
-#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\1MCC_IMG_20181229_001526_1.raw"
-//#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\20210103062220_packaged_4000x3000_0.raw"
-//#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\PD_4096x768.raw"
-//#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\4000_3000_unpackaged_GRBG.raw"
-//#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\4000_3000_unpackaged_MSB_GRBG.raw"
-#define IMG_OUTPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\img_output.bmp"
-#define VIDEO_OUTPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\out\\video_output.avi"
-#endif
+static ISPCore* gpCore = NULL;
+void SetCore(void* pCore)
+{
+	 gpCore = static_cast<ISPCore*>(pCore);
+}
 
-int main() {
+void* GetCore()
+{
+	return gpCore;
+}
+
+int main(int argc, char* argv[], char* envp[]) {
 	ISPResult rt = ISP_SUCCESS;
 
 	ISPCore core;
@@ -54,6 +44,7 @@ int main() {
 	FileManager* pFileManager = nullptr;
 	ISPListManager* pListManager = nullptr;
 	MemoryPool<char>* pBufferManager = nullptr;
+	IO_INFO ioInfo = { 0 };
 	int32_t numPixel = 0;
 	int32_t alignedW = 0;
 	int32_t bufferSize = 0;
@@ -68,22 +59,6 @@ int main() {
 	int32_t listId = 0;
 	int32_t frameNum = 0;
 
-	/* Set media type here */
-	mediaInfo.type = IMAGE_MEDIA;
-//	mediaInfo.type = IMAGE_AND_VIDEO_MEDIA;
-
-	/* Set raw info here */
-	mediaInfo.img.width			= 4032;
-	mediaInfo.img.height		= 3024;
-	mediaInfo.img.bitspp		= 10;
-	mediaInfo.img.stride		= 32;
-	mediaInfo.img.rawFormat		= ANDROID_RAW10;
-	mediaInfo.img.bayerOrder	= BGGR;
-
-	/* Set video info here */
-	mediaInfo.video.fps			= 30;
-	mediaInfo.video.frameNum	= 30;
-
 	rt = core.Init();
 	if (SUCCESS(rt)) {
 		pParamManager = static_cast<ISPParamManager*>(core.GetParamManager());
@@ -94,11 +69,25 @@ int main() {
 			rt = ISP_FAILED;
 			ILOGE("ParamManager:%p FileManager:%p ListManager:%p BufferManager:%p",
 					pParamManager, pFileManager, pListManager, pBufferManager);
+		} else {
+			ioInfo.argc = argc;
+			for (int32_t i = 0; i < ioInfo.argc; i++) {
+				ioInfo.argv[i] = argv[i];
+				ioInfo.envp[i] = envp[i];
+			}
+			rt = (ISPResult)pFileManager->Input(ioInfo);
+			if (rt == ISP_SKIP) {
+				return 0;
+			}
+			SetCore((void*)& core);
 		}
 	}
 
 	if (SUCCESS(rt)) {
-		rt = pParamManager->SetMediaInfo(&mediaInfo);
+		rt = pFileManager->GetIOInfo(&mediaInfo);
+		if (SUCCESS(rt)) {
+			rt = pParamManager->SetMediaInfo(&mediaInfo);
+		}
 	}
 
 	if (SUCCESS(rt)) {
@@ -127,15 +116,10 @@ int main() {
 	}
 
 	if (SUCCESS(rt)) {
-		strcpy(inputInfo.path, INPUT_PATH);
 		inputInfo.type = INPUT_FILE_TYPE_RAW;
-
-		strcpy(outputInfo.imgInfo.path, IMG_OUTPUT_PATH);
 		outputInfo.imgInfo.type = OUTPUT_FILE_TYPE_BMP;
 		rt = pParamManager->GetImgDimension(&outputInfo.imgInfo.width, &outputInfo.imgInfo.hight);
 		outputInfo.imgInfo.channels = dst.channels();
-
-		strcpy(outputInfo.videoInfo.path, VIDEO_OUTPUT_PATH);
 		outputInfo.videoInfo.type = OUTPUT_FILE_TYPE_AVI;
 		rt = pParamManager->GetVideoFPS(&outputInfo.videoInfo.fps);
 		rt = pParamManager->GetVideoFrameNum(&outputInfo.videoInfo.frameNum);
@@ -173,19 +157,9 @@ int main() {
 			}
 
 			if (SUCCESS(rt)) {
-				if (SUCCESS(rt)) {
-					/* ====================================================================== */
-					/* |	Process steps can be switch on/off here as you wish				| */
-					/* |	eg: ISPListMgr.EnableNodebyType(listId, PROCESS_CC);			| */
-					/* |	eg: ISPListMgr.DisableNodebyType(listId, PROCESS_GAMMA);		| */
-					/* ====================================================================== */
-				}
-
-				if (SUCCESS(rt)) {
-					rt = pListManager->StartById(listId);
-					if (!SUCCESS(rt)) {
-						ILOGE("Failed to start list:%d %d", listId, rt);
-					}
+				rt = pListManager->StartById(listId);
+				if (!SUCCESS(rt)) {
+					ILOGE("Failed to start list:%d %d", listId, rt);
 				}
 			}
 
@@ -235,7 +209,7 @@ int main() {
 			namedWindow(RESNAME, 0);
 			resizeWindow(RESNAME, showSizex, showSizey);
 			imshow(RESNAME, dst);
-			waitKey(0); //for the possibility of interacting with window, keep the value as 0.
+			waitKey(0); /* for the possibility of interacting with window, keep the value as 0 */
 		}
 	}
 

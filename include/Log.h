@@ -9,8 +9,8 @@
 #include "Utils.h"
 
 #define LOG_ON 1
-#define LOG_LEVEL (0x1 + 0x2 + 0x4 + 0x8)
-#define DBG_LEVEL (0x1 + 0x10)
+#define LOG_LEVEL (0x1 + 0x2 + 0x4)
+#define DBG_LEVEL (0x1)
 #define LOG_FOR_RELEASE
 
 #define LOG_BUFFER_SIZE				256

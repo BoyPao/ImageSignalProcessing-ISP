@@ -23,6 +23,7 @@ enum CORE_STATE {
 class ISPCore {
 	public:
 		ISPCore();
+		~ISPCore();
 		ISPResult Init();
 		ISPResult Config();
 		void* GetParamManager();
@@ -42,7 +43,10 @@ class ISPCore {
 ISPCore::ISPCore():
 	mState(CORE_IDLE)
 {
+}
 
+ISPCore::~ISPCore()
+{
 }
 
 ISPResult ISPCore::Init()
@@ -80,7 +84,7 @@ ISPResult ISPCore::Init()
 		}
 		rt = mListMgr->Init(mParamMgr.get(), mItfWrapper.get());
 	}
-	
+
 	if (SUCCESS(rt)) {
 		if (!mBufferMgr) {
 			mBufferMgr = std::make_shared<MemoryPool<char>>();
@@ -113,3 +117,6 @@ void* ISPCore::GetBufferManager()
 {
 	return (mState == CORE_INITED) ? (void*) mBufferMgr.get() : nullptr;
 }
+
+void SetCore(void* pCore);
+void* GetCore();

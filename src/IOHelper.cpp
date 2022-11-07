@@ -7,3 +7,20 @@
 
 #include "IOHelper.h"
 
+IOHelper::IOHelper()
+{
+	pStaticInfo = (void*)&defaultMediaInfo;
+	pDynamicInfo = (void*) new MEDIA_INFO;
+	if (!pDynamicInfo) {
+		ILOGE("Faild to malloc dynamic info buffer!");
+	}
+}
+
+IOHelper::~IOHelper()
+{
+	pStaticInfo = NULL;
+	if (pDynamicInfo) {
+		delete static_cast<MEDIA_INFO*>(pDynamicInfo);
+		pDynamicInfo = NULL;
+	}
+}

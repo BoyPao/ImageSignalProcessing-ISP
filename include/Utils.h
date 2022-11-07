@@ -30,6 +30,9 @@
 #elif defined WIN32_SYSTEM
 #endif
 
+#define VERSION 0
+#define SUB_VERSION 1
+
 #define SYSTEM_YEAR_OFFSET			1900
 #define SYSTEM_MONTH_OFFSET			1
 #define LOCAL_TIME_ZOOM_OFFSET		8	/* Beijing time zoom */
