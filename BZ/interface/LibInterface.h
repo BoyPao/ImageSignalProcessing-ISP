@@ -7,6 +7,7 @@
 
 #pragma once
 #include <stdint.h>
+#include <stdlib.h>
 
 #define CCM_WIDTH 3
 #define CCM_HEIGHT 3
@@ -98,6 +99,8 @@ struct LIB_PARAMS {
 struct ISP_UTILS_FUNCS {
 	void (*Log) (const char* str, ...);
 	void (*DumpDataInt) (void* pData, ...);
+	void* (*Alloc) (size_t size, ...);
+	void* (*Free) (void* pBuf, ...);
 };
 
 struct ISP_CALLBACKS {

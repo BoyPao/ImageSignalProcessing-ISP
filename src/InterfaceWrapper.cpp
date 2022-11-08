@@ -7,6 +7,7 @@
 
 #include "InterfaceWrapper.h"
 #include "FileManager.h"
+#include "ISPCore.h"
 #ifdef LINUX_SYSTEM
 #include <dlfcn.h>
 #elif defined WIN32_SYSTEM
@@ -250,6 +251,8 @@ ISPResult InterfaceWrapper::AlgInterfaceInit()
 			CBs.ISP_Notify = nullptr;
 			CBs.UtilsFuncs.Log = LogBase;
 			CBs.UtilsFuncs.DumpDataInt = DumpDataInt;
+			CBs.UtilsFuncs.Alloc = ISPAlloc;
+			CBs.UtilsFuncs.Free = ISPFree;
 			funcs[2]((void*)&CBs);
 		} else {
 			rt = ISP_FAILED;

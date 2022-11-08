@@ -2026,3 +2026,123 @@ BZResult BZ_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 	return rt;
 }
 
+#define VMASK_uchar(v) ((v) & 0xff)
+#define VFIX_uchar(v) ((v) > 255 ? 255 : ((v < 0) ? 0 : (v)))
+#define YUV2R(y, u ,v) VFIX_uchar((y) + ((360 * ((v) - 128)) >> 8))
+#define YUV2G(y, u ,v) VFIX_uchar((y) - (((88 * ((u) - 128) + 184 * ((v) - 128))) >> 8))
+#define YUV2B(y, u ,v) VFIX_uchar((y) + ((455 * ((u) - 128)) >> 8))
+#define YUV2R_uchar(y, u ,v) YUV2R(VMASK_uchar(y), VMASK_uchar(u), VMASK_uchar(v))
+#define YUV2G_uchar(y, u ,v) YUV2G(VMASK_uchar(y), VMASK_uchar(u), VMASK_uchar(v))
+#define YUV2B_uchar(y, u ,v) YUV2B(VMASK_uchar(y), VMASK_uchar(u), VMASK_uchar(v))
+/* YUV to RGB fallow below formulor	*/
+/* R = Y + 1.4075 * V;				*/
+/* G = Y - 0.3455 * U - 0.7169*V;	*/
+/* B = Y + 1.779 * U;				*/
+/*
+BZResult BZ_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+{
+	BZResult rt = BZ_SUCCESS;
+	(void)CBs;
+	uint32_t w = 0;
+	uint32_t h = 0;
+	uint32_t planeOffset = 0;
+	uint32_t planeOffsetUorV = 0;
+	uchar* pY = NULL;
+	uchar* pUV = NULL;
+	uchar u = 128;
+	uchar v = 128;
+	uchar* pTmp = NULL;
+	uchar* pR = NULL;
+	uchar* pG = NULL;
+	uchar* pB = NULL;
+
+	if (!src || !dst || !pParams) {
+		rt = BZ_INVALID_PARAM;
+		BLOGE("data is null! rt:%d", rt);
+	}
+
+	if (SUCCESS(rt)) {
+	w = pParams->info.width;
+	h = pParams->info.height;
+	if (gBZ->mISPCBs.UtilsFuncs.Alloc) {
+		gBZ->mISPCBs.UtilsFuncs.Alloc(w * h * 3);
+	}
+	pTmp = (src == dst) ?
+		VOID_RES(mResource)->GetMemPool()->RequireBuffer(GetOutputBufferSize()) :
+		static_cast<uchar*>(dst);
+
+	switch (mInInfo.bitWidth) {
+		case 8:
+			pY = static_cast<uchar*>(src);
+			if (mInInfo.fmt != V4L2_PIX_FMT_GREY) {
+				planeOffset = w * h;
+				planeOffsetUorV = w * h / 4;
+				pUV = pY + planeOffset;
+			}
+			break;
+		case 10:
+		case 12:
+		case 14:
+		case 16:
+			LOGW("TODO: support bw:%u", mInInfo.bitWidth);
+		default:
+			LOGE("Invalid input bit width:%u", mInInfo.bitWidth);
+			return;
+			break;
+	}
+
+	switch (mOutInfo.bitWidth) {
+		case 8:
+			planeOffset = mOutInfo.width * mOutInfo.height;
+			pR = pTmp;
+			pG = pR + planeOffset;
+			pB = pG + planeOffset;
+			break;
+		default:
+			LOGE("Invalid output bit width:%u", mOutInfo.bitWidth);
+			return;
+			break;
+	}
+
+	for (uint32_t row = 0 ; row < h; row += 2) {
+		for (uint32_t col = 0 ; col < w; col += 2) {
+			if (mInInfo.fmt == V4L2_PIX_FMT_NV12) {
+				u = pUV[row / 2 * w + col];
+				v = pUV[row / 2 * w + col + 1];
+			} else if (mInInfo.fmt == V4L2_PIX_FMT_NV21) {
+				u = pUV[row / 2 * w + col + 1];
+				v = pUV[row / 2 * w + col];
+			} else if (mInInfo.fmt == V4L2_PIX_FMT_YUV420) {
+				u = pUV[(row % 4 / 2 * w / 2) + row / 4 * w + col / 2];
+				v = pUV[planeOffsetUorV + (row % 4 / 2 * w / 2) + row / 4 * w + col / 2];
+			} else if (mInInfo.fmt == V4L2_PIX_FMT_YVU420) {
+				u = pUV[planeOffsetUorV + (row % 4 / 2 * w / 2) + row / 4 * w + col / 2];
+				v = pUV[(row % 4 / 2 * w / 2) + row / 4 * w + col / 2];
+			} else if (mInInfo.fmt == V4L2_PIX_FMT_GREY) {
+				u = 128;
+				v = 128;
+			}
+
+			pR[row * w + col]			= YUV2R_uchar(pY[row * w + col], u, v);
+			pR[row * w + col + 1]		= YUV2R_uchar(pY[row * w + col + 1], u, v);
+			pR[(row + 1) * w + col]		= YUV2R_uchar(pY[(row + 1) * w + col], u, v);
+			pR[(row + 1) * w + col + 1]	= YUV2R_uchar(pY[(row + 1) * w + col + 1], u, v);
+			pG[row * w + col]			= YUV2G_uchar(pY[row * w + col], u, v);
+			pG[row * w + col + 1]		= YUV2G_uchar(pY[row * w + col + 1], u, v);
+			pG[(row + 1) * w + col]		= YUV2G_uchar(pY[(row + 1) * w + col], u, v);
+			pG[(row + 1) * w + col + 1]	= YUV2G_uchar(pY[(row + 1) * w + col + 1], u, v);
+			pB[row * w + col]			= YUV2B_uchar(pY[row * w + col], u, v);
+			pB[row * w + col + 1]		= YUV2B_uchar(pY[row * w + col + 1], u, v);
+			pB[(row + 1) * w + col]		= YUV2B_uchar(pY[(row + 1) * w + col], u, v);
+			pB[(row + 1) * w + col + 1]	= YUV2B_uchar(pY[(row + 1) * w + col + 1], u, v);
+		}
+	}
+
+	if (src == dst) {
+		memcpy(dst, pTmp, w * h * 3);
+		pTmp = VOID_RES(mResource)->GetMemPool()->RevertBuffer(pTmp);
+	}
+
+	return rt;
+}
+*/
