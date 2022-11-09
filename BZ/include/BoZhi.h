@@ -12,6 +12,7 @@
 
 #include "LibInterface.h"
 #include "BZUtils.h"
+#include <cuchar>
 
 enum BZ_STATE {
 	BZ_STATE_NEW = 0,
@@ -30,9 +31,9 @@ public:
 	ISP_CALLBACKS const* GetCallbacks();
 	BZResult ExecuteCMD();
 	LIB_MSG mMsg;
+	ISP_CALLBACKS mISPCBs;
 
 private:
-	ISP_CALLBACKS mISPCBs;
 	BZ_STATE mState;
 };
 
@@ -40,3 +41,6 @@ int32_t WrapLibInit(void* pOPS);
 int32_t WrapLibDeInit();
 int32_t WrapRegistCallbacks(void* pOPS);
 void* WrapGetBoZhi();
+u_char* WrapAlloc(size_t size);
+u_char* WrapFree(u_char* pBuf);
+

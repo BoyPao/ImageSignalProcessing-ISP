@@ -109,6 +109,39 @@ void* WrapGetBoZhi()
 	return (void*)gBZ;
 }
 
+u_char* WrapAlloc(size_t size)
+{
+	BoZhi* pBZ = static_cast<BoZhi*>(WrapGetBoZhi());
+
+	if (!pBZ) {
+		BLOGE("Failed to get BZ!");
+		return NULL;
+	}
+
+	if (pBZ->mISPCBs.UtilsFuncs.Alloc) {
+		return static_cast<u_char*>(pBZ->mISPCBs.UtilsFuncs.Alloc(size));
+	} else {
+		return new u_char[size];
+	}
+}
+
+u_char* WrapFree(u_char* pBuf)
+{
+	BoZhi* pBZ = static_cast<BoZhi*>(WrapGetBoZhi());
+
+	if (!pBZ) {
+		BLOGE("Failed to get BZ!");
+		return pBuf;
+	}
+
+	if (pBZ->mISPCBs.UtilsFuncs.Alloc) {
+		return static_cast<u_char*>(pBZ->mISPCBs.UtilsFuncs.Free(pBuf));
+	} else {
+		delete[] pBuf;
+		return NULL;
+	}
+}
+
 BoZhi::BoZhi()
 {
 	mISPCBs = { 0 };

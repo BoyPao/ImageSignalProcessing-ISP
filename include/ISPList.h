@@ -13,7 +13,6 @@
 
 #define NODE_NAME_MAX_SZIE 15
 
-/* NODE */
 enum PROCESS_TYPE {
 	PROCESS_BLC = 0,
 	PROCESS_LSC,
@@ -26,11 +25,37 @@ enum PROCESS_TYPE {
 	PROCESS_TYPE_NUM
 };
 
+enum NEC_PROCESS_TYPE {
+	NEC_PROCESS_HEAD = PROCESS_TYPE_NUM + 1,
+	NEC_PROCESS_CST_RAW2RGB,
+	NEC_PROCESS_CST_RGB2YUV,
+	NEC_PROCESS_CST_YUV2RGB,
+	NEC_PROCESS_TYPE_NUM
+};
+
+const ALG_PROCESS_CMD gProcessCMD[NEC_PROCESS_TYPE_NUM] = 
+{
+	ALG_CMD_BLC,
+	ALG_CMD_LSC,
+	ALG_CMD_DEMOSAIC,
+	ALG_CMD_WB,
+	ALG_CMD_CC,
+	ALG_CMD_GAMMA,
+	ALG_CMD_WNR,
+	ALG_CMD_EE,
+	ALG_CMD_NUM,
+	ALG_CMD_NUM,
+	ALG_CMD_CTS_RAW2RGB,
+	ALG_CMD_CTS_RGB2YUV,
+	ALG_CMD_CTS_YUV2RGB,
+};
+
 enum NODE_SWITCH {
 	NODE_OFF = 0,
 	NODE_ON
 };
 
+/* NODE */
 struct ISP_NODE_PROPERTY {
 	char name[NODE_NAME_MAX_SZIE];
 	PROCESS_TYPE type;
@@ -176,36 +201,7 @@ ISPResult ISPNode<T1, T2>::Process(void* pItf)
 
 	if (SUCCESS(rt)) {
 		ILOGDL("%s:Buffer(in:%p out:%p)", name, pInputBuffer, pOutputBuffer);
-		switch (mProperty.type) {
-		case PROCESS_BLC:
-			rt = pIW->AlgProcess(ALG_CMD_BLC ,pInputBuffer, mProperty.enable);
-			break;
-		case PROCESS_LSC:
-			rt = pIW->AlgProcess(ALG_CMD_LSC ,pInputBuffer, mProperty.enable);
-			break;
-		case PROCESS_Demosaic:
-			rt = pIW->AlgProcess(ALG_CMD_DEMOSAIC ,pInputBuffer, mProperty.enable);
-			break;
-		case PROCESS_WB:
-			rt = pIW->AlgProcess(ALG_CMD_WB ,pInputBuffer, mProperty.enable);
-			break;
-		case PROCESS_CC:
-			rt = pIW->AlgProcess(ALG_CMD_CC ,pInputBuffer, mProperty.enable);
-			break;
-		case PROCESS_GAMMA:
-			rt = pIW->AlgProcess(ALG_CMD_GAMMA ,pInputBuffer, mProperty.enable);
-			break;
-		case PROCESS_WNR:
-			rt = pIW->AlgProcess(ALG_CMD_WNR ,pInputBuffer, mProperty.enable);
-			break;
-		case PROCESS_EE:
-			rt = pIW->AlgProcess(ALG_CMD_EE ,pInputBuffer, mProperty.enable);
-			break;
-		case PROCESS_TYPE_NUM:
-		default:
-			rt = ISP_FAILED;
-			break;
-		}
+		rt = pIW->AlgProcess(gProcessCMD[mProperty.type] ,pInputBuffer, mProperty.enable);
 	}
 
 	if (SUCCESS(rt)) {
@@ -220,14 +216,6 @@ ISPResult ISPNode<T1, T2>::Process(void* pItf)
 }
 
 /* NEC NODE */
-enum NEC_PROCESS_TYPE {
-	NEC_PROCESS_HEAD = PROCESS_TYPE_NUM + 1,
-	NEC_PROCESS_CST_RAW2RGB,
-	NEC_PROCESS_CST_RGB2YUV,
-	NEC_PROCESS_CST_YUV2RGB,
-	NEC_PROCESS_TYPE_NUM
-};
-
 struct ISP_NECNODE_PROPERTY {
 	char name[NODE_NAME_MAX_SZIE];
 	NEC_PROCESS_TYPE type;
@@ -319,24 +307,9 @@ ISPResult ISPNecNode<T1, T2>::Process(void* pItf)
 	}
 
 	if (SUCCESS(rt)) {
-		ILOGDL("%s:Buffer(in:%p out:%p)", name, this->pInputBuffer, this->pOutputBuffer);
-		switch (mProperty.type) {
-		case NEC_PROCESS_HEAD:
-			// currentlly nothing to be done here.
-			break;
-		case NEC_PROCESS_CST_RAW2RGB:
-			rt = pIW->AlgProcess(ALG_CMD_CTS_RAW2RGB, this->pInputBuffer, this->pOutputBuffer, mProperty.enable);
-			break;
-		case NEC_PROCESS_CST_RGB2YUV:
-			rt = pIW->AlgProcess(ALG_CMD_CTS_RGB2YUV, this->pInputBuffer, this->pOutputBuffer, mProperty.enable);
-			break;
-		case NEC_PROCESS_CST_YUV2RGB:
-			rt = pIW->AlgProcess(ALG_CMD_CTS_YUV2RGB, this->pInputBuffer, this->pOutputBuffer, mProperty.enable);
-			break;
-		case NEC_PROCESS_TYPE_NUM:
-		default:
-			rt = ISP_FAILED;
-			break;
+		if (mProperty.type != NEC_PROCESS_HEAD) { /* Now nothing todo with head */
+			ILOGDL("%s:Buffer(in:%p out:%p)", name, this->pInputBuffer, this->pOutputBuffer);
+			rt = pIW->AlgProcess(gProcessCMD[mProperty.type], this->pInputBuffer, this->pOutputBuffer, mProperty.enable);
 		}
 	}
 
