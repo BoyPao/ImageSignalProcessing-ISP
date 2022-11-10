@@ -47,7 +47,7 @@ struct OutputImgInfo {
 	OUTPUT_FILE_TYPE type;
 	int32_t size;
 	int32_t width;
-	int32_t hight;
+	int32_t height;
 	int32_t channels;
 };
 
@@ -55,7 +55,7 @@ struct OutputVideoInfo {
 	char path[FILE_PATH_MAX_SIZE];
 	OUTPUT_FILE_TYPE type;
 	int32_t width;
-	int32_t hight;
+	int32_t height;
 	int32_t fps;
 	int32_t frameNum;
 };

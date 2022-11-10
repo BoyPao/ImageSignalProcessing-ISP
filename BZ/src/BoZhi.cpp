@@ -134,11 +134,13 @@ u_char* WrapFree(u_char* pBuf)
 		return pBuf;
 	}
 
-	if (pBZ->mISPCBs.UtilsFuncs.Alloc) {
-		return static_cast<u_char*>(pBZ->mISPCBs.UtilsFuncs.Free(pBuf));
-	} else {
-		delete[] pBuf;
-		return NULL;
+	if (pBuf) {
+		if (pBZ->mISPCBs.UtilsFuncs.Alloc) {
+			return static_cast<u_char*>(pBZ->mISPCBs.UtilsFuncs.Free(pBuf));
+		} else {
+			delete[] pBuf;
+			return NULL;
+		}
 	}
 }
 

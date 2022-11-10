@@ -1918,80 +1918,39 @@ void Compress10to8(uint16_t* src, unsigned char* dst, int32_t size, bool need_42
 	}
 }
 
+#define VMASK_uchar(v) ((v) & 0xff)
+#define VFIX_uchar(v) ((v) > 255 ? 255 : ((v < 0) ? 0 : (v)))
+/* RGB to YUV fallow below formulor			*/
+/* Y =  0.299 * R + 0.587 * G + 0.114 * B;	*/
+/* U = -0.169 * R - 0.331 * G + 0.5 * B ;	*/
+/* V =  0.5 * R - 0.419 * G - 0.081 * B;	*/
+#define RGB2Y(r, g, b) VFIX_uchar((77 * (r) + 150 * (g) + 29 *(b)) >> 8)
+#define RGB2U(r, g, b) VFIX_uchar(((131 * (b) - 44 * (r) - 87 * (g)) >> 8) + 128)
+#define RGB2V(r, g, b) VFIX_uchar(((131 * (r) - 110 * (g) - 21 * (b)) >> 8) + 128)
+
+/* YUV to RGB fallow below formulor		*/
+/* R = Y + 1.4075 * V;					*/
+/* G = Y - (0.3455 * U + 0.7169 * V);	*/
+/* B = Y + 1.779 * U;					*/
+#define YUV2R(y, u ,v) VFIX_uchar((y) + ((360 * ((v) - 128)) >> 8))
+#define YUV2G(y, u ,v) VFIX_uchar((y) - ((88 * ((u) - 128) + 184 * ((v) - 128)) >> 8))
+#define YUV2B(y, u ,v) VFIX_uchar((y) + ((455 * ((u) - 128)) >> 8))
+#define YUV2R_uchar(y, u ,v) YUV2R(VMASK_uchar(y), VMASK_uchar(u), VMASK_uchar(v))
+#define YUV2G_uchar(y, u ,v) YUV2G(VMASK_uchar(y), VMASK_uchar(u), VMASK_uchar(v))
+#define YUV2B_uchar(y, u ,v) YUV2B(VMASK_uchar(y), VMASK_uchar(u), VMASK_uchar(v))
+
+
 BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult rt = BZ_SUCCESS;
-
-	if (!src || !dst || !pParams) {
-		rt = BZ_INVALID_PARAM;
-		BLOGE("Invalid input! rt:%d", rt);
-	}
-
-	int32_t width, height;
+	uint32_t w, h;
 	bool enable = true;
-	width = pParams->info.width;
-	height = pParams->info.height;
-	BLOGDA("width:%d height:%d", width, height);
-	if (width && height) {
-		va_list va_param;
-		va_start(va_param, CBs);
-		enable = static_cast<bool>(va_arg(va_param, int32_t));
-		va_end(va_param);
-		BLOGDA("enable:%d", enable);
-		uint16_t* bSrc = static_cast<uint16_t*>(src);
-		uint16_t* gSrc = static_cast<uint16_t*>(src) + width * height;
-		uint16_t* rSrc = static_cast<uint16_t*>(src) + 2 * width * height;
-		uint8_t* data8bit = nullptr;
-		uint8_t* b8bit = nullptr;
-		uint8_t* g8bit = nullptr;
-		uint8_t* r8bit = nullptr;
-
-		if (SUCCESS(rt)) {
-			data8bit = new uint8_t[3 * width * height];
-			if (data8bit) {
-				memset(data8bit, 0x0, 3 * width * height);
-				b8bit = data8bit;
-				g8bit = b8bit + width * height;
-				r8bit = g8bit + width * height;
-				Compress10to8(bSrc, b8bit, width * height, true);
-				Compress10to8(gSrc, g8bit, width * height, true);
-				Compress10to8(rSrc, r8bit, width * height, true);
-			}
-			else {
-				rt = BZ_MEMORY_ERROR;
-				BLOGE("cannot new buffer for 8 bits data! rt:%d", rt);
-			}
-		}
-
-		if (SUCCESS(rt)) {
-			int32_t i, j;
-			Mat YUVdst(height, width, CV_8UC3, Scalar(0, 0, 0));
-			for (i = 0; i < height; i++) {
-				for (j = 0; j < width; j++) {
-					YUVdst.data[i * width * 3 + 3 * j] = (unsigned int)b8bit[i * width + j];
-					YUVdst.data[i * width * 3 + 3 * j + 1] = (unsigned int)g8bit[i * width + j];
-					YUVdst.data[i * width * 3 + 3 * j + 2] = (unsigned int)r8bit[i * width + j];
-				}
-			}
-			if (enable) {
-				cvtColor(YUVdst, YUVdst, COLOR_BGR2YCrCb, 0);
-			}
-			memcpy(dst, YUVdst.data, 3 * width * height);
-			YUVdst.release();
-		}
-
-		if (data8bit) {
-			delete data8bit;
-		}
-	}
-
-	return rt;
-}
-
-BZResult BZ_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
-{
-	BZResult rt = BZ_SUCCESS;
-	(void)CBs;
+	uint32_t inOrder = RO_BGR;
+	uint32_t outOrder = YO_YUV;
+	uint16_t *pB16 = NULL, *pG16 = NULL, *pR16= NULL;
+	uint8_t *pB8 = NULL, *pG8 = NULL, *pR8= NULL;
+	uchar *pY = NULL, *pU = NULL, *pV = NULL;
+	uchar* pTmp = NULL;
 
 	if (!src || !dst || !pParams) {
 		rt = BZ_INVALID_PARAM;
@@ -1999,148 +1958,251 @@ BZResult BZ_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 	}
 
 	if (SUCCESS(rt)) {
-		int32_t width, height;
-		width = pParams->info.width;
-		height = pParams->info.height;
-		BLOGDA("width:%d height:%d", width, height);
-		if (width && height) {
-			Mat container(height, width, CV_8UC3, Scalar(0, 0, 0));
-			memcpy(container.data, src, width * height * container.channels());
-			cvtColor(container, container, COLOR_YCrCb2BGR, 0);
-			memcpy(dst, container.data, width * height * container.channels());
+		va_list va_param;
+		va_start(va_param, CBs);
+		enable = static_cast<bool>(va_arg(va_param, int32_t));
+		va_end(va_param);
+		BLOGDA("%s", enable ? "ON" : "OFF");
+		w = pParams->info.width;
+		h = pParams->info.height;
+		BLOGDA("%ux%u", w, h);
+	}
+
+	if (SUCCESS(rt)) {
+		if (inOrder == RO_BGR) {
+			pB16 = static_cast<uint16_t*>(src);
+			pG16 = static_cast<uint16_t*>(src) + w * h;
+			pR16 = static_cast<uint16_t*>(src) + 2 * w * h;
+		} else if (inOrder == RO_RGB) {
+			pR16 = static_cast<uint16_t*>(src);
+			pG16 = static_cast<uint16_t*>(src) + w * h;
+			pB16 = static_cast<uint16_t*>(src) + 2 * w * h;
+		} else {
+			BLOGE("Unsupported RGB order:%d", inOrder);
 		}
+	}
+
+	if (SUCCESS(rt)) {
+		if (outOrder == YO_YUV) {
+			pY = static_cast<uchar*>(dst);
+			pU = static_cast<uchar*>(dst) + w * h;
+			pV = static_cast<uchar*>(dst) + 2 *w * h;
+		} else if (outOrder == YO_YVU) {
+			pY = static_cast<uchar*>(dst);
+			pV = static_cast<uchar*>(dst) + w * h;
+			pU = static_cast<uchar*>(dst) + 2 * w * h;
+		} else {
+			BLOGE("Unsupported YUV order:%d", inOrder);
+		}
+	}
+
+	if (SUCCESS(rt)) {
+		pTmp = WrapAlloc(w * h * 3);
+		if (pTmp) {
+			pB8 = pTmp;
+			pG8 = pTmp + w * h;
+			pR8 = pTmp + 2 * w * h;
+			Compress10to8(pB16, pB8, w * h, true);
+			Compress10to8(pG16, pG8, w * h, true);
+			Compress10to8(pR16, pR8, w * h, true);
+			if (!enable) {
+				memcpy(dst, pTmp, w * h * 3);
+			} else {
+				for (uint32_t row = 0; row < h; row++) {
+					for (uint32_t col = 0; col < w; col++) {
+						pY[row * w + col] = RGB2Y(pR8[row * w + col], pG8[row * w + col], pB8[row * w + col]);
+						pU[row * w + col] = RGB2U(pR8[row * w + col], pG8[row * w + col], pB8[row * w + col]);
+						pV[row * w + col] = RGB2V(pR8[row * w + col], pG8[row * w + col], pB8[row * w + col]);
+					}
+				}
+
+				/* TMP: using Mat */
+				for (uint32_t row = 0; row < h; row++) {
+					for (uint32_t col = 0; col < w; col++) {
+						pTmp[row * w * 3 + col * 3] = static_cast<uchar*>(dst)[row * w + col];
+						pTmp[row * w * 3 + col * 3 + 1] = static_cast<uchar*>(dst)[w * h + row * w + col];
+						pTmp[row * w * 3 + col * 3 + 2] = static_cast<uchar*>(dst)[w * h * 2 + row * w + col];
+					}
+				}
+				memcpy(dst, pTmp, 3 * w * h);
+			}
+		}
+		else {
+			rt = BZ_MEMORY_ERROR;
+			BLOGE("cannot new buffer for 8 bits data! rt:%d", rt);
+		}
+
+		pTmp = WrapFree(pTmp);
+		pB8 = pG8 = pR8 = NULL;
 	}
 
 	return rt;
 }
 
-#define VMASK_uchar(v) ((v) & 0xff)
-#define VFIX_uchar(v) ((v) > 255 ? 255 : ((v < 0) ? 0 : (v)))
-#define YUV2R(y, u ,v) VFIX_uchar((y) + ((360 * ((v) - 128)) >> 8))
-#define YUV2G(y, u ,v) VFIX_uchar((y) - (((88 * ((u) - 128) + 184 * ((v) - 128))) >> 8))
-#define YUV2B(y, u ,v) VFIX_uchar((y) + ((455 * ((u) - 128)) >> 8))
-#define YUV2R_uchar(y, u ,v) YUV2R(VMASK_uchar(y), VMASK_uchar(u), VMASK_uchar(v))
-#define YUV2G_uchar(y, u ,v) YUV2G(VMASK_uchar(y), VMASK_uchar(u), VMASK_uchar(v))
-#define YUV2B_uchar(y, u ,v) YUV2B(VMASK_uchar(y), VMASK_uchar(u), VMASK_uchar(v))
-/* YUV to RGB fallow below formulor	*/
-/* R = Y + 1.4075 * V;				*/
-/* G = Y - 0.3455 * U - 0.7169*V;	*/
-/* B = Y + 1.779 * U;				*/
-/*
 BZResult BZ_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult rt = BZ_SUCCESS;
 	(void)CBs;
-	uint32_t w = 0;
-	uint32_t h = 0;
-	uint32_t planeOffset = 0;
-	uint32_t planeOffsetUorV = 0;
-	uchar* pY = NULL;
-	uchar* pU = NULL;
-	uchar* pV = NULL;
-	uchar u = 128;
-	uchar v = 128;
-	uchar* pTmp = NULL;
-	uchar* pR = NULL;
-	uchar* pG = NULL;
-	uchar* pB = NULL;
+	uint32_t w = 0, h = 0;
+	/* TODO: set dynamic value from param */
+	uint32_t inBpp = 8, outBpp = 8;
+	uint32_t inOrder = YO_YUV;
+	uint32_t outOrder = RO_BGR;
+	uint32_t dataStruct = YS_444;
+	uint32_t planeOffset = 0, planeOffsetUorV = 0;
+	uchar *pY = NULL, *pU = NULL, *pV = NULL;
+	uchar u = 128, v = 128;
+	uchar *pTmp = NULL;
+	uchar *pR = NULL, *pG = NULL, *pB = NULL;
 
 	if (!src || !dst || !pParams) {
 		rt = BZ_INVALID_PARAM;
 		BLOGE("data is null! rt:%d", rt);
-		return rt;
 	}
 
-	w = pParams->info.width;
-	h = pParams->info.height;
-	pTmp = (src == dst) ? WrapAlloc(w * h * 3) : static_cast<uchar*>(dst);
-
-//	switch (pParams->info.bitspp) {
-	switch (8) {
-		case 8:
-			pY = static_cast<uchar*>(src);
-			planeOffset = w * h;
-//			if (YUV420) {
-//				planeOffsetUorV = w * h / 4;
-//				pU = pY + planeOffset;
-//				pV = pU;
-//			} else if (YUV444) {
-				planeOffsetUorV = w * h;
-				pV = pU + planeOffsetUorV;
-//			}
-			break;
-		case 10:
-		case 12:
-		case 14:
-		case 16:
-			BLOGW("TODO: support bw:%u", pParams->info.bitspp);
-		default:
-			rt = BZ_INVALID_PARAM;
-			BLOGE("Invalid input bit width:%u", pParams->info.bitspp);
+	if (SUCCESS(rt)) {
+		bool enable = true;
+		va_list va_param;
+		va_start(va_param, CBs);
+		enable = static_cast<bool>(va_arg(va_param, int32_t));
+		BLOGDA("%s", enable ? "ON" : "OFF");
+		w = pParams->info.width;
+		h = pParams->info.height;
+		BLOGDA("%ux%u ", w, h);
+		va_end(va_param);
+		if (!enable) {
+			if (src != dst) {
+				if (inBpp == outBpp) { /* TODO: should be in&out size checking*/
+					memcpy(dst, src, w * h * 3);
+				} else {
+					rt = BZ_INVALID_PARAM;
+					BLOGE("Invalid in&out param");
+				}
+			}
 			return rt;
-			break;
-	}
-
-//	switch (pParams->info.bitspp) {
-	switch (8) {
-		case 8:
-			planeOffset = w * h;
-			pR = pTmp;
-			pG = pR + planeOffset;
-			pB = pG + planeOffset;
-			break;
-		default:
-			rt = BZ_INVALID_PARAM;
-			BLOGE("Invalid output bit width:%u", pParams->info.bitspp);
-			return rt;
-			break;
-	}
-
-//	if (YUV444) {
-	for (uint32_t row = 0 ; row < h; row++) {
-		for (uint32_t col = 0 ; col < w; col++) {
-			u = pU[row * w + col];
-			v = pV[row * w + col];
-			pR[row * w + col] = YUV2R_uchar(pY[row * w + col], u, v);
-			pG[row * w + col] = YUV2G_uchar(pY[row * w + col], u, v);
-			pB[row * w + col] = YUV2B_uchar(pY[row * w + col], u, v);
 		}
 	}
-//	} else if (YUV420) {
-//	for (uint32_t row = 0 ; row < h; row += 2) {
-//		for (uint32_t col = 0 ; col < w; col += 2) {
-//			if (mInInfo.fmt == V4L2_PIX_FMT_NV12) {
-//				u = pU[row / 2 * w + col];
-//				v = pU[row / 2 * w + col + 1];
-//			} else if (mInInfo.fmt == V4L2_PIX_FMT_NV21) {
-//				u = pU[row / 2 * w + col + 1];
-//				v = pU[row / 2 * w + col];
-//			} else if (mInInfo.fmt == V4L2_PIX_FMT_YUV420) {
-//				u = pU[(row % 4 / 2 * w / 2) + row / 4 * w + col / 2];
-//				v = pU[planeOffsetUorV + (row % 4 / 2 * w / 2) + row / 4 * w + col / 2];
-//			} else if (mInInfo.fmt == V4L2_PIX_FMT_YVU420) {
-//				u = pU[planeOffsetUorV + (row % 4 / 2 * w / 2) + row / 4 * w + col / 2];
-//				v = pU[(row % 4 / 2 * w / 2) + row / 4 * w + col / 2];
-//			} else if (mInInfo.fmt == V4L2_PIX_FMT_GREY) {
-//				u = 128;
-//				v = 128;
-//			}
-//
-//			pR[row * w + col]			= YUV2R_uchar(pY[row * w + col], u, v);
-//			pR[row * w + col + 1]		= YUV2R_uchar(pY[row * w + col + 1], u, v);
-//			pR[(row + 1) * w + col]		= YUV2R_uchar(pY[(row + 1) * w + col], u, v);
-//			pR[(row + 1) * w + col + 1]	= YUV2R_uchar(pY[(row + 1) * w + col + 1], u, v);
-//			pG[row * w + col]			= YUV2G_uchar(pY[row * w + col], u, v);
-//			pG[row * w + col + 1]		= YUV2G_uchar(pY[row * w + col + 1], u, v);
-//			pG[(row + 1) * w + col]		= YUV2G_uchar(pY[(row + 1) * w + col], u, v);
-//			pG[(row + 1) * w + col + 1]	= YUV2G_uchar(pY[(row + 1) * w + col + 1], u, v);
-//			pB[row * w + col]			= YUV2B_uchar(pY[row * w + col], u, v);
-//			pB[row * w + col + 1]		= YUV2B_uchar(pY[row * w + col + 1], u, v);
-//			pB[(row + 1) * w + col]		= YUV2B_uchar(pY[(row + 1) * w + col], u, v);
-//			pB[(row + 1) * w + col + 1]	= YUV2B_uchar(pY[(row + 1) * w + col + 1], u, v);
-//		}
-//	}
-//	}
+
+	if (SUCCESS(rt)) {
+		pTmp = (src == dst) ? WrapAlloc(w * h * 3) : static_cast<uchar*>(dst);
+
+		/* TMP: using Mat */
+		for (uint32_t row = 0; row < h; row++) {
+			for (uint32_t col = 0; col < w; col++) {
+				pTmp[row * w + col] = static_cast<uchar*>(src)[row * w * 3 + col * 3];
+				pTmp[w * h + row * w + col] = static_cast<uchar*>(src)[row * w * 3 + col * 3 + 1];
+				pTmp[2 * w * h + row * w + col] = static_cast<uchar*>(src)[row * w * 3 + col * 3 + 2];
+			}
+		}
+		memcpy(src, pTmp, w * h * 3);
+		memset(pTmp, 0, w * h * 3);
+	}
+
+	if (SUCCESS(rt)) {
+		switch (inBpp) {
+			case 8:
+				pY = static_cast<uchar*>(src);
+				planeOffset = w * h;
+				if (dataStruct == YS_444) {
+					planeOffsetUorV = w * h;
+					pU = (inOrder == YO_YUV) ? (pY + planeOffset) : (pY + 2 * planeOffset);
+					pV = (inOrder == YO_YUV) ? (pY + 2 * planeOffset) : (pY + planeOffset);
+				} else if (dataStruct == YS_420_NV) {
+					planeOffsetUorV = w * h / 4;
+					pU = (inOrder == YO_YUV) ? (pY + planeOffset) : (pY + planeOffset + 1);
+					pV = (inOrder == YO_YUV) ? (pY + planeOffset + 1) : (pY + planeOffset);
+				} else if (dataStruct == YS_420) {
+					planeOffsetUorV = w * h / 4;
+					pU = (inOrder == YO_YUV) ? (pY + planeOffset) : (pY + planeOffset + planeOffsetUorV);
+					pV = (inOrder == YO_YUV) ? (pY + planeOffset + planeOffsetUorV) : (pY + planeOffset);
+				} else if (dataStruct == YS_GREY) {
+					pU = NULL;
+					pV = NULL;
+				} else {
+					rt = BZ_INVALID_PARAM;
+					BLOGW("TODO: not support data struct:%u", dataStruct);
+				}
+				break;
+			case 10:
+			case 12:
+			case 14:
+			case 16:
+				BLOGW("TODO: not support bw:%u", pParams->info.bitspp);
+			default:
+				rt = BZ_INVALID_PARAM;
+				BLOGE("Invalid input bit width:%u", pParams->info.bitspp);
+				break;
+		}
+	}
+
+	if (SUCCESS(rt)) {
+		switch (outBpp) {
+			case 8:
+				planeOffset = w * h;
+				if (outOrder == RO_RGB) {
+					pR = pTmp;
+					pG = pR + planeOffset;
+					pB = pG + planeOffset;
+				} else if (outOrder == RO_BGR) {
+					pB = pTmp;
+					pG = pB + planeOffset;
+					pR = pG + planeOffset;
+				} else {
+					rt = BZ_INVALID_PARAM;
+					BLOGE("Invalid output order:%d", outOrder);
+				}
+				break;
+			default:
+				rt = BZ_INVALID_PARAM;
+				BLOGE("Invalid output bit width:%u", pParams->info.bitspp);
+				break;
+		}
+	}
+
+	if (SUCCESS(rt)) {
+		if (dataStruct == YS_444) {
+			for (uint32_t row = 0 ; row < h; row++) {
+				for (uint32_t col = 0 ; col < w; col++) {
+					u = pU[row * w + col];
+					v = pV[row * w + col];
+					pR[row * w + col] = YUV2R_uchar(pY[row * w + col], u, v);
+					pG[row * w + col] = YUV2G_uchar(pY[row * w + col], u, v);
+					pB[row * w + col] = YUV2B_uchar(pY[row * w + col], u, v);
+				}
+			}
+		} else if (dataStruct == YS_420 || dataStruct == YS_420_NV || dataStruct == YS_GREY) {
+			for (uint32_t row = 0 ; row < h; row += 2) {
+				for (uint32_t col = 0 ; col < w; col += 2) {
+					if (dataStruct == YS_420_NV) {
+						u = pU[row / 2 * w + col];
+						v = pV[row / 2 * w + col];
+					} else if (dataStruct == YS_420) {
+						u = pU[(row % 4 / 2 * w / 2) + row / 4 * w + col / 2];
+						v = pV[(row % 4 / 2 * w / 2) + row / 4 * w + col / 2];
+					} else if (dataStruct == YS_GREY) {
+						u = 128;
+						v = 128;
+					}
+
+					pR[row * w + col]			= YUV2R_uchar(pY[row * w + col], u, v);
+					pR[row * w + col + 1]		= YUV2R_uchar(pY[row * w + col + 1], u, v);
+					pR[(row + 1) * w + col]		= YUV2R_uchar(pY[(row + 1) * w + col], u, v);
+					pR[(row + 1) * w + col + 1]	= YUV2R_uchar(pY[(row + 1) * w + col + 1], u, v);
+					pG[row * w + col]			= YUV2G_uchar(pY[row * w + col], u, v);
+					pG[row * w + col + 1]		= YUV2G_uchar(pY[row * w + col + 1], u, v);
+					pG[(row + 1) * w + col]		= YUV2G_uchar(pY[(row + 1) * w + col], u, v);
+					pG[(row + 1) * w + col + 1]	= YUV2G_uchar(pY[(row + 1) * w + col + 1], u, v);
+					pB[row * w + col]			= YUV2B_uchar(pY[row * w + col], u, v);
+					pB[row * w + col + 1]		= YUV2B_uchar(pY[row * w + col + 1], u, v);
+					pB[(row + 1) * w + col]		= YUV2B_uchar(pY[(row + 1) * w + col], u, v);
+					pB[(row + 1) * w + col + 1]	= YUV2B_uchar(pY[(row + 1) * w + col + 1], u, v);
+				}
+			}
+		} else {
+			rt = BZ_INVALID_PARAM;
+			BLOGE("Invalid data struct:%u", dataStruct);
+		}
+	}
 
 	if (src == dst) {
 		memcpy(dst, pTmp, w * h * 3);
@@ -2149,4 +2211,3 @@ BZResult BZ_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 
 	return rt;
 }
-*/

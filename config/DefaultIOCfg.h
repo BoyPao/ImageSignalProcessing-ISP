@@ -26,4 +26,5 @@ const MEDIA_INFO defaultMediaInfo {
 	{30, 30},
 	/* media type: IMAGE_MEDIA, VIDEO_MEDIA */
 	IMAGE_MEDIA,
+//	IMAGE_AND_VIDEO_MEDIA,
 };

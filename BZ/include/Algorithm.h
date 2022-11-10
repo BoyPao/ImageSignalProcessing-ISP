@@ -51,3 +51,23 @@ void WrapCST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 void WrapCST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 void WrapCST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
 
+enum RGB_O {
+	RO_RGB = 0,
+	RO_BGR,
+	RO_NUM
+};
+
+enum YUV_ORDER {
+	YO_YUV = 0,
+	YO_YVU,
+	YO_NUM
+};
+
+enum YUV_STRUCT {
+	YS_444 = 0,
+	YS_422,
+	YS_420,
+	YS_420_NV,
+	YS_GREY,
+	YS_NUM
+};

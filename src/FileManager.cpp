@@ -229,7 +229,7 @@ ISPResult FileManager::SaveBMPData(uint8_t* srcData, int32_t channels)
 
 	if(SUCCESS(rt)) {
 		mOutputInfo.imgInfo.size = mOutputInfo.imgInfo.width *
-			mOutputInfo.imgInfo.hight *
+			mOutputInfo.imgInfo.height *
 			mOutputInfo.imgInfo.channels;
 		BYTE* BMPdata = new BYTE[mOutputInfo.imgInfo.size];
 		rt = SetBMP(srcData, mOutputInfo.imgInfo.channels, BMPdata);
@@ -257,7 +257,17 @@ ISPResult FileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
 	}
 
 	if (SUCCESS(rt)) {
-		memcpy(dstData, srcData, mOutputInfo.imgInfo.size);
+		if (channels == 1) {
+			memcpy(dstData, srcData, mOutputInfo.imgInfo.width * mOutputInfo.imgInfo.height);
+		} else if (channels == 3) {
+			for (int32_t row = 0; row < mOutputInfo.imgInfo.height; row++) {
+				for (int32_t col = 0; col < mOutputInfo.imgInfo.width; col++) {
+					dstData[row * mOutputInfo.imgInfo.width * 3 + col * 3] = srcData[row * mOutputInfo.imgInfo.width + col];
+					dstData[row * mOutputInfo.imgInfo.width * 3 + col * 3 + 1] = srcData[mOutputInfo.imgInfo.width * mOutputInfo.imgInfo.height + row * mOutputInfo.imgInfo.width + col];
+					dstData[row * mOutputInfo.imgInfo.width * 3 + col * 3 + 2] = srcData[2 * mOutputInfo.imgInfo.width * mOutputInfo.imgInfo.height + row * mOutputInfo.imgInfo.width + col];
+				}
+			}
+		}
 
 		/* Convertion for the head & tail of data array */
 		while (j < mOutputInfo.imgInfo.size - j) {
@@ -267,8 +277,8 @@ ISPResult FileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
 			j++;
 		}
 
-		/* mirror flip */
-		for (int32_t row = 0; row < mOutputInfo.imgInfo.hight; row++) {
+		/* Mirror flip */
+		for (int32_t row = 0; row < mOutputInfo.imgInfo.height; row++) {
 			int32_t col = 0;
 			while (col < channels * mOutputInfo.imgInfo.width - col) {
 				temp = dstData[row * channels * mOutputInfo.imgInfo.width + channels * mOutputInfo.imgInfo.width - col - 1];
@@ -293,7 +303,7 @@ void FileManager::WriteBMP(BYTE* data, int32_t channels)
 	memset(&header, 0, sizeof(BITMAPFILEHEADER));
 	memset(&headerinfo, 0, sizeof(BITMAPINFOHEADER));
 	headerinfo.biSize = sizeof(BITMAPINFOHEADER);
-	headerinfo.biHeight = mOutputInfo.imgInfo.hight;
+	headerinfo.biHeight = mOutputInfo.imgInfo.height;
 	headerinfo.biWidth = mOutputInfo.imgInfo.width;
 	headerinfo.biPlanes = 1;
 	headerinfo.biBitCount = (channels == 1) ? 8 : 24;

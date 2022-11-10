@@ -52,7 +52,7 @@ int main(int argc, char* argv[], char* envp[]) {
 	void* rawData;
 	void* bgrData;
 	void* yuvData;
-	Mat dst;
+	void* postData;
 	InputInfo inputInfo = { 0 };
 	OutputInfo outputInfo = { 0 };
 	MEDIA_INFO mediaInfo = { 0 };
@@ -98,16 +98,12 @@ int main(int argc, char* argv[], char* envp[]) {
 		ILOGI("Align (%d,%d) bufferSize:%d", alignedW, mediaInfo.img.height, bufferSize);
 
 		mipiRawData = static_cast<void*>(pBufferManager->RequireBuffer(bufferSize));
-		rawData		= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * 2));
-		bgrData		= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * 3 * 2));
+		rawData		= static_cast<void*>(pBufferManager->RequireBuffer(numPixel, sizeof(uint16_t)));
+		bgrData		= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * 3, sizeof(uint16_t)));
 		yuvData		= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * 3));
-		dst			= Mat(mediaInfo.img.height, mediaInfo.img.width, CV_8UC3, Scalar(0, 0, 0));
-		if (mipiRawData && rawData && bgrData && yuvData && !dst.empty()) {
-			memset((uint8_t*)mipiRawData, 0x0, bufferSize);
-			memset((uint16_t*)rawData, 0x0, numPixel);
-			memset((uint16_t*)bgrData, 0x0, numPixel * 3);
-			memset((uint8_t*)yuvData, 0x0, numPixel * 3);
-			ILOGDC("buffer addr(%p %p %p %p %p)", mipiRawData, rawData, bgrData, yuvData, dst.data);
+		postData	= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * 3));
+		if (mipiRawData && rawData && bgrData && yuvData && postData) {
+			ILOGDC("buffer addr(%p %p %p %p %p)", mipiRawData, rawData, bgrData, yuvData, postData);
 		}
 		else {
 			rt = ISP_MEMORY_ERROR;
@@ -118,24 +114,24 @@ int main(int argc, char* argv[], char* envp[]) {
 	if (SUCCESS(rt)) {
 		inputInfo.type = INPUT_FILE_TYPE_RAW;
 		outputInfo.imgInfo.type = OUTPUT_FILE_TYPE_BMP;
-		rt = pParamManager->GetImgDimension(&outputInfo.imgInfo.width, &outputInfo.imgInfo.hight);
-		outputInfo.imgInfo.channels = dst.channels();
+		rt = pParamManager->GetImgDimension(&outputInfo.imgInfo.width, &outputInfo.imgInfo.height);
+		outputInfo.imgInfo.channels = 3;
 		outputInfo.videoInfo.type = OUTPUT_FILE_TYPE_AVI;
 		rt = pParamManager->GetVideoFPS(&outputInfo.videoInfo.fps);
 		rt = pParamManager->GetVideoFrameNum(&outputInfo.videoInfo.frameNum);
-		rt = pParamManager->GetImgDimension(&outputInfo.videoInfo.width, &outputInfo.videoInfo.hight);
+		rt = pParamManager->GetImgDimension(&outputInfo.videoInfo.width, &outputInfo.videoInfo.height);
 
 		rt = pFileManager->SetInputInfo(inputInfo);
 		rt = pFileManager->SetOutputInfo(outputInfo);
 	}
 
 	if (SUCCESS(rt)) {
-		rt = pListManager->CreateList((uint16_t*)rawData, (uint16_t*)bgrData, (uint8_t*)yuvData, dst.data, LIST_CFG_DEFAULT, &listId);
+		rt = pListManager->CreateList((uint16_t*)rawData, (uint16_t*)bgrData, (uint8_t*)yuvData, (uint8_t*)postData, LIST_CFG_DEFAULT, &listId);
 	}
 
 	if (SUCCESS(rt)) {
 		if (mediaInfo.type >= VIDEO_MEDIA && mediaInfo.type < MEDIA_TYPE_NUM) {
-			pFileManager->CreateVideo(&dst);
+			pFileManager->CreateVideo(postData);
 		}
 	}
 
@@ -173,7 +169,7 @@ int main(int argc, char* argv[], char* envp[]) {
 
 	if (SUCCESS(rt)) {
 		if (mediaInfo.type == IMAGE_MEDIA || mediaInfo.type == IMAGE_AND_VIDEO_MEDIA) {
-			rt = pFileManager->SaveImgData(dst.data);
+			rt = pFileManager->SaveImgData((uint8_t*)postData);
 		}
 	}
 
@@ -203,18 +199,25 @@ int main(int argc, char* argv[], char* envp[]) {
 #endif
 		if (supportWin) {
 			int32_t showSizex, showSizey;
-
+			Mat dst = Mat(mediaInfo.img.height, mediaInfo.img.width, CV_8UC3, Scalar(0, 0, 0));
+			for (int32_t row = 0; row < mediaInfo.img.height; row++) {
+				for (int32_t col = 0; col < mediaInfo.img.width; col++) {
+					dst.data[row * mediaInfo.img.width * 3 + col * 3] = static_cast<uchar*>(postData)[row * mediaInfo.img.width + col];
+					dst.data[row * mediaInfo.img.width * 3 + col * 3 + 1] = static_cast<uchar*>(postData)[numPixel + row * mediaInfo.img.width + col];
+					dst.data[row * mediaInfo.img.width * 3 + col * 3 + 2] = static_cast<uchar*>(postData)[2 * numPixel + row * mediaInfo.img.width + col];
+				}
+			}
 			showSizey = winSizey * 2 / 3;
 			showSizex = showSizey * mediaInfo.img.width / mediaInfo.img.height;
 			namedWindow(RESNAME, 0);
 			resizeWindow(RESNAME, showSizex, showSizey);
 			imshow(RESNAME, dst);
 			waitKey(0); /* for the possibility of interacting with window, keep the value as 0 */
-		}
-	}
 
-	if (!dst.empty()) {
-		dst.release();
+			if (!dst.empty()) {
+				dst.release();
+			}
+		}
 	}
 
 	return 0;

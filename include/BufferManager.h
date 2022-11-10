@@ -59,7 +59,8 @@ class MemoryPool
 		MemoryPool();
 		~MemoryPool();
 
-		T* RequireBuffer(size_t size);
+		T* RequireBuffer(size_t sSize);
+		T* RequireBuffer(size_t sSize, size_t num);
 		T* RevertBuffer(T* pBuffer);
 
 	private:
@@ -204,14 +205,21 @@ ISPResult MemoryPool<T>::PrintPool()
 }
 
 template <typename T>
-T* MemoryPool<T>::RequireBuffer(size_t size)
+T* MemoryPool<T>::RequireBuffer(size_t sSize)
+{
+	return RequireBuffer(sSize, 1);
+}
+
+template <typename T>
+T* MemoryPool<T>::RequireBuffer(size_t sSize, size_t num)
 {
 	ISPResult rt = ISP_SUCCESS;
 	T* pBuffer = NULL;
+	size_t size = sSize * num;
 
 	if (!size || size > mMemBlockCfg[MEM_BLK_LEVEL_NUM - 1]->size) {
 		rt = ISP_INVALID_PARAM;
-		ILOGE("Require invalid size:%u", size);
+		ILOGE("Require invalid size:%u num:%u", size, num);
 	}
 
 	/* 1. Search valid segment */

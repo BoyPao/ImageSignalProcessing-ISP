@@ -35,18 +35,18 @@ public:
 	ISPResult Init(void* pData);
 	ISPResult CreateThread(void* pThreadParam);
 	ISPResult DestroyThread();
-	ISPResult GetSrc(cv::Mat** ppSrc);
 
-	ISPResult Record(cv::VideoWriter* pRecorder);
+	ISPResult Record(cv::VideoWriter* pRecorder, int32_t w, int32_t h);
 	ISPResult Lock();
 	ISPResult Unlock();
 	ISPResult Wait();
 	ISPResult Notify();
+	
+	void* pSrc;
 
 private:
 	ISPResult StatusTransform();
 
-	cv::Mat* pSrc;
 	VIDEO_STATE mState;
 
 	thread mThread;
