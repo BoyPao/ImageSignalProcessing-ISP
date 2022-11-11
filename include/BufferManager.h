@@ -18,7 +18,7 @@
 
 #define MEM_BLK_L0_MAX_NUM 16
 #define MEM_BLK_L1_MAX_NUM 8
-#define MEM_BLK_L2_MAX_NUM 2
+#define MEM_BLK_L2_MAX_NUM 4
 
 #define MEM_BLK_L0_SIZE 1024 * 1024
 #define MEM_BLK_L1_SIZE MEM_BLK_L0_MAX_NUM * MEM_BLK_L0_SIZE
@@ -221,6 +221,7 @@ int32_t MemoryPool<T>::PrintPool()
 	int32_t rt = ISP_SUCCESS;
 #if DBG_MEM_PRINT_ON
 	int32_t segCnt = 0;
+	ILOGDM("<<<<<<<<<<<<<<<<<<<<<< MEM STATE >>>>>>>>>>>>>>>>>>>>>>>");
 	for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
 		for (auto blk = mUsageInfo[level].begin(); blk != mUsageInfo[level].end(); blk++) {
 			ILOGDM("L%d B%d(%u) addr:%-8p size:%-8u used:%.2f%%",
