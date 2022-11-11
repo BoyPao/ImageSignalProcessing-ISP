@@ -13,7 +13,8 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/photo.hpp"
 
-#define DUMP_NEEDED false
+#define DBG_SHOW_ON true
+#define DBG_DUMP_ON false
 #ifdef LINUX_SYSTEM
 #define DUMP_PATH "~/HAO/test_project/ISP/ISP/res/out/output.txt"
 #elif defined WIN32_SYSTEM
@@ -303,64 +304,57 @@ void WrapCST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 	}
 }
 
-//EdgePreservedNR not used, it should be redeveloped
-/*ISPrt EdgePreservedNR(Mat YUV, Mat NRYUV, float arph, bool enable) {
-	ISPrt rt = ISP_SUCCESS;
+enum PixelDataType {
+	DT_UCHAR = 0,
+	DT_FLOAT,
+	DT_NUM
+};
 
-	if (enable == true) {
-		int32_t WIDTH;
-		int32_t HEIGHT;
-		rt = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
+void WrapIMGShow(void* pData, int32_t w, int32_t h, int32_t chNum, PixelDataType DT)
+{
+	int32_t type = chNum == 1 ? CV_8U: CV_8UC3;
+	
+	if (!pData) {
+		BLOGE("Input is null");
+		return;
+	}
 
-		int i, j;
-		Mat Edge, YUVEdge, NoEdgeNR, AYUV, BYUV;
-		Edge = YUV.clone();
-		YUVEdge = YUV.clone();
-		NoEdgeNR = YUV.clone();
-		AYUV = YUV.clone();
-		BYUV = YUV.clone();
-		Canny(YUV, Edge, 40, 90, 3);
+	if (chNum != 1 && chNum != 3) {
+		BLOGE("Invalid ch number:%d", chNum);
+		return;
+	}
 
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				YUVEdge.data[i * 3 * WIDTH + 3 * j] = YUVEdge.data[i * 3 * WIDTH + 3 * j] & Edge.data[i * WIDTH + j];
-				YUVEdge.data[i * 3 * WIDTH + 3 * j + 1] = YUVEdge.data[i * 3 * WIDTH + 3 * j + 1] & Edge.data[i * WIDTH + j];
-				YUVEdge.data[i * 3 * WIDTH + 3 * j + 2] = YUVEdge.data[i * 3 * WIDTH + 3 * j + 2] & Edge.data[i * WIDTH + j];
+	if (DT >= DT_NUM) {
+		BLOGE("Invalid data type:%d", DT);
+		return;
+	}
+
+	Mat img(h, w, type);
+	for (int32_t i = 0; i < w * h; i++) {
+		if (chNum == 1) {
+			if (DT == DT_UCHAR) {
+				img.data[i] = static_cast<uchar*>(pData)[i];
+			} else if (DT == DT_FLOAT) {
+				img.data[i] = (int)static_cast<float*>(pData)[i];
 			}
-		}
-		bilateralFilter(YUV, NoEdgeNR, 5, 5, 9, BORDER_DEFAULT);
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				NoEdgeNR.data[i * 3 * WIDTH + 3 * j] = NoEdgeNR.data[i * 3 * WIDTH + 3 * j] & (~Edge.data[i * WIDTH + j]);
-				NoEdgeNR.data[i * 3 * WIDTH + 3 * j + 1] = NoEdgeNR.data[i * 3 * WIDTH + 3 * j + 1] & (~Edge.data[i * WIDTH + j]);
-				NoEdgeNR.data[i * 3 * WIDTH + 3 * j + 2] = NoEdgeNR.data[i * 3 * WIDTH + 3 * j + 2] & (~Edge.data[i * WIDTH + j]);
-			}
-		}
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				AYUV.data[i * 3 * WIDTH + 3 * j] = NoEdgeNR.data[i * 3 * WIDTH + 3 * j] + YUVEdge.data[i * 3 * WIDTH + 3 * j];
-				AYUV.data[i * 3 * WIDTH + 3 * j + 1] = NoEdgeNR.data[i * 3 * WIDTH + 3 * j + 1] + YUVEdge.data[i * 3 * WIDTH + 3 * j + 1];
-				AYUV.data[i * 3 * WIDTH + 3 * j + 2] = NoEdgeNR.data[i * 3 * WIDTH + 3 * j + 2] + YUVEdge.data[i * 3 * WIDTH + 3 * j + 2];
-			}
-		}
-		blur(YUV, BYUV, Size(3, 3));
-		//namedWindow(TEMP, 0);
-		//resizeWindow(TEMP, Imgsizex, Imgsizey);
-		//imshow(TEMP, AYUV);
-
-		for (i = 0; i < HEIGHT; i++) {
-			for (j = 0; j < WIDTH; j++) {
-				NRYUV.data[i * 3 * WIDTH + 3 * j] = (unsigned int)AYUV.data[i * 3 * WIDTH + 3 * j] * arph + (unsigned int)BYUV.data[i * 3 * WIDTH + 3 * j] * (1 - arph);
-				NRYUV.data[i * 3 * WIDTH + 3 * j + 1] = (unsigned int)AYUV.data[i * 3 * WIDTH + 3 * j + 1] * arph + (unsigned int)BYUV.data[i * 3 * WIDTH + 3 * j + 1] * (1 - arph);
-				NRYUV.data[i * 3 * WIDTH + 3 * j + 2] = (unsigned int)AYUV.data[i * 3 * WIDTH + 3 * j + 2] * arph + (unsigned int)BYUV.data[i * 3 * WIDTH + 3 * j + 2] * (1 - arph);
-				//NRYUV.data[i * 3 * WIDTH + 3 * j + 1] =127;
-				//NRYUV.data[i * 3 * WIDTH + 3 * j + 2] =127;
+		} else if (chNum == 3) {
+			if (DT == DT_UCHAR) {
+				img.data[i * 3] = static_cast<uchar*>(pData)[i];
+				img.data[i * 3 + 1] = static_cast<uchar*>(pData)[w * h + i];
+				img.data[i * 3 + 2] = static_cast<uchar*>(pData)[w * h * 2 + i];
+			} else if (DT == DT_FLOAT) {
+				img.data[i * 3] = (int)static_cast<float*>(pData)[i];
+				img.data[i * 3 + 1] = (int)static_cast<float*>(pData)[w * h + i];
+				img.data[i * 3 + 2] = (int)static_cast<float*>(pData)[w * h * 2 + i];
 			}
 		}
 	}
 
-	return rt;
-}*/
+	namedWindow("Debug", 0);
+	resizeWindow("Debug", 640, 480);
+	imshow("Debug", img);
+	waitKey(0); /* for the possibility of interacting with window, keep the value as 0 */
+}
 
 //BF not used, it use opencvlib. it should be develop with self alg
 /*void BF(unsigned char* b, unsigned char* g, unsigned char* r, int dec, int Colorsigma, int Spacesigma, bool enable)
@@ -1014,9 +1008,10 @@ BZResult BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	if (SUCCESS(rt)) {
 		rt = DemosaicInterpolation(pChannel1, pChannel2, pChannel3,
 				width, height, bayerOrder);
-//		FirstPixelInsertProcess(pChannel1, pChannel1, width, height);
-//		TwoGPixelInsertProcess(pChannel2, pChannel2, width, height);
-//		LastPixelInsertProcess(pChannel3, pChannel3, width, height);
+		/* Preserve original method for understanding */
+		/* FirstPixelInsertProcess(pChannel1, pChannel1, width, height);*/
+		/* TwoGPixelInsertProcess(pChannel2, pChannel2, width, height); */
+		/* LastPixelInsertProcess(pChannel3, pChannel3, width, height); */
 	}
 
 	return rt;
@@ -1309,334 +1304,202 @@ Mat WDT(const Mat& _src, WAVELET_TYPE type, const int _level)
 	return dst;
 }
 
-
-
-Mat getim(Mat src, int32_t WIDTH, int32_t HEIGHT,
-	int depth, int channel,
-	int strength1, int strength2, int strength3)
+BZResult WaveletDecomposition(void* src, void* dst, int32_t bufW, int32_t bufH, int32_t depth)
 {
-	int i, j;
-	Mat im, im1, im2, im3, im4, im5, im6, temp, im11, im12, im13, im14, imi, imd, imr, tempHL;
-	imr = Mat::zeros(src.rows, src.cols, CV_32F);
-	imd = Mat::zeros(src.rows, src.cols, CV_32F);
-	Mat imL11, imL12, imL13, imL21, imL22, imL23;
+	BZResult rt = BZ_SUCCESS;
 
-	float a, b, c, d;
+	float *pT = NULL, *pB = NULL;
+	float *pLT = NULL, *pRT = NULL, *pLB = NULL, *pRB = NULL;
+	float *pSrc = static_cast<float*>(src);
+	float *pDst = static_cast<float*>(dst);
+	int32_t quartW, quartH, ROIW, ROIH;
 
-	im = src.clone(); //Load image in Gray Scale
-	imi = Mat::zeros(im.rows, im.cols, CV_8U);
-	im.copyTo(imi);
-
-	im.convertTo(im, CV_32F, 1.0, 0.0);
-
-	int redepth = 1;
-
-	//--------------Decomposition-------------------
-	while (redepth - 1 < depth) {
-
-
-		im1 = Mat::zeros(im.rows / 2, im.cols, CV_32F);
-		im2 = Mat::zeros(im.rows / 2, im.cols, CV_32F);
-		im3 = Mat::zeros(im.rows / 2, im.cols / 2, CV_32F);
-		im4 = Mat::zeros(im.rows / 2, im.cols / 2, CV_32F);
-		im5 = Mat::zeros(im.rows / 2, im.cols / 2, CV_32F);
-		im6 = Mat::zeros(im.rows / 2, im.cols / 2, CV_32F);
-
-
-		//L1 H and L
-		for (int rcnt = 0; rcnt < im.rows; rcnt += 2)
-		{
-			for (int ccnt = 0; ccnt < im.cols; ccnt++)
-			{
-
-				a = im.at<float>(rcnt, ccnt);
-				b = im.at<float>(rcnt + 1, ccnt);
-				c = (a + b) * 0.707;
-				d = (a - b) * 0.707;
-				int _rcnt = rcnt / 2;
-				im1.at<float>(_rcnt, ccnt) = c;
-				im2.at<float>(_rcnt, ccnt) = d;
-			}
-		}
-
-
-		//L1 HH and HL
-		for (int rcnt = 0; rcnt < im.rows / 2; rcnt++)
-		{
-			for (int ccnt = 0; ccnt < im.cols; ccnt += 2)
-			{
-
-				a = im1.at<float>(rcnt, ccnt);
-				b = im1.at<float>(rcnt, ccnt + 1);
-				c = (a + b) * 0.707;
-				d = (a - b) * 0.707;
-				int _ccnt = ccnt / 2;
-				im3.at<float>(rcnt, _ccnt) = c;
-				im4.at<float>(rcnt, _ccnt) = d;
-			}
-		}
-
-		//L1 LH and LL
-		for (int rcnt = 0; rcnt < im.rows / 2; rcnt++)
-		{
-			for (int ccnt = 0; ccnt < im.cols; ccnt += 2)
-			{
-
-				a = im2.at<float>(rcnt, ccnt);
-				b = im2.at<float>(rcnt, ccnt + 1);
-				c = (a + b) * 0.707;
-				d = (a - b) * 0.707;
-				int _ccnt = ccnt / 2;
-				im5.at<float>(rcnt, _ccnt) = c;
-				im6.at<float>(rcnt, _ccnt) = d;
-			}
-		}
-
-		for (i = 0; i < src.rows / (pow(2, redepth)); i++) {
-			for (j = 0; j < src.cols / (pow(2, redepth)); j++) {
-				imd.at<float>(i, j) = im3.at<float>(i, j);
-				imd.at<float>(i, j + src.cols / (pow(2, redepth))) = im4.at<float>(i, j);
-				imd.at<float>(i + src.rows / (pow(2, redepth)), j) = im5.at<float>(i, j);
-				imd.at<float>(i + src.rows / (pow(2, redepth)), j + src.cols / (pow(2, redepth))) = im6.at<float>(i, j);
-			}
-		}
-
-
-
-		im = im3.clone();
-		if (redepth == 1) {
-			imL11 = im4.clone();
-			imL12 = im5.clone();
-			imL13 = im6.clone();
-		}
-		if (redepth == 2) {
-			imL21 = im4.clone();
-			imL22 = im5.clone();
-			imL23 = im6.clone();
-		}
-		redepth += 1;
+	if (!src || !dst) {
+		rt = BZ_INVALID_PARAM;
+		BLOGE("Invalid input");
 	}
 
-	//---------------------------------NR-------------------------------------
-	// 高频降噪
-	// 1/4
-
-	for (i = 0; i < imL11.rows; i++) {
-		for (j = 0; j < imL11.cols; j++) {
-			if (channel == 0) {//Lunma noise
-				if (imL11.at<float>(i, j) < strength1)
-					imL11.at<float>(i, j) = imL11.at<float>(i, j) / 2;
-			}
-			else {//Color noise
-				if (imL11.at<float>(i, j) < strength1)
-					imL11.at<float>(i, j) = imL11.at<float>(i, j) / 2;
-			}
+	if (SUCCESS(rt)) {
+		quartW = bufW / pow(2, depth);
+		quartH = bufH / pow(2, depth);
+		ROIW = quartW * 2;
+		ROIH = quartH * 2;
+		if (ROIW > bufW || ROIH > bufH) {
+			rt = BZ_INVALID_PARAM;
+			BLOGE("Oversize: ROI(%dx%d) > buffer(%dx%d) depth:%d ", ROIW, ROIH, bufW, bufH, depth);
 		}
 	}
 
-	for (i = 0; i < imL12.rows; i++) {
-		for (j = 0; j < imL12.cols; j++) {
-			if (channel == 0) {//Lunma noise
-				if (imL11.at<float>(i, j) < strength2)
-					imL11.at<float>(i, j) = imL11.at<float>(i, j) / 2;
+	if (SUCCESS(rt)) {
+		BLOGDA("ROI(%dx%d) QUART(%dx%d) depth:%d", ROIW, ROIH, quartW, quartH, depth);
+		pT = static_cast<float*>(WrapAlloc(ROIW * ROIH / 2, sizeof(float)));
+		pB = static_cast<float*>(WrapAlloc(ROIW * ROIH / 2, sizeof(float)));
+		pLT = static_cast<float*>(WrapAlloc(quartW * quartH, sizeof(float)));
+		pLB = static_cast<float*>(WrapAlloc(quartW * quartH, sizeof(float)));
+		pRT = static_cast<float*>(WrapAlloc(quartW * quartH, sizeof(float)));
+		pRB = static_cast<float*>(WrapAlloc(quartW * quartH, sizeof(float)));
+
+		for (int32_t row = 0; row < ROIH; row += 2) {
+			for (int32_t col = 0; col < ROIW; col++) {
+				pT[row / 2 * ROIW + col] = (pSrc[row * bufW + col] + pSrc[(row + 1) * bufW + col]) * 0.707;
+				pB[row / 2 * ROIW + col] = (pSrc[row * bufW + col] - pSrc[(row + 1) * bufW + col]) * 0.707;
 			}
-			else {//Color noise
-				if (imL12.at<float>(i, j) < strength2)
-					imL12.at<float>(i, j) = imL12.at<float>(i, j) / 2;
+		}
+
+		for (int32_t row = 0; row < quartH; row++) {
+			for (int32_t col = 0; col < ROIW; col += 2) {
+				pLT[row * quartW + col / 2] = (pT[row * ROIW + col] + pT[row * ROIW + col + 1]) * 0.707;
+				pRT[row * quartW + col / 2] = (pT[row * ROIW + col] - pT[row * ROIW + col + 1]) * 0.707;
+
+				pLB[row * quartW + col / 2] = (pB[row * ROIW + col] + pB[row * ROIW + col + 1]) * 0.707;
+				pRB[row * quartW + col / 2] = (pB[row * ROIW + col] - pB[row * ROIW + col + 1]) * 0.707;
 			}
+		}
+
+		for (int32_t row = 0; row < quartH; row ++) {
+			memcpy(pDst + row * bufW, pLT + row * quartW, quartW * sizeof(float));
+			memcpy(pDst + row * bufW + quartW, pRT + row * quartW, quartW * sizeof(float));
+			memcpy(pDst + (quartH + row) * bufW, pLB + row * quartW, quartW * sizeof(float));
+			memcpy(pDst + (quartH + row) * bufW + quartW, pRB + row * quartW, quartW * sizeof(float));
+		}
+
+		pT = static_cast<float*>(WrapFree((void*)pT));
+		pB = static_cast<float*>(WrapFree((void*)pB));
+		pLT = static_cast<float*>(WrapFree((void*)pLT));
+		pLB = static_cast<float*>(WrapFree((void*)pLB));
+		pRT = static_cast<float*>(WrapFree((void*)pRT));
+		pRB = static_cast<float*>(WrapFree((void*)pRB));
+	}
+
+	return rt;
+}
+
+BZResult WaveletRecomposition(void* src, void* dst, int32_t bufW, int32_t bufH, int32_t depth)
+{
+	BZResult rt = BZ_SUCCESS;
+
+	float *pT = NULL, *pB = NULL;
+	float *pLT = NULL, *pRT = NULL, *pLB = NULL, *pRB = NULL;
+	float *pSrc = static_cast<float*>(src);
+	float *pDst = static_cast<float*>(dst);
+	int32_t quartW, quartH, ROIW, ROIH;
+
+	if (!src || !dst) {
+		rt = BZ_INVALID_PARAM;
+		BLOGE("Invalid input");
+	}
+
+	if (SUCCESS(rt)) {
+		quartW = bufW / pow(2, depth);
+		quartH = bufH / pow(2, depth);
+		ROIW = quartW * 2;
+		ROIH = quartH * 2;
+		if (ROIW > bufW || ROIH > bufH) {
+			rt = BZ_INVALID_PARAM;
+			BLOGE("Oversize: ROI(%dx%d) > buffer(%dx%d) depth:%d ", ROIW, ROIH, bufW, bufH, depth);
 		}
 	}
 
-	for (i = 0; i < imL13.rows; i++) {
-		for (j = 0; j < imL13.cols; j++) {
-			if (channel == 0) {//Lunma noise
-				if (imL11.at<float>(i, j) < strength3)
-					imL11.at<float>(i, j) = imL11.at<float>(i, j) / 2;
-			}
-			else {//Color noise
-				if (imL13.at<float>(i, j) < strength3)
-					imL13.at<float>(i, j) = imL13.at<float>(i, j) / 5;
-			}
-		}
-	}
-	// 1/16
+	if (SUCCESS(rt)) {
+		BLOGDA("ROI(%dx%d) QUART(%dx%d) depth:%d", ROIW, ROIH, quartW, quartH, depth);
+		pT = static_cast<float*>(WrapAlloc(ROIW * ROIH / 2, sizeof(float)));
+		pB = static_cast<float*>(WrapAlloc(ROIW * ROIH / 2, sizeof(float)));
+		pLT = static_cast<float*>(WrapAlloc(quartW * quartH, sizeof(float)));
+		pLB = static_cast<float*>(WrapAlloc(quartW * quartH, sizeof(float)));
+		pRT = static_cast<float*>(WrapAlloc(quartW * quartH, sizeof(float)));
+		pRB = static_cast<float*>(WrapAlloc(quartW * quartH, sizeof(float)));
 
-	for (i = 0; i < imL21.rows; i++) {
-		for (j = 0; j < imL21.cols; j++) {
-			if (channel == 0) {//Lunma noise
-				if (imL11.at<float>(i, j) < strength1)
-					imL11.at<float>(i, j) = imL11.at<float>(i, j) / 2;
-			}
-			else {//Color noise
-				if (imL21.at<float>(i, j) < strength1)
-					imL21.at<float>(i, j) = imL21.at<float>(i, j) / 2;
-			}
+		for (int32_t row = 0; row < quartH; row ++) {
+			memcpy(pLT + row * quartW, pSrc + row * bufW, quartW * sizeof(float));
+			memcpy(pRT + row * quartW, pSrc + row * bufW + quartW, quartW * sizeof(float));
+			memcpy(pLB + row * quartW, pSrc + (quartH + row) * bufW, quartW * sizeof(float));
+			memcpy(pRB + row * quartW, pSrc + (quartH + row) * bufW + quartW, quartW * sizeof(float));
 		}
-	}
 
-	for (i = 0; i < imL22.rows; i++) {
-		for (j = 0; j < imL22.cols; j++) {
-			if (channel == 0) {//Lunma noise
-				if (imL11.at<float>(i, j) < strength2)
-					imL11.at<float>(i, j) = imL11.at<float>(i, j) / 2;
-			}
-			else {//Color noise
-				if (imL21.at<float>(i, j) < strength2)
-					imL22.at<float>(i, j) = imL22.at<float>(i, j) / 2;
+		for (int32_t row = 0; row < quartH; row++) {
+			for (int32_t col = 0; col < quartW; col++) {
+				pT[row * ROIW + col * 2] = (pLT[row * quartW + col] + pRT[row * quartW + col]) * 0.707;
+				pT[row * ROIW + col * 2 + 1] = (pLT[row * quartW + col] - pRT[row * quartW + col]) * 0.707;
+				pB[row * ROIW + col * 2] = (pLB[row * quartW + col] + pRB[row * quartW + col]) * 0.707;
+				pB[row * ROIW + col * 2 + 1] = (pLB[row * quartW + col] - pRB[row * quartW + col]) * 0.707;
 			}
 		}
-	}
 
-	for (i = 0; i < imL23.rows; i++) {
-		for (j = 0; j < imL23.cols; j++) {
-			if (channel == 0) {//Lunma noise
-				if (imL11.at<float>(i, j) < strength3)
-					imL11.at<float>(i, j) = imL11.at<float>(i, j) / 2;
-			}
-			else {//Color noise
-				if (imL21.at<float>(i, j) < strength3)
-					imL23.at<float>(i, j) = imL23.at<float>(i, j) / 5;
+		for (int32_t row = 0; row < quartH; row++) {
+			for (int32_t col = 0; col < ROIW; col++) {
+				pDst[row * 2 * bufW + col] = (pT[row * ROIW + col] + pB[row * ROIW + col]) * 0.707;
+				pDst[(row * 2 + 1) * bufW + col] = (pT[row * ROIW + col] - pB[row * ROIW + col]) * 0.707;
 			}
 		}
+
+		pT = static_cast<float*>(WrapFree((void*)pT));
+		pB = static_cast<float*>(WrapFree((void*)pB));
+		pLT = static_cast<float*>(WrapFree((void*)pLT));
+		pLB = static_cast<float*>(WrapFree((void*)pLB));
+		pRT = static_cast<float*>(WrapFree((void*)pRT));
+		pRB = static_cast<float*>(WrapFree((void*)pRB));
 	}
 
-	// 低频降噪
-	// 1/64
-	for (i = 0; i < im.rows; i++) {
-		for (j = 0; j < im.cols; j++) {
-			if (im6.at<float>(i, j) < strength3)
-				im6.at<float>(i, j) = im6.at<float>(i, j) / 5;
-		}
+	return rt;
+}
+
+#define WNR_DEPTH 3
+BZResult WaveletNoiseReduction(void* pData, int32_t bufW, int32_t bufH, int32_t *pStrength)
+{
+	BZResult rt = BZ_SUCCESS;
+	float reductionRatio = 10.0;
+	float* pFData = static_cast<float*>(pData);
+	int32_t x, y, ROIW, ROIH;
+
+	if (!pFData || !pStrength) {
+		rt = BZ_INVALID_PARAM;
+		BLOGE("Invalid input");
 	}
-	/*
-	for (i = 0; i < im.rows; i++) {
-		for (j = 0; j < im.cols; j++) {
-			if (im5.at<float>(i, j) < 2)
-				im5.at<float>(i, j) = im6.at<float>(i, j) / 2;
-		}
-	}
-	for (i = 0; i < im.rows; i++) {
-		for (j = 0; j < im.cols; j++) {
-			if (im4.at<float>(i, j) < 2)
-				im4.at<float>(i, j) = im6.at<float>(i, j) / 2;
-		}
-	}*/
 
-	//---------------------------------Reconstruction-------------------------------------
-	redepth = 1;
-	while (redepth - 1 < depth) {
+	if (SUCCESS(rt)) {
+		for (int32_t depth = 1; depth <= WNR_DEPTH; depth++) {
+			x = ROIW = bufW / pow(2, depth);
+			y = ROIH = bufH / pow(2, depth);
+			if (x + ROIW > bufW || y + ROIH > bufH) {
+				rt = BZ_INVALID_PARAM;
+				BLOGE("Oversize: ROI(%dx%d) > buffer(%dx%d) depth:%d ", ROIW, ROIH, bufW, bufH, depth);
+				return rt;
+			}
 
-		im11 = Mat::zeros(im.rows, im.cols * 2, CV_32F);
-		im12 = Mat::zeros(im.rows, im.cols * 2, CV_32F);
-		im13 = Mat::zeros(im.rows, im.cols * 2, CV_32F);
-		im14 = Mat::zeros(im.rows, im.cols * 2, CV_32F);
+			for (int32_t row = 0; row < ROIH; row++) {
+				for (int32_t col = 0; col < ROIW; col++) {
+					/* HH */
+					if (abs((int)pFData[(y + row) * bufW + x + col]) < pStrength[depth - 1]) {
+						pFData[(y + row) * bufW + x + col] /= reductionRatio;
+					}
 
-		for (int rcnt = 0; rcnt < im.rows; rcnt++)
-		{
-			for (int ccnt = 0; ccnt < im.cols; ccnt++)
-			{
-				int _ccnt = ccnt * 2;
-				if (redepth == 1) {
-					im11.at<float>(rcnt, _ccnt) = im.at<float>(rcnt, ccnt);     //Upsampling of stage I
-					im12.at<float>(rcnt, _ccnt) = im4.at<float>(rcnt, ccnt);
-					im13.at<float>(rcnt, _ccnt) = im5.at<float>(rcnt, ccnt);
-					im14.at<float>(rcnt, _ccnt) = im6.at<float>(rcnt, ccnt);
-				}
-				if (redepth == 2) {
-					im11.at<float>(rcnt, _ccnt) = im.at<float>(rcnt, ccnt);     //Upsampling of stage I
-					im12.at<float>(rcnt, _ccnt) = imL21.at<float>(rcnt, ccnt);
-					im13.at<float>(rcnt, _ccnt) = imL22.at<float>(rcnt, ccnt);
-					im14.at<float>(rcnt, _ccnt) = imL23.at<float>(rcnt, ccnt);
-				}
-				if (redepth == 3) {
-					im11.at<float>(rcnt, _ccnt) = im.at<float>(rcnt, ccnt);     //Upsampling of stage I
-					im12.at<float>(rcnt, _ccnt) = imL11.at<float>(rcnt, ccnt);
-					im13.at<float>(rcnt, _ccnt) = imL12.at<float>(rcnt, ccnt);
-					im14.at<float>(rcnt, _ccnt) = imL13.at<float>(rcnt, ccnt);
+					/* HL */
+					if (abs((int)pFData[row * bufW + x + col]) < pStrength[depth - 1]) {
+						pFData[row * bufW + x + col] /= reductionRatio;
+					}
+
+					/* LH */
+					if (abs((int)pFData[(y + row) * bufW + col]) < pStrength[depth - 1]) {
+						pFData[(y + row) * bufW + col] /= reductionRatio;
+					}
 				}
 			}
 		}
-
-		for (int rcnt = 0; rcnt < im.rows; rcnt++)
-		{
-			for (int ccnt = 0; ccnt < im.cols * 2; ccnt += 2)
-			{
-				a = im11.at<float>(rcnt, ccnt);
-				b = im12.at<float>(rcnt, ccnt);
-				c = (a + b) * 0.707;
-				im11.at<float>(rcnt, ccnt) = c;
-				d = (a - b) * 0.707;                           //Filtering at Stage I
-				im11.at<float>(rcnt, ccnt + 1) = d;
-				a = im13.at<float>(rcnt, ccnt);
-				b = im14.at<float>(rcnt, ccnt);
-				c = (a + b) * 0.707;
-				im13.at<float>(rcnt, ccnt) = c;
-				d = (a - b) * 0.707;
-				im13.at<float>(rcnt, ccnt + 1) = d;
-			}
-		}
-
-		temp = Mat::zeros(im.rows * 2, im.cols * 2, CV_32F);
-		tempHL = Mat::zeros(im.rows * 2, im.cols * 2, CV_32F);
-
-		for (int rcnt = 0; rcnt < im.rows; rcnt++)
-		{
-			for (int ccnt = 0; ccnt < im.cols * 2; ccnt++)
-			{
-
-				int _rcnt = rcnt * 2;
-				tempHL.at<float>(_rcnt, ccnt) = im11.at<float>(rcnt, ccnt);     //Upsampling at stage II
-				temp.at<float>(_rcnt, ccnt) = im13.at<float>(rcnt, ccnt);
-			}
-		}
-
-		for (int rcnt = 0; rcnt < im.rows * 2; rcnt += 2)
-		{
-			for (int ccnt = 0; ccnt < im.cols * 2; ccnt++)
-			{
-
-				a = tempHL.at<float>(rcnt, ccnt);
-				b = temp.at<float>(rcnt, ccnt);
-				c = (a + b) * 0.707;
-				tempHL.at<float>(rcnt, ccnt) = c;                                      //Filtering at Stage II
-				d = (a - b) * 0.707;
-				tempHL.at<float>(rcnt + 1, ccnt) = d;
-			}
-		}
-
-		im = tempHL.clone();
-		redepth += 1;
-
 	}
 
-	imr = im.clone();
-	imr.convertTo(imr, CV_8U);
-	imd.convertTo(imd, CV_8U);
-	//namedWindow("Wavelet Decomposition",0);
-	//resizeWindow("Wavelet Decomposition", Imgsizex, Imgsizey);
-	//imshow("Wavelet Decomposition", imd);
+#if DBG_SHOW_ON
+	WrapIMGShow(pData, bufW, bufH, 1, DT_FLOAT);
+#endif
 
-	Mat dst(HEIGHT, WIDTH, CV_8UC3, Scalar(0, 0, 0));
-	for (i = 0; i < HEIGHT; i++) {
-		for (j = 0; j < WIDTH; j++) {
-			dst.data[i * 3 * WIDTH + 3 * j] = 0;
-			dst.data[i * 3 * WIDTH + 3 * j + 1] = imd.data[i * WIDTH + j];
-			dst.data[i * 3 * WIDTH + 3 * j + 2] = 0;
-		}
-	}
-	//BYTE *BMPdata = new BYTE[WIDTH * HEIGHT * dst.channels()];
-	//setBMP(BMPdata, dst);
-	//setBMP(BMPdata, WIDTH, HEIGHT, Rdata, Gdata, Bdata);
-
-	//saveBMP(BMPdata, "C:\\Users\\penghao6\\Desktop\\小波分解.BMP");
-	//delete BMPdata;
-	return imr;
+	return rt;
 }
 
 BZResult BZ_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult rt = BZ_SUCCESS;
 	(void)CBs;
+	int32_t w, h;
+	int32_t strength[3][WNR_DEPTH];
 
 	if (!data || !pParams) {
 		rt = BZ_INVALID_PARAM;
@@ -1644,78 +1507,58 @@ BZResult BZ_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	}
 
 	if (SUCCESS(rt)) {
-		int32_t width, height;
-		int32_t strength1;
-		int32_t strength2;
-		int32_t strength3;
-		width = pParams->info.width;
-		height = pParams->info.height;
-		strength1 = pParams->WNR_param.L1_threshold;
-		strength2 = pParams->WNR_param.L2_threshold;
-		strength3 = pParams->WNR_param.L3_threshold;
-		BLOGDA("width:%d height:%d", width, height);
-		BLOGDA("strength:%d %d %d", strength1, strength2, strength3);
-		if (width && height) {
-			int32_t i, j;
-			Mat onechannel(height, width, CV_8U);
-			Mat onechannel2(height, width, CV_8U);
+		w= pParams->info.width;
+		h= pParams->info.height;
+		BLOGDA("w:%d h:%d", w, h);
+		strength[0][0] = pParams->WNR_param.ch1Threshold[0];
+		strength[0][1] = pParams->WNR_param.ch1Threshold[1];
+		strength[0][2] = pParams->WNR_param.ch1Threshold[2];
+		strength[1][0] = pParams->WNR_param.ch2Threshold[0];
+		strength[1][1] = pParams->WNR_param.ch2Threshold[1];
+		strength[1][2] = pParams->WNR_param.ch2Threshold[2];
+		strength[2][0] = pParams->WNR_param.ch3Threshold[0];
+		strength[2][1] = pParams->WNR_param.ch3Threshold[1];
+		strength[2][2] = pParams->WNR_param.ch3Threshold[2];
+		for (int32_t ch = 0; ch < 3; ch++) {
+			BLOGDA("Ch:%d strength:%d %d %d", ch, strength[ch][0],
+					strength[ch][1], strength[ch][2]);
+		}
+	}
 
-			if (SUCCESS(rt)) {
-				//会产生严重格子现象
-				//Y通道小波
-				/*for (i = 0; i < height; i++) {
-				  for (j = 0; j < width; j++) {
-				  onechannel.data[i*width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j];
-				  }
-				  }
-				  onechannel2 = getim(onechannel, width, height, 3, Imgsizey, Imgsizex, 1, 50, 30, 20);
-				  for (i = 0; i < height; i++) {
-				  for (j = 0; j < width; j++) {
-				  static_cast<uchar*>(data)[i * 3 * width + 3 * j ]= onechannel2.data[i*width + j];
-				//YUV.data[i * 3 * width + 3 * j + 1] = onechannel2.data[i*width + j];
-				//YUV.data[i * 3 * width + 3 * j + 2] = onechannel2.data[i*width + j];
-				}
-				}*/
+	if (SUCCESS(rt)) {
+		float *pIn = static_cast<float*>(WrapAlloc(w*h, sizeof(float)));
+		float *pOut = static_cast<float*>(WrapAlloc(w*h, sizeof(float)));
 
-				//U通道小波
-				for (i = 0; i < height; i++) {
-					for (j = 0; j < width; j++) {
-						onechannel.data[i * width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j + 1];
-					}
-				}
-				onechannel2 = getim(onechannel, width, height, 3, 1, strength1, strength2, strength3);
-				//onechannel2 = onechannel.clone();
-				onechannel = onechannel2.clone();
-				for (i = 0; i < height; i++) {
-					for (j = 0; j < width; j++) {
-						//YUV.data[i * 3 * width + 3 * j ]= onechannel2.data[i*width + j];
-						static_cast<uchar*>(data)[i * 3 * width + 3 * j + 1] = onechannel2.data[i * width + j];
-						//YUV.data[i * 3 * width + 3 * j + 2] = onechannel2.data[i*width + j];
-					}
-				}
+		for (int32_t ch = 0; ch < 3; ch++) {
+			for (int32_t i = 0; i < w * h; i++) {
+				pIn[i] = static_cast<uchar*>(data)[w * h * ch + i] * 1.0;
+			}
 
-				//V通道小波
-				for (i = 0; i < height; i++) {
-					for (j = 0; j < width; j++) {
-						onechannel.data[i * width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j + 2];
-					}
-				}
-				onechannel2 = getim(onechannel, width, height, 3, 2, strength1, strength2, strength3);
-				//onechannel2 = onechannel.clone();
-				onechannel = onechannel2.clone();
-				for (i = 0; i < height; i++) {
-					for (j = 0; j < width; j++) {
-						//YUV.data[i * 3 * width + 3 * j ]= onechannel2.data[i*width + j];
-						//YUV.data[i * 3 * width + 3 * j + 1] = onechannel2.data[i*width + j];
-						static_cast<uchar*>(data)[i * 3 * width + 3 * j + 2] = onechannel2.data[i * width + j];
+			for (int32_t depth = 1; depth <= WNR_DEPTH; depth++) {
+				rt = WaveletDecomposition(pIn, pOut, w, h, depth);
+				memcpy(pIn, pOut, w * h * sizeof(float));
+			}
+
+			if (ch == 0)
+			rt = WaveletNoiseReduction(pIn, w, h, strength[ch]);
+
+			for (int32_t depth = WNR_DEPTH; depth > 0; depth--) {
+				rt = WaveletRecomposition(pIn, pOut, w, h, depth);
+				if (depth != 1) {
+					memcpy(pIn, pOut, w * h * sizeof(float));
+				} else {
+					for (int32_t i = 0; i < w * h; i++) {
+						static_cast<uchar*>(data)[w * h * ch + i] = (int8_t)pOut[i];
 					}
 				}
 			}
 		}
+		pIn = static_cast<float*>(WrapFree(pIn));
+		pOut = static_cast<float*>(WrapFree(pOut));
 	}
+
 	return rt;
 }
-
 
 BZResult BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
@@ -1881,7 +1724,7 @@ BZResult BZ_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 				width, height, bayerOrder);
 	}
 
-#if DUMP_NEEDED
+#if DBG_DUMP_ON
 	if (SUCCESS(rt)) {
 		BoZhi* pBZ = static_cast<BoZhi*>(WrapGetBoZhi());
 		if (pBZ->mISPCBs.UtilsFuncs.DumpDataInt) {
@@ -1997,7 +1840,7 @@ BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 	}
 
 	if (SUCCESS(rt)) {
-		pTmp = WrapAlloc(w * h * 3);
+		pTmp = static_cast<uchar*>(WrapAlloc(w * h * 3));
 		if (pTmp) {
 			pB8 = pTmp;
 			pG8 = pTmp + w * h;
@@ -2017,14 +1860,14 @@ BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 				}
 
 				/* TMP: using Mat */
-				for (uint32_t row = 0; row < h; row++) {
-					for (uint32_t col = 0; col < w; col++) {
-						pTmp[row * w * 3 + col * 3] = static_cast<uchar*>(dst)[row * w + col];
-						pTmp[row * w * 3 + col * 3 + 1] = static_cast<uchar*>(dst)[w * h + row * w + col];
-						pTmp[row * w * 3 + col * 3 + 2] = static_cast<uchar*>(dst)[w * h * 2 + row * w + col];
-					}
-				}
-				memcpy(dst, pTmp, 3 * w * h);
+//				for (uint32_t row = 0; row < h; row++) {
+//					for (uint32_t col = 0; col < w; col++) {
+//						pTmp[row * w * 3 + col * 3] = static_cast<uchar*>(dst)[row * w + col];
+//						pTmp[row * w * 3 + col * 3 + 1] = static_cast<uchar*>(dst)[w * h + row * w + col];
+//						pTmp[row * w * 3 + col * 3 + 2] = static_cast<uchar*>(dst)[w * h * 2 + row * w + col];
+//					}
+//				}
+//				memcpy(dst, pTmp, 3 * w * h);
 			}
 		}
 		else {
@@ -2032,7 +1875,7 @@ BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 			BLOGE("cannot new buffer for 8 bits data! rt:%d", rt);
 		}
 
-		pTmp = WrapFree(pTmp);
+		pTmp = static_cast<uchar*>(WrapFree((void*)pTmp));
 		pB8 = pG8 = pR8 = NULL;
 	}
 
@@ -2084,18 +1927,18 @@ BZResult BZ_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 	}
 
 	if (SUCCESS(rt)) {
-		pTmp = (src == dst) ? WrapAlloc(w * h * 3) : static_cast<uchar*>(dst);
+		pTmp = (src == dst) ? static_cast<uchar*>(WrapAlloc(w * h * 3)) : static_cast<uchar*>(dst);
 
 		/* TMP: using Mat */
-		for (uint32_t row = 0; row < h; row++) {
-			for (uint32_t col = 0; col < w; col++) {
-				pTmp[row * w + col] = static_cast<uchar*>(src)[row * w * 3 + col * 3];
-				pTmp[w * h + row * w + col] = static_cast<uchar*>(src)[row * w * 3 + col * 3 + 1];
-				pTmp[2 * w * h + row * w + col] = static_cast<uchar*>(src)[row * w * 3 + col * 3 + 2];
-			}
-		}
-		memcpy(src, pTmp, w * h * 3);
-		memset(pTmp, 0, w * h * 3);
+//		for (uint32_t row = 0; row < h; row++) {
+//			for (uint32_t col = 0; col < w; col++) {
+//				pTmp[row * w + col] = static_cast<uchar*>(src)[row * w * 3 + col * 3];
+//				pTmp[w * h + row * w + col] = static_cast<uchar*>(src)[row * w * 3 + col * 3 + 1];
+//				pTmp[2 * w * h + row * w + col] = static_cast<uchar*>(src)[row * w * 3 + col * 3 + 2];
+//			}
+//		}
+//		memcpy(src, pTmp, w * h * 3);
+//		memset(pTmp, 0, w * h * 3);
 	}
 
 	if (SUCCESS(rt)) {
@@ -2206,7 +2049,7 @@ BZResult BZ_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 
 	if (src == dst) {
 		memcpy(dst, pTmp, w * h * 3);
-		pTmp = WrapFree(pTmp);
+		pTmp = static_cast<uchar*>(WrapFree((void*)pTmp));
 	}
 
 	return rt;

@@ -366,9 +366,11 @@ ISPResult ISPParamManager::GetWNRParam(void* pParams)
 	}
 
 	if (SUCCESS(rt)) {
-		param->WNR_param.L1_threshold = mISP_ConfigParams.pWNR_param->L1_threshold;
-		param->WNR_param.L2_threshold = mISP_ConfigParams.pWNR_param->L2_threshold;
-		param->WNR_param.L3_threshold = mISP_ConfigParams.pWNR_param->L3_threshold;
+		for (int32_t l = 0; l < 3; l++) {
+			param->WNR_param.ch1Threshold[l] = mISP_ConfigParams.pWNR_param->ch1Threshold[l];
+			param->WNR_param.ch2Threshold[l] = mISP_ConfigParams.pWNR_param->ch2Threshold[l];
+			param->WNR_param.ch3Threshold[l] = mISP_ConfigParams.pWNR_param->ch3Threshold[l];
+		}
 	}
 
 	return rt;

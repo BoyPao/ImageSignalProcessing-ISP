@@ -41,6 +41,7 @@ int32_t WrapLibInit(void* pOPS);
 int32_t WrapLibDeInit();
 int32_t WrapRegistCallbacks(void* pOPS);
 void* WrapGetBoZhi();
-u_char* WrapAlloc(size_t size);
-u_char* WrapFree(u_char* pBuf);
+void* WrapAlloc(size_t size);
+void* WrapAlloc(size_t size, size_t num);
+void* WrapFree(void* pBuf);
 

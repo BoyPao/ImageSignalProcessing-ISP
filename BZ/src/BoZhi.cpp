@@ -109,7 +109,13 @@ void* WrapGetBoZhi()
 	return (void*)gBZ;
 }
 
-u_char* WrapAlloc(size_t size)
+void* WrapAlloc(size_t size)
+{
+	size_t num = 1;
+	return WrapAlloc(size, num);
+}
+
+void* WrapAlloc(size_t size, size_t num)
 {
 	BoZhi* pBZ = static_cast<BoZhi*>(WrapGetBoZhi());
 
@@ -119,13 +125,13 @@ u_char* WrapAlloc(size_t size)
 	}
 
 	if (pBZ->mISPCBs.UtilsFuncs.Alloc) {
-		return static_cast<u_char*>(pBZ->mISPCBs.UtilsFuncs.Alloc(size));
+		return pBZ->mISPCBs.UtilsFuncs.Alloc(size, num);
 	} else {
-		return new u_char[size];
+		return (void*) new u_char[size * num];
 	}
 }
 
-u_char* WrapFree(u_char* pBuf)
+void* WrapFree(void* pBuf)
 {
 	BoZhi* pBZ = static_cast<BoZhi*>(WrapGetBoZhi());
 
@@ -135,13 +141,15 @@ u_char* WrapFree(u_char* pBuf)
 	}
 
 	if (pBuf) {
-		if (pBZ->mISPCBs.UtilsFuncs.Alloc) {
-			return static_cast<u_char*>(pBZ->mISPCBs.UtilsFuncs.Free(pBuf));
+		if (pBZ->mISPCBs.UtilsFuncs.Free) {
+			return pBZ->mISPCBs.UtilsFuncs.Free(pBuf);
 		} else {
-			delete[] pBuf;
-			return NULL;
+			delete[] static_cast<u_char*>(pBuf);
+			pBuf = NULL;
 		}
 	}
+
+	return pBuf;
 }
 
 BoZhi::BoZhi()

@@ -16,5 +16,5 @@ static ISP_LIST_PROPERTY DefaultListConfig = {
 	 {"CC",				PROCESS_CC,				NODE_ON},
 	 {"Gamma",			PROCESS_GAMMA,			NODE_ON},
 	 {"WNR",			PROCESS_WNR,			NODE_ON},
-	 {"EE",				PROCESS_EE,				NODE_ON}}
+	 {"EE",				PROCESS_EE,				NODE_OFF}}
 };

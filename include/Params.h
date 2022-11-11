@@ -50,9 +50,9 @@ struct GAMMA_PARAM {
 };
 
 struct WNR_PARAM {
-	int32_t L1_threshold;
-	int32_t L2_threshold;
-	int32_t L3_threshold;
+	int32_t ch1Threshold[3];
+	int32_t ch2Threshold[3];
+	int32_t ch3Threshold[3];
 };
 
 struct EE_PARAM {

@@ -101,7 +101,12 @@ void* ISPAlloc(size_t size, ...)
 		ILOGE("Failed to get memory pool");
 		return NULL;
 	} else {
-		return pBufMgr->RequireBuffer(size);
+		size_t num = 1;
+		va_list va_param;
+		va_start(va_param, size);
+		num = va_arg(va_param, size_t);
+		va_end(va_param);
+		return pBufMgr->RequireBuffer(size, num);
 	}
 }
 
