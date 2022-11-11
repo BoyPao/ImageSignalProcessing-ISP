@@ -718,77 +718,62 @@ int32_t CheckImgStride(char* pCharStride, void* pInfo)
 	return rt;
 }
 
-int FileManager::Input(IO_INFO in)
+int FileManager::Input(IOInfo ioInfo)
 {
 	int32_t rt = ISP_SUCCESS;
 
-	int32_t checkResult = CheckInput(in);
-	if (checkResult == ISP_FAILED) {
-		IOInfoFlag = 1;
-		ILOGI("Use default I/O config");
-	} else {
-		rt = checkResult;
-	}
-
-	return rt;
-}
-
-int FileManager::CheckInput(IO_INFO ioInfo)
-{
-	int32_t rt = ISP_SUCCESS;
-	MEDIA_INFO* pInfo = static_cast<MEDIA_INFO*>(pDynamicInfo);
-
-	if (!pInfo) {
-		rt = ISP_STATE_ERROR;
-		ILOGE("IO buffer is null! %d", rt);
-	}
-
-	for (int32_t i = 0; i < (ioInfo.argc < MAX_IO_PARAM_CNT ? ioInfo.argc : MAX_IO_PARAM_CNT); i++) {
+	if (SUCCESS(rt)) {
 		if (ioInfo.argc <= 1) {
-			rt = ISP_FAILED;
-			break;
+			IOInfoFlag = 1;
+			ILOGI("Use default I/O config");
+			return rt;
 		}
-		if (!ioInfo.argv[i]) {
-			rt = ISP_INVALID_PARAM;
-			ILOGE("Null param[%d]", i);
-			break;
-		}
+	}
 
-		if (SUCCESS(rt)) {
-			if (i == 1) {
-				if (!strcmp(ioInfo.argv[i], "-h") || !strcmp(ioInfo.argv[i], "-help")) {
-					HelpMenu();
-					rt = ISP_SKIP;
-					break;
-				}
-				if (!strcmp(ioInfo.argv[i], "-l") || !strcmp(ioInfo.argv[i], "-list")) {
-					SupportInfo();
-					rt = ISP_SKIP;
-					break;
-				}
+	if (SUCCESS(rt)) {
+		for (int32_t i = 0; i < (ioInfo.argc < MAX_IO_PARAM_CNT ? ioInfo.argc : MAX_IO_PARAM_CNT); i++) {
+			if (!ioInfo.argv[i]) {
+				rt = ISP_INVALID_PARAM;
+				ILOGE("Null param[%d]", i);
+				break;
+			}
 
-				if (ioInfo.argc - 1 < MIN_IO_PARAM_CNT) {
-					rt = ISP_INVALID_PARAM;
-					ILOGE("Insufficient param num:%d < expected param num:%d", ioInfo.argc - 1, MIN_IO_PARAM_CNT);
-					break;
-				}
-				rt = CheckFilePath(ioInfo.argv[i], &mInputInfo, &mOutputInfo);
-			}
-		}
+			if (SUCCESS(rt)) {
+				if (i == 1) {
+					if (!strcmp(ioInfo.argv[i], "-h") || !strcmp(ioInfo.argv[i], "-help")) {
+						HelpMenu();
+						rt = ISP_SKIP;
+						break;
+					}
+					if (!strcmp(ioInfo.argv[i], "-l") || !strcmp(ioInfo.argv[i], "-list")) {
+						SupportInfo();
+						rt = ISP_SKIP;
+						break;
+					}
 
-		if (SUCCESS(rt)) {
-			if (i == 3) {
-				rt = CheckImgSize(ioInfo.argv[i-1], ioInfo.argv[i], pDynamicInfo);
+					if (ioInfo.argc - 1 < MIN_IO_PARAM_CNT) {
+						rt = ISP_INVALID_PARAM;
+						ILOGE("Insufficient param num:%d < expected param num:%d", ioInfo.argc - 1, MIN_IO_PARAM_CNT);
+						break;
+					}
+					rt = CheckFilePath(ioInfo.argv[i], &mInputInfo, &mOutputInfo);
+				}
 			}
-		}
-		if (SUCCESS(rt)) {
-			if (i == 4) {
-				rt = CheckImgFmt(ioInfo.argv[i], pDynamicInfo);
+
+			if (SUCCESS(rt)) {
+				if (i == 3) {
+					rt = CheckImgSize(ioInfo.argv[i-1], ioInfo.argv[i], pDynamicInfo);
+				}
 			}
-		}
-		if (SUCCESS(rt)) {
-			if (i == 5) {
-				rt = CheckImgStride(ioInfo.argv[i], pDynamicInfo);
+			if (SUCCESS(rt)) {
+				if (i == 4) {
+					rt = CheckImgFmt(ioInfo.argv[i], pDynamicInfo);
+				}
+			}
+			if (SUCCESS(rt)) {
+				if (i == 5) {
+					rt = CheckImgStride(ioInfo.argv[i], pDynamicInfo);
+				}
 			}
 		}
 	}

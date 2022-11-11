@@ -33,6 +33,10 @@
 #define VERSION 0
 #define SUB_VERSION 1
 
+#define SERIAL_NUM_TAIL(n)  (n) == 1 ? "st" :\
+								((n) == 2 ? "nd" :\
+								((n) == 3 ? "rd" : "th"))
+
 #define SYSTEM_YEAR_OFFSET			1900
 #define SYSTEM_MONTH_OFFSET			1
 #define LOCAL_TIME_ZOOM_OFFSET		8	/* Beijing time zoom */
@@ -43,6 +47,7 @@
 #define SUCCESS(rt)		((rt) >= 0) ? true : false
 
 enum ISPResult {
+	ISP_TIMEOUT			= -5,
 	ISP_INVALID_PARAM	= -4,
 	ISP_MEMORY_ERROR	= -3,
 	ISP_STATE_ERROR		= -2,

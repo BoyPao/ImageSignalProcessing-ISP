@@ -91,7 +91,7 @@ public:
 	int32_t SaveVideoData(int32_t frameCount);
 	int32_t DestroyVideo();
 	int32_t Mipi10decode(void* src, void* dst, IMG_INFO* info);
-	int32_t Input(IO_INFO in);
+	int32_t Input(IOInfo in);
 	int32_t GetIOInfo(void* pInfo);
 
 private:
@@ -101,7 +101,6 @@ private:
 	void WriteBMP(BYTE* data, int32_t channels);
 	void HelpMenu();
 	void SupportInfo();
-	int32_t CheckInput(IO_INFO ioInfo);
 
 	InputInfo mInputInfo;
 	OutputInfo mOutputInfo;
