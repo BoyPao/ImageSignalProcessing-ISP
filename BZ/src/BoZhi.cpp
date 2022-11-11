@@ -21,7 +21,7 @@ int32_t WrapEvent(void* msg)
 
 	if (SUCCESS(rt)) {
 		if (msg) {
-			memcpy(&gBZ->mMsg, msg, sizeof(LIB_MSG));
+			memcpy(&gBZ->mMsg, msg, sizeof(BZMsg));
 			rt = gBZ->ExecuteCMD();
 		} else {
 			rt = BZ_FAILED;
@@ -36,10 +36,10 @@ int32_t WrapGetOPS(void* pOPS)
 {
 	int32_t rt = BZ_SUCCESS;
 
-	LIB_OPS* pLibOPS = static_cast<LIB_OPS*>(pOPS);
+	BZOps* pLibOPS = static_cast<BZOps*>(pOPS);
 	if (pLibOPS) {
 		/* Add OPS if need */
-		pLibOPS->LIB_Event = &WrapEvent;
+		pLibOPS->BZEvent = &WrapEvent;
 	} else {
 		rt = BZ_INVALID_PARAM;
 		BLOGE("Input is nullptr!");
@@ -160,7 +160,7 @@ BoZhi::BoZhi()
 
 BoZhi::~BoZhi()
 {
-	memset(&mISPCBs, 0, sizeof(ISP_CALLBACKS));
+	memset(&mISPCBs, 0, sizeof(ISPCallbacks));
 }
 
 int32_t BoZhi::Init()
@@ -173,7 +173,7 @@ int32_t BoZhi::Init()
 	}
 
 	if (SUCCESS(rt)) {
-		memset(&mMsg, 0 , sizeof(LIB_MSG));
+		memset(&mMsg, 0 , sizeof(BZMsg));
 	}
 
 	if (SUCCESS(rt)) {
@@ -189,7 +189,7 @@ int32_t BoZhi::DeInit()
 	int32_t rt = BZ_SUCCESS;
 
 	if (SUCCESS(rt)) {
-		memset(&mMsg, 0 , sizeof(LIB_MSG));
+		memset(&mMsg, 0 , sizeof(BZMsg));
 		BLOGDC("state %d -> %d", mState, BZ_STATE_NEW);
 		mState = BZ_STATE_NEW;
 	}
@@ -203,42 +203,42 @@ int32_t BoZhi::ExecuteCMD()
 	bool enable = mMsg.enable;
 
 	BLOGDC("cmd:%d on:%d", mMsg.cmd, enable);
-	ISP_CALLBACKS tempCbs;
+	ISPCallbacks tempCbs;
 	switch(mMsg.cmd) {
-		case LIB_CMD_BLC:
+		case BZ_CMD_BLC:
 			WrapBlackLevelCorrection(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
 			break;
-		case LIB_CMD_LSC:
+		case BZ_CMD_LSC:
 			WrapLensShadingCorrection(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
 			break;
-		case LIB_CMD_DEMOSAIC:
+		case BZ_CMD_DEMOSAIC:
 			WrapDemosaic(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
 			break;
-		case LIB_CMD_WB:
+		case BZ_CMD_WB:
 			WrapWhiteBalance(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
 			break;
-		case LIB_CMD_CC:
+		case BZ_CMD_CC:
 			WrapColorCorrection(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
 			break;
-		case LIB_CMD_GAMMA:
+		case BZ_CMD_GAMMA:
 			WrapGammaCorrection(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
 			break;
-		case LIB_CMD_WNR:
+		case BZ_CMD_WNR:
 			WrapWaveletNR(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
 			break;
-		case LIB_CMD_EE:
+		case BZ_CMD_EE:
 			WrapEdgeEnhancement(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
 			break;
-		case LIB_CMD_RAW2RGB:
+		case BZ_CMD_RAW2RGB:
 			WrapCST_RAW2RGB(mMsg.pSrc, mMsg.pDst, mMsg.pParam, tempCbs, mMsg.enable);
 			break;
-		case LIB_CMD_RGB2YUV:
+		case BZ_CMD_RGB2YUV:
 			WrapCST_RGB2YUV(mMsg.pSrc, mMsg.pDst, mMsg.pParam, tempCbs, mMsg.enable);
 			break;
-		case LIB_CMD_YUV2RGB:
+		case BZ_CMD_YUV2RGB:
 			WrapCST_YUV2RGB(mMsg.pSrc, mMsg.pDst, mMsg.pParam, tempCbs, mMsg.enable);
 			break;
-		case LIB_CMD_NUM:
+		case BZ_CMD_NUM:
 		default:
 			BLOGW("Nothinint32_ttodo for cmd:%d", mMsg.cmd);
 			break;
@@ -250,10 +250,10 @@ int32_t BoZhi::ExecuteCMD()
 int32_t BoZhi::RegisterCallbacks(void *pCBs)
 {
 	int32_t rt = BZ_SUCCESS;
-	ISP_CALLBACKS* pISPCBs = static_cast<ISP_CALLBACKS*>(pCBs);
+	ISPCallbacks* pISPCBs = static_cast<ISPCallbacks*>(pCBs);
 
 	if (pISPCBs) {
-		memcpy(&mISPCBs, pISPCBs, sizeof(ISP_CALLBACKS));
+		memcpy(&mISPCBs, pISPCBs, sizeof(ISPCallbacks));
 	} else {
 		rt = BZ_INVALID_PARAM;
 		BLOGE("Input is nullptr!");
@@ -262,7 +262,7 @@ int32_t BoZhi::RegisterCallbacks(void *pCBs)
 	return rt;
 }
 
-ISP_CALLBACKS const* BoZhi::GetCallbacks()
+ISPCallbacks const* BoZhi::GetCallbacks()
 {
 	return &mISPCBs;
 }

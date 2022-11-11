@@ -13,7 +13,7 @@
 #include "../../libbzalg/BZ/interface/LibInterface.h"
 #endif
 
-enum ALG_PROCESS_CMD {
+enum AlgProcessCmd {
 	ALG_CMD_BLC = 0,
 	ALG_CMD_LSC,
 	ALG_CMD_DEMOSAIC,
@@ -30,19 +30,19 @@ enum ALG_PROCESS_CMD {
 	ALG_CMD_NUM
 };
 
-enum ISP_LIBS_ID {
+enum ISPLibsId {
 	ISP_ALG_LIB = 0,
 	/* TODO: Add lib if need */
 	ISP_LIBS_NUM
 };
 
-struct ISP_LIBS {
+struct ISPLibs {
 	void* pAlgLib;
 	/* TODO: Add lib if need */
 };
 
-struct ISP_LIBS_OPS {
-	LIB_OPS algOPS;
+struct ISPLibsOps {
+	BZOps algOPS;
 	/* TODO: Add lib if need */
 };
 
@@ -59,15 +59,15 @@ class InterfaceWrapper {
 		int32_t NotifyMain();
 
 	private:
-		int32_t LoadLib(ISP_LIBS_ID libId, const char* path);
-		int32_t ReleaseLib(ISP_LIBS_ID libId);
-		int32_t InterfaceInit(ISP_LIBS_ID libId);
-		int32_t InterfaceDeInit(ISP_LIBS_ID libId);
+		int32_t LoadLib(int32_t libId, const char* path);
+		int32_t ReleaseLib(int32_t libId);
+		int32_t InterfaceInit(int32_t libId);
+		int32_t InterfaceDeInit(int32_t libId);
 		int32_t AlgInterfaceInit();
 		int32_t AlgInterfaceDeInit();
-		ISP_LIBS mLibs;
-		ISP_LIBS_OPS mLibsOPS;
-		LIB_PARAMS mISPLibParams;
+		ISPLibs mLibs;
+		ISPLibsOps mLibsOPS;
+		BZParam mISPLibParams;
 		void* pParamMgr;
 };
 

@@ -21,7 +21,7 @@ void LogBase(const char* str, ...);
 void LogAddInfo(const char* str, ...);
 void LogPrint(const char* str, va_list va);
 
-enum BZ_LOG_MASK {
+enum BZLogMask {
 	LOG_BASE_MASK	= 0x1,
 	LOG_ERROR_MASK	= LOG_BASE_MASK,
 	LOG_WARN_MASK	= LOG_ERROR_MASK << 1,
@@ -29,7 +29,7 @@ enum BZ_LOG_MASK {
 	LOG_DEBUG_MASK	= LOG_ERROR_MASK << 3,
 };
 
-enum BZ_DBG_MASK {
+enum BZDbgMask {
 	DBG_BASE_MASK = 0x1,
 	DBG_CORE_MASK = DBG_BASE_MASK,
 	DBG_INTF_MASK = DBG_BASE_MASK << 1,

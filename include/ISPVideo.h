@@ -11,15 +11,10 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "opencv2/core/core.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/calib3d/calib3d.hpp"
-#include "opencv2/highgui/highgui.hpp"
-
 #include "Utils.h"
 #include "ParamManager.h"
 
-enum VIDEO_STATE {
+enum VideoState {
 	VIDEO_NEW = 0,
 	VIDEO_INITED,
 	VIDEO_READY,
@@ -36,7 +31,7 @@ public:
 	int32_t CreateThread(void* pThreadParam);
 	int32_t DestroyThread();
 
-	int32_t Record(cv::VideoWriter* pRecorder, int32_t w, int32_t h);
+	int32_t Record(void* pRecorder, int32_t w, int32_t h);
 	int32_t Lock();
 	int32_t Unlock();
 	int32_t Wait();
@@ -47,7 +42,7 @@ public:
 private:
 	int32_t StatusTransform();
 
-	VIDEO_STATE mState;
+	int32_t mState;
 
 	thread mThread;
 	mutex mMutex;

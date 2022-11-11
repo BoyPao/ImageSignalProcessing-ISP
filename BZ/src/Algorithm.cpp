@@ -6,12 +6,21 @@
  */
 
 #include "Algorithm.h"
+#include <vector>
 
+#if DBG_OPENCV_ON
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/photo.hpp"
+
+using namespace cv;
+#else
+typedef u_char uchar;
+#endif
+
+using namespace std;
 
 #define DBG_SHOW_ON false
 #define DBG_DUMP_ON false
@@ -22,32 +31,30 @@
 #define DUMP_PATH "D:\\test_project\\ISP\\local\\output\\output.txt"
 #endif
 
-using namespace cv;
-
 #define VMASK_UCHAR(v) ((v) & 0xff)
 #define VFIX_UCHAR(v) ((v) > 255 ? 255 : ((v < 0) ? 0 : (v)))
 
 /* Bayer Process */
-int32_t BZ_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-int32_t BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+int32_t BZ_BlackLevelCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
+int32_t BZ_LensShadingCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
 
 /* RGB Process */
-int32_t BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-int32_t BZ_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-int32_t BZ_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-int32_t BZ_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+int32_t BZ_Demosaic(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
+int32_t BZ_WhiteBalance(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
+int32_t BZ_ColorCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
+int32_t BZ_GammaCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
 
 /* YUVProcess */
-int32_t BZ_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-int32_t BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+int32_t BZ_WaveletNR(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
+int32_t BZ_EdgeEnhancement(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
 
 /* CST */
-int32_t BZ_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-int32_t BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-int32_t BZ_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+int32_t BZ_CST_RAW2RGB(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs, ...);
+int32_t BZ_CST_RGB2YUV(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs, ...);
+int32_t BZ_CST_YUV2RGB(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs, ...);
 
 /* Bayer Process */
-void WrapBlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void WrapBlackLevelCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt= BZ_SUCCESS;
 
@@ -71,7 +78,7 @@ void WrapBlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs
 	}
 }
 
-void WrapLensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void WrapLensShadingCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 
@@ -96,7 +103,7 @@ void WrapLensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 }
 
 /* RGB Process */
-void WrapDemosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void WrapDemosaic(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 
@@ -120,7 +127,7 @@ void WrapDemosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	}
 }
 
-void WrapWhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void WrapWhiteBalance(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 
@@ -144,7 +151,7 @@ void WrapWhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	}
 }
 
-void WrapColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void WrapColorCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 
@@ -168,7 +175,7 @@ void WrapColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 	}
 }
 
-void WrapGammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void WrapGammaCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 
@@ -193,7 +200,7 @@ void WrapGammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 }
 
 /* YUVProcess */
-void WrapWaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void WrapWaveletNR(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 
@@ -217,7 +224,7 @@ void WrapWaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	}
 }
 
-void WrapEdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void WrapEdgeEnhancement(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 
@@ -242,7 +249,7 @@ void WrapEdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...
 }
 
 /* CST */
-void WrapCST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void WrapCST_RAW2RGB(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 
@@ -264,7 +271,7 @@ void WrapCST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 	}
 }
 
-void WrapCST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void WrapCST_RGB2YUV(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 
@@ -286,7 +293,7 @@ void WrapCST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CB
 	}
 }
 
-void WrapCST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+void WrapCST_YUV2RGB(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 
@@ -314,8 +321,9 @@ enum PixelDataType {
 	DT_NUM
 };
 
-void WrapIMGShow(void* pData, int32_t w, int32_t h, int32_t chNum, PixelDataType DT)
+void WrapIMGShow(void* pData, int32_t w, int32_t h, int32_t chNum, int32_t DT)
 {
+#if DBG_OPENCV_ON
 	int32_t type = chNum == 1 ? CV_8U: CV_8UC3;
 
 	if (!pData) {
@@ -358,9 +366,10 @@ void WrapIMGShow(void* pData, int32_t w, int32_t h, int32_t chNum, PixelDataType
 	resizeWindow("Debug", 640, 480);
 	imshow("Debug", img);
 	waitKey(0); /* for the possibility of interacting with window, keep the value as 0 */
+#endif
 }
 
-int32_t BZ_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+int32_t BZ_BlackLevelCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 	(void)CBs;
@@ -376,7 +385,7 @@ int32_t BZ_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS C
 		int32_t temp;
 		width = pParams->info.width;
 		height = pParams->info.height;
-		offset = pParams->BLC_param.offset;
+		offset = pParams->blc.offset;
 		BLOGDA("width:%d height:%d", width, height);
 		BLOGDA("offset:%d", offset);
 		for (int32_t i = 0; i < width * height; i++) {
@@ -401,7 +410,7 @@ float LSCInterpolation(int32_t w, int32_t h,
 	return rt;
 }
 
-int32_t BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+int32_t BZ_LensShadingCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 	(void)CBs;
@@ -413,7 +422,7 @@ int32_t BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS 
 
 	if (SUCCESS(rt)) {
 		int32_t width, height;
-		LIB_BAYER_ORDER bayerOrder = LIB_BAYER_ORDER_NUM;
+		int32_t bayerOrder = BZ_BO_NUM;
 		int32_t i, j;
 		float* pR = nullptr;
 		float* pGr = nullptr;
@@ -426,29 +435,29 @@ int32_t BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS 
 		BLOGDA("width:%d height:%d type:%d", width, height, bayerOrder);
 		switch (bayerOrder)
 		{
-		case LIB_RGGB:
-			pR = pParams->LSC_param.GainCh1;
-			pGr = pParams->LSC_param.GainCh2;
-			pGb = pParams->LSC_param.GainCh3;
-			pB = pParams->LSC_param.GainCh4;
+		case BZ_BO_RGGB:
+			pR = pParams->lsc.gainCh1;
+			pGr = pParams->lsc.gainCh2;
+			pGb = pParams->lsc.gainCh3;
+			pB = pParams->lsc.gainCh4;
 			break;
-		case LIB_BGGR:
-			pB = pParams->LSC_param.GainCh1;
-			pGb = pParams->LSC_param.GainCh2;
-			pGr = pParams->LSC_param.GainCh3;
-			pR = pParams->LSC_param.GainCh4;
+		case BZ_BO_BGGR:
+			pB = pParams->lsc.gainCh1;
+			pGb = pParams->lsc.gainCh2;
+			pGr = pParams->lsc.gainCh3;
+			pR = pParams->lsc.gainCh4;
 			break;
-		case LIB_GRBG:
-			pGr = pParams->LSC_param.GainCh1;
-			pR = pParams->LSC_param.GainCh2;
-			pB = pParams->LSC_param.GainCh3;
-			pGb = pParams->LSC_param.GainCh4;
+		case BZ_BO_GRBG:
+			pGr = pParams->lsc.gainCh1;
+			pR = pParams->lsc.gainCh2;
+			pB = pParams->lsc.gainCh3;
+			pGb = pParams->lsc.gainCh4;
 			break;
-		case LIB_GBRG:
-			pGb = pParams->LSC_param.GainCh1;
-			pB = pParams->LSC_param.GainCh2;
-			pR = pParams->LSC_param.GainCh3;
-			pGr = pParams->LSC_param.GainCh4;
+		case BZ_BO_GBRG:
+			pGb = pParams->lsc.gainCh1;
+			pB = pParams->lsc.gainCh2;
+			pR = pParams->lsc.gainCh3;
+			pGr = pParams->lsc.gainCh4;
 			break;
 		default:
 			rt = BZ_INVALID_PARAM;
@@ -634,7 +643,7 @@ void LastPixelInsertProcess(uint16_t* src, uint16_t* dst , int32_t width, int32_
 }
 
 int32_t DemosaicInterpolation(uint16_t* pch1, uint16_t* pch2, uint16_t* pch3,
-		int32_t width, int32_t height, LIB_BAYER_ORDER order)
+		int32_t width, int32_t height, int32_t order)
 {
 	int32_t rt = BZ_SUCCESS;
 
@@ -650,8 +659,8 @@ int32_t DemosaicInterpolation(uint16_t* pch1, uint16_t* pch2, uint16_t* pch3,
 
 	if (SUCCESS(rt)) {
 		switch(order) {
-			case LIB_RGGB:
-			case LIB_BGGR:
+			case BZ_BO_RGGB:
+			case BZ_BO_BGGR:
 				for(int32_t row = 0; row < height; row++) {
 					for(int32_t col = 0; col < width; col++) {
 						if (row % 2 == 0 && col % 2 == 0) {
@@ -769,8 +778,8 @@ int32_t DemosaicInterpolation(uint16_t* pch1, uint16_t* pch2, uint16_t* pch3,
 					}
 				}
 				break;
-			case LIB_GRBG:
-			case LIB_GBRG:
+			case BZ_BO_GRBG:
+			case BZ_BO_GBRG:
 				for(int32_t row = 0; row < height; row++) {
 					for(int32_t col = 0; col < width; col++) {
 						if (row % 2 == 0 && col % 2 == 0) {
@@ -888,7 +897,7 @@ int32_t DemosaicInterpolation(uint16_t* pch1, uint16_t* pch2, uint16_t* pch3,
 					}
 				}
 				break;
-			case LIB_BAYER_ORDER_NUM:
+			case BZ_BO_NUM:
 			default:
 				BLOGE("Unsupported bayer order:%d", rt);
 				break;
@@ -898,7 +907,7 @@ int32_t DemosaicInterpolation(uint16_t* pch1, uint16_t* pch2, uint16_t* pch3,
 	return rt;
 }
 
-int32_t BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+int32_t BZ_Demosaic(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 	(void)CBs;
@@ -909,7 +918,7 @@ int32_t BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	}
 
 	int32_t width, height;
-	LIB_BAYER_ORDER bayerOrder = LIB_BAYER_ORDER_NUM;
+	int32_t bayerOrder = BZ_BO_NUM;
 	width = pParams->info.width;
 	height = pParams->info.height;
 	bayerOrder = pParams->info.bayerOrder;
@@ -918,14 +927,14 @@ int32_t BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	uint16_t* pChannel2 = nullptr;
 	uint16_t* pChannel3 = nullptr;
 	switch (bayerOrder) {
-	case LIB_RGGB:
-	case LIB_GRBG:
+	case BZ_BO_RGGB:
+	case BZ_BO_GRBG:
 		pChannel3 = static_cast<uint16_t*>(data);
 		pChannel2 = static_cast<uint16_t*>(data) + width * height;
 		pChannel1 = static_cast<uint16_t*>(data) + 2 * width * height;
 		break;
-	case LIB_BGGR:
-	case LIB_GBRG:
+	case BZ_BO_BGGR:
+	case BZ_BO_GBRG:
 		pChannel1 = static_cast<uint16_t*>(data);
 		pChannel2 = static_cast<uint16_t*>(data) + width * height;
 		pChannel3 = static_cast<uint16_t*>(data) + 2 * width * height;
@@ -947,7 +956,7 @@ int32_t BZ_Demosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	return rt;
 }
 
-int32_t BZ_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+int32_t BZ_WhiteBalance(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 	(void)CBs;
@@ -962,9 +971,9 @@ int32_t BZ_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 		float rGain, gGain, bGain;
 		width = pParams->info.width;
 		height = pParams->info.height;
-		rGain = pParams->WB_param.rGain;
-		gGain = pParams->WB_param.gGain;
-		bGain = pParams->WB_param.bGain;
+		rGain = pParams->wb.rGain;
+		gGain = pParams->wb.gGain;
+		bGain = pParams->wb.bGain;
 		BLOGDA("width:%d height:%d", width, height);
 		BLOGDA("Gain(r/g/b):%f %f %f", rGain, gGain, bGain);
 
@@ -984,7 +993,7 @@ int32_t BZ_WhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	return rt;
 }
 
-int32_t BZ_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+int32_t BZ_ColorCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 	int32_t w, h;
@@ -1012,7 +1021,7 @@ int32_t BZ_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, .
 			rt = BZ_INVALID_PARAM;
 			BLOGE("Invalid param:%dx%d %db %d", w, h, bpp, rt);
 		}
-		pCCM = pParams->CC_param.CCM;
+		pCCM = pParams->cc.ccm;
 		if (!pCCM) {
 			rt = BZ_INVALID_PARAM;
 			BLOGE("Faild to get CCM %d", rt);
@@ -1062,7 +1071,7 @@ int32_t BZ_ColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, .
 	return rt;
 }
 
-int32_t BZ_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+int32_t BZ_GammaCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 	(void)CBs;
@@ -1077,7 +1086,7 @@ int32_t BZ_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, .
 		uint16_t* plut = nullptr;
 		width = pParams->info.width;
 		height = pParams->info.height;
-		plut = pParams->Gamma_param.lut;
+		plut = pParams->gamma.lut;
 		BLOGDA("width:%d height:%d", width, height);
 
 		uint16_t* B = static_cast<uint16_t*>(data);
@@ -1284,7 +1293,7 @@ int32_t WaveletNoiseReduction(void* pData, int32_t bufW, int32_t bufH, int32_t *
 	return rt;
 }
 
-int32_t BZ_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+int32_t BZ_WaveletNR(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 	(void)CBs;
@@ -1300,15 +1309,15 @@ int32_t BZ_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 		w= pParams->info.width;
 		h= pParams->info.height;
 		BLOGDA("w:%d h:%d", w, h);
-		strength[0][0] = pParams->WNR_param.ch1Threshold[0];
-		strength[0][1] = pParams->WNR_param.ch1Threshold[1];
-		strength[0][2] = pParams->WNR_param.ch1Threshold[2];
-		strength[1][0] = pParams->WNR_param.ch2Threshold[0];
-		strength[1][1] = pParams->WNR_param.ch2Threshold[1];
-		strength[1][2] = pParams->WNR_param.ch2Threshold[2];
-		strength[2][0] = pParams->WNR_param.ch3Threshold[0];
-		strength[2][1] = pParams->WNR_param.ch3Threshold[1];
-		strength[2][2] = pParams->WNR_param.ch3Threshold[2];
+		strength[0][0] = pParams->wnr.ch1Threshold[0];
+		strength[0][1] = pParams->wnr.ch1Threshold[1];
+		strength[0][2] = pParams->wnr.ch1Threshold[2];
+		strength[1][0] = pParams->wnr.ch2Threshold[0];
+		strength[1][1] = pParams->wnr.ch2Threshold[1];
+		strength[1][2] = pParams->wnr.ch2Threshold[2];
+		strength[2][0] = pParams->wnr.ch3Threshold[0];
+		strength[2][1] = pParams->wnr.ch3Threshold[1];
+		strength[2][2] = pParams->wnr.ch3Threshold[2];
 		for (int32_t ch = 0; ch < 3; ch++) {
 			BLOGDA("Ch:%d strength:%d %d %d", ch, strength[ch][0],
 					strength[ch][1], strength[ch][2]);
@@ -1524,7 +1533,7 @@ int32_t Convolution2D(void* pData, size_t w, size_t h, FilterKernel2D* pK)
 	return rt;
 }
 
-int32_t BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+int32_t BZ_EdgeEnhancement(void* data, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 	(void)CBs;
@@ -1542,9 +1551,9 @@ int32_t BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, .
 	if (SUCCESS(rt)) {
 		w = pParams->info.width;
 		h = pParams->info.height;
-		alpha = pParams->EE_param.alpha;
-		coreSzie = pParams->EE_param.coreSize;
-		sigma = pParams->EE_param.sigma;
+		alpha = pParams->ee.alpha;
+		coreSzie = pParams->ee.coreSize;
+		sigma = pParams->ee.sigma;
 		BLOGDA("width:%d height:%d", w, h);
 		BLOGDA("alpha:%f coreSzie:%d sigma:%d", alpha, coreSzie, sigma);
 	}
@@ -1580,7 +1589,7 @@ int32_t BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, .
 }
 
 int32_t ReadChannels(uint16_t* data, uint16_t* pChannel1, uint16_t* pChannel2, uint16_t* pChannel3,
-		int32_t width, int32_t height, LIB_BAYER_ORDER order)
+		int32_t width, int32_t height, int32_t order)
 {
 	int32_t rt = BZ_SUCCESS;
 	int32_t i, j;
@@ -1592,8 +1601,8 @@ int32_t ReadChannels(uint16_t* data, uint16_t* pChannel1, uint16_t* pChannel2, u
 
 	if (SUCCESS(rt)) {
 		switch (order) {
-			case LIB_RGGB:
-			case LIB_BGGR:
+			case BZ_BO_RGGB:
+			case BZ_BO_BGGR:
 				for (i = 0; i < height; i++) {
 					for (j = 0; j < width; j++) {
 						if (i % 2 == 0 && j % 2 == 0) {
@@ -1614,8 +1623,8 @@ int32_t ReadChannels(uint16_t* data, uint16_t* pChannel1, uint16_t* pChannel2, u
 					}
 				}
 				break;
-			case LIB_GRBG:
-			case LIB_GBRG:
+			case BZ_BO_GRBG:
+			case BZ_BO_GBRG:
 				for (i = 0; i < height; i++) {
 					for (j = 0; j < width; j++) {
 						if (i % 2 == 0 && j % 2 == 1) {
@@ -1636,7 +1645,7 @@ int32_t ReadChannels(uint16_t* data, uint16_t* pChannel1, uint16_t* pChannel2, u
 					}
 				}
 				break;
-			case LIB_BAYER_ORDER_NUM:
+			case BZ_BO_NUM:
 			default:
 				BLOGE("Not support bayer order:%d", order);
 				rt = BZ_FAILED;
@@ -1647,7 +1656,7 @@ int32_t ReadChannels(uint16_t* data, uint16_t* pChannel1, uint16_t* pChannel2, u
 	return rt;
 }
 
-int32_t BZ_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+int32_t BZ_CST_RAW2RGB(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 
@@ -1657,7 +1666,7 @@ int32_t BZ_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS 
 	}
 
 	int32_t width, height;
-	LIB_BAYER_ORDER bayerOrder = LIB_BAYER_ORDER_NUM;
+	int32_t bayerOrder = BZ_BO_NUM;
 	width = pParams->info.width;
 	height = pParams->info.height;
 	bayerOrder = pParams->info.bayerOrder;
@@ -1666,14 +1675,14 @@ int32_t BZ_CST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS 
 	uint16_t* pChannel2 = nullptr;
 	uint16_t* pChannel3 = nullptr;
 	switch (bayerOrder) {
-	case LIB_RGGB:
-	case LIB_GRBG:
+	case BZ_BO_RGGB:
+	case BZ_BO_GRBG:
 		pChannel3 = static_cast<uint16_t*>(dst);
 		pChannel2 = static_cast<uint16_t*>(dst) + width * height;
 		pChannel1 = static_cast<uint16_t*>(dst) + 2 * width * height;
 		break;
-	case LIB_GBRG:
-	case LIB_BGGR:
+	case BZ_BO_GBRG:
+	case BZ_BO_BGGR:
 		pChannel1 = static_cast<uint16_t*>(dst);
 		pChannel2 = static_cast<uint16_t*>(dst) + width * height;
 		pChannel3 = static_cast<uint16_t*>(dst) + 2 * width * height;
@@ -1746,7 +1755,7 @@ void Compress10to8(uint16_t* src, unsigned char* dst, int32_t size, bool need_42
 #define YUV2B_uchar(y, u ,v) YUV2B(VMASK_UCHAR(y), VMASK_UCHAR(u), VMASK_UCHAR(v))
 
 
-int32_t BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+int32_t BZ_CST_RGB2YUV(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 	uint32_t w, h;
@@ -1834,7 +1843,7 @@ int32_t BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS 
 	return rt;
 }
 
-int32_t BZ_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
+int32_t BZ_CST_YUV2RGB(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs, ...)
 {
 	int32_t rt = BZ_SUCCESS;
 	(void)CBs;

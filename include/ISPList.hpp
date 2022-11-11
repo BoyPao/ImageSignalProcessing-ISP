@@ -8,7 +8,7 @@
 
 #include "ISPList.h"
 
-const ALG_PROCESS_CMD gProcessCMD[NEC_PROCESS_TYPE_NUM] =
+const int32_t gProcessCmd[NEC_PROCESS_TYPE_NUM] =
 {
 	ALG_CMD_BLC,
 	ALG_CMD_LSC,
@@ -25,31 +25,31 @@ const ALG_PROCESS_CMD gProcessCMD[NEC_PROCESS_TYPE_NUM] =
 	ALG_CMD_CTS_YUV2RGB,
 };
 
-static ISP_LISTHEAD_PROPERTY gListHeadsConfigure = {
+static ISPListHeadProperty gListHeadsConfigure = {
 	{{"HEAD",			NEC_PROCESS_HEAD,			NODE_ON},
 	 {"CST_RAW2RGB",	NEC_PROCESS_CST_RAW2RGB,	NODE_ON},
 	 {"CST_RGB2YUV",	NEC_PROCESS_CST_RGB2YUV,	NODE_ON}, /* support off this node for debug */
 	 {"CST_YUV2RGB",	NEC_PROCESS_CST_YUV2RGB,	NODE_ON}}
 };
 
-const PROCESS_TYPE RawListConfigure[] = {
+const int32_t RawListConfigure[] = {
 	PROCESS_BLC,
 	PROCESS_LSC,
 };
 
-const PROCESS_TYPE RgbListConfigure[] = {
+const int32_t RgbListConfigure[] = {
 	PROCESS_Demosaic,
 	PROCESS_WB,
 	PROCESS_CC,
 	PROCESS_GAMMA,
 };
 
-const PROCESS_TYPE YuvListConfigure[] = {
+const int32_t YuvListConfigure[] = {
 	PROCESS_WNR,
 	PROCESS_EE,
 };
 
-const PROCESS_TYPE PostListConfigure[] = {
+const int32_t PostListConfigure[] = {
 	PROCESS_TYPE_NUM
 };
 
@@ -60,7 +60,7 @@ ISPNode<T1, T2>::ISPNode() :
 	pInputBuffer(nullptr),
 	pOutputBuffer(nullptr)
 {
-	memset(&mProperty, 0, sizeof(ISP_NODE_PROPERTY));
+	memset(&mProperty, 0, sizeof(ISPNodeProperty));
 }
 
 template<typename T1, typename T2>
@@ -70,11 +70,11 @@ ISPNode<T1, T2>::~ISPNode()
 	mInited = false;
 	pInputBuffer = nullptr;
 	pOutputBuffer = nullptr;
-	memset(&mProperty, 0, sizeof(ISP_NODE_PROPERTY));
+	memset(&mProperty, 0, sizeof(ISPNodeProperty));
 }
 
 template<typename T1, typename T2>
-int32_t ISPNode<T1, T2>::Init(ISP_NODE_PROPERTY *cfg, T1* input, T2* output)
+int32_t ISPNode<T1, T2>::Init(ISPNodeProperty *cfg, T1* input, T2* output)
 {
 	int32_t rt = ISP_SUCCESS;
 
@@ -83,7 +83,7 @@ int32_t ISPNode<T1, T2>::Init(ISP_NODE_PROPERTY *cfg, T1* input, T2* output)
 	}
 
 	if (SUCCESS(rt)) {
-		memcpy(&mProperty, cfg, sizeof(ISP_NODE_PROPERTY));
+		memcpy(&mProperty, cfg, sizeof(ISPNodeProperty));
 	}
 
 	if (SUCCESS(rt)) {
@@ -140,7 +140,7 @@ int32_t ISPNode<T1, T2>::GetNodeName(char* name)
 }
 
 template<typename T1, typename T2>
-ISP_NODE_PROPERTY ISPNode<T1, T2>::GetProperty()
+ISPNodeProperty ISPNode<T1, T2>::GetProperty()
 {
 	return mProperty;
 }
@@ -168,7 +168,7 @@ int32_t ISPNode<T1, T2>::Process(void* pItf)
 
 	if (SUCCESS(rt)) {
 		ILOGDL("%s:Buffer(in:%p out:%p)", name, pInputBuffer, pOutputBuffer);
-		rt = pIW->AlgProcess(gProcessCMD[mProperty.type] ,pInputBuffer, mProperty.enable);
+		rt = pIW->AlgProcess(gProcessCmd[mProperty.type] ,pInputBuffer, mProperty.enable);
 	}
 
 	if (SUCCESS(rt)) {
@@ -185,17 +185,17 @@ int32_t ISPNode<T1, T2>::Process(void* pItf)
 template<typename T1, typename T2>
 ISPNecNode<T1, T2>::ISPNecNode()
 {
-	memset(&mProperty, 0, sizeof(ISP_NODE_PROPERTY));
+	memset(&mProperty, 0, sizeof(ISPNodeProperty));
 }
 
 template<typename T1, typename T2>
 ISPNecNode<T1, T2>::~ISPNecNode()
 {
-	memset(&mProperty, 0, sizeof(ISP_NODE_PROPERTY));
+	memset(&mProperty, 0, sizeof(ISPNodeProperty));
 }
 
 template<typename T1, typename T2>
-int32_t ISPNecNode<T1, T2>::Init(ISP_NECNODE_PROPERTY *cfg, T1* input, T2* output)
+int32_t ISPNecNode<T1, T2>::Init(ISPNecNodeProperty *cfg, T1* input, T2* output)
 {
 	int32_t rt = ISP_SUCCESS;
 
@@ -204,7 +204,7 @@ int32_t ISPNecNode<T1, T2>::Init(ISP_NECNODE_PROPERTY *cfg, T1* input, T2* outpu
 	}
 
 	if (SUCCESS(rt)) {
-		memcpy(&mProperty, cfg, sizeof(ISP_NODE_PROPERTY));
+		memcpy(&mProperty, cfg, sizeof(ISPNodeProperty));
 	}
 
 	if (SUCCESS(rt)) {
@@ -256,7 +256,7 @@ int32_t ISPNecNode<T1, T2>::Process(void* pItf)
 	if (SUCCESS(rt)) {
 		if (mProperty.type != NEC_PROCESS_HEAD) { /* Now nothing todo with head */
 			ILOGDL("%s:Buffer(in:%p out:%p)", name, this->pInputBuffer, this->pOutputBuffer);
-			rt = pIW->AlgProcess(gProcessCMD[mProperty.type], this->pInputBuffer, this->pOutputBuffer, mProperty.enable);
+			rt = pIW->AlgProcess(gProcessCmd[mProperty.type], this->pInputBuffer, this->pOutputBuffer, mProperty.enable);
 		}
 	}
 
@@ -359,10 +359,10 @@ ISPList<T1, T2, T3, T4>::~ISPList()
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-int32_t ISPList<T1, T2, T3, T4>::StateTransform(STATE_TRANS_ORIENTATION orientation)
+int32_t ISPList<T1, T2, T3, T4>::StateTransform(int32_t orientation)
 {
 	int32_t rt = ISP_SUCCESS;
-	ISP_LIST_STATE currentState = mState;
+	int32_t currentState = mState;
 
 	if (orientation == STATE_TRANS_FORWARD) {
 		switch (currentState) {
@@ -445,7 +445,7 @@ int32_t ISPList<T1, T2, T3, T4>::Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T4*
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-int32_t ISPList<T1, T2, T3, T4>::SetListConfig(ISP_LIST_PROPERTY* pCfg)
+int32_t ISPList<T1, T2, T3, T4>::SetListConfig(ISPListProperty* pCfg)
 {
 	int32_t rt = ISP_SUCCESS;
 
@@ -456,7 +456,7 @@ int32_t ISPList<T1, T2, T3, T4>::SetListConfig(ISP_LIST_PROPERTY* pCfg)
 
 	if (SUCCESS(rt)) {
 		if (pCfg) {
-			memcpy(&mProperty, pCfg, sizeof(ISP_LIST_PROPERTY));
+			memcpy(&mProperty, pCfg, sizeof(ISPListProperty));
 		}
 		else {
 			rt = ISP_INVALID_PARAM;
@@ -472,7 +472,7 @@ int32_t ISPList<T1, T2, T3, T4>::SetListConfig(ISP_LIST_PROPERTY* pCfg)
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-int32_t ISPList<T1, T2, T3, T4>::FindNodePropertyIndex(PROCESS_TYPE type, int32_t* index)
+int32_t ISPList<T1, T2, T3, T4>::FindNodePropertyIndex(int32_t type, int32_t* index)
 {
 	int32_t rt = ISP_SUCCESS;
 
@@ -495,7 +495,7 @@ int32_t ISPList<T1, T2, T3, T4>::FindNodePropertyIndex(PROCESS_TYPE type, int32_
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-int32_t ISPList<T1, T2, T3, T4>::FindNecNodePropertyIndex(NEC_PROCESS_TYPE type, int32_t* index)
+int32_t ISPList<T1, T2, T3, T4>::FindNecNodePropertyIndex(int32_t type, int32_t* index)
 {
 	int32_t rt = ISP_SUCCESS;
 
@@ -641,7 +641,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreateRawList()
 
 	int32_t nodePropertyIndex = -1;
 	ISPNode<T1, T1>* pNewNode = nullptr;
-	PROCESS_TYPE newNodeType = PROCESS_TYPE_NUM;
+	int32_t newNodeType = PROCESS_TYPE_NUM;
 
 	if (mState != ISP_LIST_CONFIGED) {
 		rt = ISP_STATE_ERROR;
@@ -649,7 +649,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreateRawList()
 	}
 
 	if (SUCCESS(rt)) {
-		for (int32_t i = 0; i < (int32_t)(sizeof(RawListConfigure) / sizeof(PROCESS_TYPE)); i++) {
+		for (uint32_t i = 0; i < (sizeof(RawListConfigure) / sizeof(int32_t)); i++) {
 			newNodeType = RawListConfigure[i];
 			FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
 			if (nodePropertyIndex >= 0) {
@@ -726,7 +726,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreateRgbList()
 
 	int32_t nodePropertyIndex = -1;
 	ISPNode<T2, T2>* pNewNode = nullptr;
-	PROCESS_TYPE newNodeType = PROCESS_TYPE_NUM;
+	int32_t newNodeType = PROCESS_TYPE_NUM;
 
 	if (mState != ISP_LIST_CONFIGED) {
 		rt = ISP_STATE_ERROR;
@@ -734,7 +734,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreateRgbList()
 	}
 
 	if (SUCCESS(rt)) {
-		for (int32_t i = 0; i < (int32_t)(sizeof(RgbListConfigure) / sizeof(PROCESS_TYPE)); i++) {
+		for (uint32_t i = 0; i < (sizeof(RgbListConfigure) / sizeof(int32_t)); i++) {
 			newNodeType = RgbListConfigure[i];
 			FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
 			if (nodePropertyIndex >= 0) {
@@ -817,7 +817,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreateYuvList()
 
 	int32_t nodePropertyIndex = -1;
 	ISPNode<T3, T3>* pNewNode = nullptr;
-	PROCESS_TYPE newNodeType = PROCESS_TYPE_NUM;
+	int32_t newNodeType = PROCESS_TYPE_NUM;
 
 	if (mState != ISP_LIST_CONFIGED) {
 		rt = ISP_STATE_ERROR;
@@ -825,7 +825,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreateYuvList()
 	}
 
 	if (SUCCESS(rt)) {
-		for (int32_t i = 0; i < (int32_t)(sizeof(YuvListConfigure) / sizeof(PROCESS_TYPE)); i++) {
+		for (uint32_t i = 0; i < (sizeof(YuvListConfigure) / sizeof(int32_t)); i++) {
 			newNodeType = YuvListConfigure[i];
 			FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
 			if (nodePropertyIndex >= 0) {
@@ -909,7 +909,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreatePostList()
 
 	int32_t nodePropertyIndex = -1;
 	ISPNode<T4, T4>* pNewNode = nullptr;
-	PROCESS_TYPE newNodeType = PROCESS_TYPE_NUM;
+	int32_t newNodeType = PROCESS_TYPE_NUM;
 
 	if (mState != ISP_LIST_CONFIGED) {
 		rt = ISP_STATE_ERROR;
@@ -917,7 +917,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreatePostList()
 	}
 
 	if (SUCCESS(rt)) {
-		for (int32_t i = 0; i < (int32_t)(sizeof(PostListConfigure) / sizeof(PROCESS_TYPE)); i++) {
+		for (uint32_t i = 0; i < (sizeof(PostListConfigure) / sizeof(int32_t)); i++) {
 			newNodeType = PostListConfigure[i];
 			FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
 			if (nodePropertyIndex >= 0) {
@@ -940,7 +940,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreatePostList()
 					break;
 				}
 			}
-			else if (sizeof(PostListConfigure)/sizeof(PROCESS_TYPE) != 1) { //Special logic for post list
+			else if (sizeof(PostListConfigure)/sizeof(int32_t) != 1) { //Special logic for post list
 				ILOGW("Not find node type:%d", newNodeType);
 			}
 		}

@@ -10,8 +10,8 @@
 #include "BZLog.h"
 #include "LibInterface.h"
 
-#define CHECK_PACKAGED(format)                          (((format) == LIB_UNPACKAGED_RAW10_LSB) ||                          \
-														((format) == LIB_UNPACKAGED_RAW10_MSB)) ? 0 : 1
+#define CHECK_PACKAGED(format)                          (((format) == BZ_UNPACKAGED_RAW10_LSB) ||                          \
+														((format) == BZ_UNPACKAGED_RAW10_MSB)) ? 0 : 1
 
 #define PIXELS2WORDS_MIPI_PACKAGED(pixelNum, bitspp)	(((bitspp) < BITS_PER_WORD) ?										\
 														0 :																	\
@@ -33,37 +33,37 @@
 #define ALIGNx(pixelNum, bitspp, packaged, align)		ALIGN(PIXELS2WORDS(pixelNum, bitspp, packaged), align)
 
 /* Bayer Process */
-void WrapBlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-void WrapLensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void WrapBlackLevelCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
+void WrapLensShadingCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
 
 /* RGB Process */
-void WrapDemosaic(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-void WrapWhiteBalance(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-void WrapColorCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-void WrapGammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void WrapDemosaic(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
+void WrapWhiteBalance(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
+void WrapColorCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
+void WrapGammaCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
 
 /* YUVProcess */
-void WrapWaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-void WrapEdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void WrapWaveletNR(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
+void WrapEdgeEnhancement(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
 
 /* CST */
-void WrapCST_RAW2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-void WrapCST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
-void WrapCST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
+void WrapCST_RAW2RGB(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs, ...);
+void WrapCST_RGB2YUV(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs, ...);
+void WrapCST_YUV2RGB(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs, ...);
 
-enum RGB_O {
+enum RGBOrder {
 	RO_RGB = 0,
 	RO_BGR,
 	RO_NUM
 };
 
-enum YUV_ORDER {
+enum YUVOrder {
 	YO_YUV = 0,
 	YO_YVU,
 	YO_NUM
 };
 
-enum YUV_STRUCT {
+enum YUVStruct {
 	YS_444 = 0,
 	YS_422,
 	YS_420,

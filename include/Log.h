@@ -22,7 +22,7 @@ void LogBase(const char* str, ...);
 void LogAddInfo(bool needExtInfo, const char* str, va_list va);
 void LogPrint(const char* str, va_list va);
 
-enum ISP_LOG_MASK {
+enum ISPLogMask {
 	LOG_BASE_MASK	= 0x1,
 	LOG_ERROR_MASK	= LOG_BASE_MASK,
 	LOG_WARN_MASK	= LOG_BASE_MASK << 1,
@@ -30,7 +30,7 @@ enum ISP_LOG_MASK {
 	LOG_DEBUG_MASK	= LOG_BASE_MASK << 3,
 };
 
-enum ISP_DBG_MASK {
+enum ISPDbgMask {
 	DBG_BASE_MASK = 0x1,
 	DBG_CORE_MASK = DBG_BASE_MASK,
 	DBG_FILE_MASK = DBG_BASE_MASK << 1,

@@ -14,7 +14,7 @@
 #include "BZUtils.h"
 #include <cuchar>
 
-enum BZ_STATE {
+enum BZState {
 	BZ_STATE_NEW = 0,
 	BZ_STATE_INITED,
 	BZ_STATE_NUM
@@ -28,13 +28,13 @@ public:
 	int32_t Init();
 	int32_t DeInit();
 	int32_t RegisterCallbacks(void *pCBs);
-	ISP_CALLBACKS const* GetCallbacks();
+	ISPCallbacks const* GetCallbacks();
 	int32_t ExecuteCMD();
-	LIB_MSG mMsg;
-	ISP_CALLBACKS mISPCBs;
+	BZMsg mMsg;
+	ISPCallbacks mISPCBs;
 
 private:
-	BZ_STATE mState;
+	int32_t mState;
 };
 
 int32_t WrapLibInit(void* pOPS);

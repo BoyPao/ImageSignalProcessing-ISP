@@ -13,7 +13,7 @@
 
 #define NODE_NAME_MAX_SZIE 15
 
-enum PROCESS_TYPE {
+enum ProcessType {
 	PROCESS_BLC = 0,
 	PROCESS_LSC,
 	PROCESS_Demosaic,
@@ -25,7 +25,7 @@ enum PROCESS_TYPE {
 	PROCESS_TYPE_NUM
 };
 
-enum NEC_PROCESS_TYPE {
+enum NecProcessType {
 	NEC_PROCESS_HEAD = PROCESS_TYPE_NUM + 1,
 	NEC_PROCESS_CST_RAW2RGB,
 	NEC_PROCESS_CST_RGB2YUV,
@@ -33,16 +33,16 @@ enum NEC_PROCESS_TYPE {
 	NEC_PROCESS_TYPE_NUM
 };
 
-enum NODE_SWITCH {
+enum NodeSwitch {
 	NODE_OFF = 0,
 	NODE_ON
 };
 
 /* NODE */
-struct ISP_NODE_PROPERTY {
+struct ISPNodeProperty {
 	char name[NODE_NAME_MAX_SZIE];
-	PROCESS_TYPE type;
-	NODE_SWITCH enable;
+	int32_t type;
+	int32_t enable;
 };
 
 template<typename T1, typename T2>
@@ -51,12 +51,12 @@ public:
 	ISPNode();
 	virtual ~ISPNode();
 	virtual int32_t GetNodeName(char* name);
-	virtual int32_t Init(ISP_NODE_PROPERTY* cfg, T1* input, T2* output);
+	virtual int32_t Init(ISPNodeProperty* cfg, T1* input, T2* output);
 	virtual int32_t Process(void* pItf);
 	virtual int32_t Enable();
 	virtual int32_t Disable();
 	virtual bool isOn();
-	virtual ISP_NODE_PROPERTY GetProperty();
+	virtual ISPNodeProperty GetProperty();
 
 	ISPNode<T2,T2>* pNext;
 
@@ -66,14 +66,14 @@ protected:
 	T2* pOutputBuffer;
 
 private:
-	ISP_NODE_PROPERTY mProperty;
+	ISPNodeProperty mProperty;
 };
 
 /* NEC NODE */
-struct ISP_NECNODE_PROPERTY {
+struct ISPNecNodeProperty {
 	char name[NODE_NAME_MAX_SZIE];
-	NEC_PROCESS_TYPE type;
-	NODE_SWITCH enable;
+	int32_t type;
+	int32_t enable;
 };
 
 template<typename T1, typename T2>
@@ -81,16 +81,16 @@ class ISPNecNode : public ISPNode<T1, T2> {
 public:
 	ISPNecNode();
 	~ISPNecNode();
-	int32_t Init(ISP_NECNODE_PROPERTY* cfg, T1* input, T2* output);
+	int32_t Init(ISPNecNodeProperty* cfg, T1* input, T2* output);
 	int32_t GetNodeName(char* name);
 	int32_t Process(void* pItf);
 	int32_t Disable();
 private:
-	ISP_NECNODE_PROPERTY mProperty;
+	ISPNecNodeProperty mProperty;
 };
 
 /* Node List */
-enum ISP_LIST_STATE {
+enum ISPListState {
 	ISP_LIST_NEW = 0,
 	ISP_LIST_INITED,
 	ISP_LIST_CONFIGED,
@@ -98,18 +98,18 @@ enum ISP_LIST_STATE {
 	ISP_LIST_RUNNING
 };
 
-enum STATE_TRANS_ORIENTATION {
+enum StateTransOrientation {
 	STATE_TRANS_FORWARD = 0,
 	STATE_TRANS_BACKWARD,
 	STATE_TRANS_TO_SELF
 };
 
-struct ISP_LIST_PROPERTY {
-	ISP_NODE_PROPERTY NodeProperty[PROCESS_TYPE_NUM];
+struct ISPListProperty {
+	ISPNodeProperty NodeProperty[PROCESS_TYPE_NUM];
 };
 
-struct ISP_LISTHEAD_PROPERTY {
-	ISP_NECNODE_PROPERTY NecNodeProperty[NEC_PROCESS_TYPE_NUM - NEC_PROCESS_HEAD];
+struct ISPListHeadProperty {
+	ISPNecNodeProperty NecNodeProperty[NEC_PROCESS_TYPE_NUM - NEC_PROCESS_HEAD];
 };
 
 template<typename T1, typename T2, typename T3, typename T4>
@@ -118,11 +118,11 @@ public:
 	ISPList(int32_t id);
 	~ISPList();
 	int32_t Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T4* pPostBuf, void* pIW);
-	int32_t SetListConfig(ISP_LIST_PROPERTY* pCfg);
-	int32_t FindNodePropertyIndex(PROCESS_TYPE type, int32_t* index);
-	int32_t FindNecNodePropertyIndex(NEC_PROCESS_TYPE type, int32_t* index);
+	int32_t SetListConfig(ISPListProperty* pCfg);
+	int32_t FindNodePropertyIndex(int32_t type, int32_t* index);
+	int32_t FindNecNodePropertyIndex(int32_t type, int32_t* index);
 	int32_t CreatISPList();
-	int32_t AddNode(PROCESS_TYPE type);
+	int32_t AddNode(int32_t type);
 	int32_t GetNodeNum();
 	int32_t Process();
 	int32_t EnableNodebyType(int32_t type);
@@ -146,7 +146,7 @@ private:
 	int32_t YuvProcess();
 	int32_t TriggerPostProcess();
 	int32_t PostProcess();
-	int32_t StateTransform(STATE_TRANS_ORIENTATION orientation);
+	int32_t StateTransform(int32_t orientation);
 
 	int32_t mId;
 	ISPNecNode<T1, T1>* mRawHead;
@@ -159,7 +159,7 @@ private:
 	T2* pRgbBuffer;
 	T3* pYuvBuffer;
 	T4* pPostBuffer;
-	ISP_LIST_PROPERTY mProperty;
-	ISP_LIST_STATE mState;
+	ISPListProperty mProperty;
+	int32_t mState;
 };
 

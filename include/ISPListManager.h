@@ -11,7 +11,7 @@
 
 using namespace std;
 
-enum LIST_CFG_INDEX {
+enum ListCfgIndex {
 	LIST_CFG_DEFAULT = 0,
 	LIST_CFG_NUM
 };
@@ -27,8 +27,8 @@ public:
 	int32_t DestoryListbyId(int32_t id);
 	int32_t DestoryAllList();
 	int32_t StartById(int32_t id);
-	int32_t EnableNodebyType(int32_t id, PROCESS_TYPE type);
-	int32_t DisableNodebyType(int32_t id, PROCESS_TYPE type);
+	int32_t EnableNodebyType(int32_t id, ProcessType type);
+	int32_t DisableNodebyType(int32_t id, ProcessType type);
 
 private:
 	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* FindListById(int32_t id);
@@ -36,7 +36,7 @@ private:
 	int32_t mListNum;
 	ISPParamManager* pParamManager;
 	InterfaceWrapper* pItfWrapper;
-	ISP_LIST_PROPERTY* pISPListConfigs;
+	ISPListProperty* pISPListConfigs;
 	map<int32_t, int32_t> mISPListConfigMap;
 	map<int32_t, ISPList<uint16_t, uint16_t, uint8_t, uint8_t>*> mListMap;
 };

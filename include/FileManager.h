@@ -25,12 +25,12 @@ typedef int32_t ISPState;
 static const ISPState Uninited = 0;
 static const ISPState Inited = 1;
 
-enum INPUT_FILE_TYPE {
+enum InputFileType {
 	INPUT_FILE_TYPE_RAW,
 	INPUT_FILE_TYPE_NUM
 };
 
-enum OUTPUT_FILE_TYPE {
+enum OutputFileType {
 	OUTPUT_FILE_TYPE_BMP,
 	OUTPUT_FILE_TYPE_AVI,
 	OUTPUT_FILE_TYPE_NUM
@@ -38,13 +38,13 @@ enum OUTPUT_FILE_TYPE {
 
 struct InputInfo {
 	char path[FILE_PATH_MAX_SIZE];
-	INPUT_FILE_TYPE type;
+	int32_t type;
 	int32_t size;
 };
 
 struct OutputImgInfo {
 	char path[FILE_PATH_MAX_SIZE];
-	OUTPUT_FILE_TYPE type;
+	int32_t type;
 	int32_t size;
 	int32_t width;
 	int32_t height;
@@ -53,7 +53,7 @@ struct OutputImgInfo {
 
 struct OutputVideoInfo {
 	char path[FILE_PATH_MAX_SIZE];
-	OUTPUT_FILE_TYPE type;
+	int32_t type;
 	int32_t width;
 	int32_t height;
 	int32_t fps;
@@ -90,7 +90,7 @@ public:
 	int32_t CreateVideo(void* dst);
 	int32_t SaveVideoData(int32_t frameCount);
 	int32_t DestroyVideo();
-	int32_t Mipi10decode(void* src, void* dst, IMG_INFO* info);
+	int32_t Mipi10decode(void* src, void* dst, ImgInfo* info);
 	int32_t Input(IOInfo in);
 	int32_t GetIOInfo(void* pInfo);
 

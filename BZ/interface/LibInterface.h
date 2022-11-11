@@ -22,118 +22,118 @@ extern "C" {
 typedef void (*LIB_VOID_FUNC_ADDR)(void*, ...);
 }
 
-enum LIB_RAW_FORMAT {
-	LIB_ANDROID_RAW10 = 0,
-	LIB_ORDINAL_RAW10,
-	LIB_UNPACKAGED_RAW10_LSB,
-	LIB_UNPACKAGED_RAW10_MSB,
-	LIB_RAW_FORMAT_NUM
+enum BZRawFormat {
+	BZ_ANDROID_RAW10 = 0,
+	BZ_ORDINAL_RAW10,
+	BZ_UNPACKAGED_RAW10_LSB,
+	BZ_UNPACKAGED_RAW10_MSB,
+	BZ_RAW_FORMAT_NUM
 };
 
-enum LIB_BAYER_ORDER {
-	LIB_BGGR = 0,
-	LIB_GBRG,
-	LIB_GRBG,
-	LIB_RGGB,
-	LIB_BAYER_ORDER_NUM
+enum BZBayerOrder {
+	BZ_BO_BGGR = 0,
+	BZ_BO_GBRG,
+	BZ_BO_GRBG,
+	BZ_BO_RGGB,
+	BZ_BO_NUM
 };
 
-struct LIB_IMG_INFO
+struct BZImgInfo
 {
 	int32_t width;
 	int32_t height;
 	int32_t bitspp;
 	int32_t stride;
-	LIB_RAW_FORMAT rawFormat;
-	LIB_BAYER_ORDER bayerOrder;
+	int32_t rawFormat;
+	int32_t bayerOrder;
 };
 
-struct LIB_BLC_PARAM {
+struct BZBlcParam {
 	uint16_t offset;
 };
 
-struct LIB_LSC_PARAM {
-	float GainCh1[LSC_LUT_HEIGHT * LSC_LUT_WIDTH];
-	float GainCh2[LSC_LUT_HEIGHT * LSC_LUT_WIDTH];
-	float GainCh3[LSC_LUT_HEIGHT * LSC_LUT_WIDTH];
-	float GainCh4[LSC_LUT_HEIGHT * LSC_LUT_WIDTH];
+struct BZLscParam {
+	float gainCh1[LSC_LUT_HEIGHT * LSC_LUT_WIDTH];
+	float gainCh2[LSC_LUT_HEIGHT * LSC_LUT_WIDTH];
+	float gainCh3[LSC_LUT_HEIGHT * LSC_LUT_WIDTH];
+	float gainCh4[LSC_LUT_HEIGHT * LSC_LUT_WIDTH];
 };
 
-struct LIB_WB_PARAM {
+struct BZWbParam {
 	float rGain;
 	float gGain;
 	float bGain;
 };
 
-struct LIB_CC_PARAM {
-	float CCM[CCM_HEIGHT * CCM_WIDTH];
+struct BZCcParam {
+	float ccm[CCM_HEIGHT * CCM_WIDTH];
 };
 
-struct LIB_GAMMA_PARAM {
+struct BZGammaParam {
 	uint16_t lut[GAMMA_LUT_SIZE];
 };
 
-struct LIB_WNR_PARAM {
+struct BZWnrParam {
 	int32_t ch1Threshold[3];
 	int32_t ch2Threshold[3];
 	int32_t ch3Threshold[3];
 };
 
-struct LIB_EE_PARAM {
+struct BZEeParam {
 	float alpha;
 	int32_t coreSize;
 	int32_t sigma;
 };
 
-struct LIB_PARAMS {
-	LIB_IMG_INFO info;
-	LIB_BLC_PARAM BLC_param;
-	LIB_LSC_PARAM LSC_param;
-	LIB_WB_PARAM WB_param;
-	LIB_CC_PARAM CC_param;
-	LIB_GAMMA_PARAM Gamma_param;
-	LIB_WNR_PARAM WNR_param;
-	LIB_EE_PARAM EE_param;
+struct BZParam {
+	BZImgInfo info;
+	BZBlcParam blc;
+	BZLscParam lsc;
+	BZWbParam wb;
+	BZCcParam cc;
+	BZGammaParam gamma;
+	BZWnrParam wnr;
+	BZEeParam ee;
 };
 
-struct ISP_UTILS_FUNCS {
+struct ISPUtilsFuncs {
 	void (*Log) (const char* str, ...);
 	void (*DumpDataInt) (void* pData, ...);
 	void* (*Alloc) (size_t size, ...);
 	void* (*Free) (void* pBuf, ...);
 };
 
-struct ISP_CALLBACKS {
-	void (*ISP_Notify) (int32_t argNum, ...);
-	ISP_UTILS_FUNCS UtilsFuncs;
+struct ISPCallbacks {
+	void (*ISPNotify) (int32_t argNum, ...);
+	ISPUtilsFuncs UtilsFuncs;
 };
 
-enum LIB_CMD {
-	LIB_CMD_BLC = 0,
-	LIB_CMD_LSC,
-	LIB_CMD_DEMOSAIC,
-	LIB_CMD_WB,
-	LIB_CMD_CC,
-	LIB_CMD_GAMMA,
-	LIB_CMD_WNR,
-	LIB_CMD_EE,
-	LIB_CMD_RAW2RGB,
-	LIB_CMD_RGB2YUV,
-	LIB_CMD_YUV2RGB,
-	LIB_CMD_NUM,
+enum BZCmd {
+	BZ_CMD_BLC = 0,
+	BZ_CMD_LSC,
+	BZ_CMD_DEMOSAIC,
+	BZ_CMD_WB,
+	BZ_CMD_CC,
+	BZ_CMD_GAMMA,
+	BZ_CMD_WNR,
+	BZ_CMD_EE,
+	BZ_CMD_RAW2RGB,
+	BZ_CMD_RGB2YUV,
+	BZ_CMD_YUV2RGB,
+	BZ_CMD_NUM,
 };
 
-struct LIB_MSG {
-	LIB_CMD cmd;
+struct BZMsg {
+	int32_t cmd;
 	void* pSrc;
 	void* pDst;
-	LIB_PARAMS* pParam;
+	BZParam* pParam;
 	bool enable;
 };
 
-struct LIB_OPS
+struct BZOps
 {
-	int32_t (*LIB_Event)	(void* msg);
+	int32_t (*BZEvent)	(void* msg);
 };
 
 

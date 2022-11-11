@@ -9,8 +9,8 @@
 #include "ISPListConfig.h"
 #include "ISPList.hpp"
 
-ISP_LIST_PROPERTY* gISPListConfigs[LIST_CFG_NUM] = {
-	&DefaultListConfig
+void *gISPListConfigs[LIST_CFG_NUM] = {
+	(void *)&defaultListConfig
 };
 
 ISPListManager::ISPListManager():
@@ -42,7 +42,7 @@ int32_t ISPListManager::Init(ISPParamManager* pPM, InterfaceWrapper* pIW)
 	}
 
 	if (SUCCESS(rt)) {
-		pISPListConfigs = gISPListConfigs[LIST_CFG_DEFAULT];
+		pISPListConfigs = static_cast<ISPListProperty*>(gISPListConfigs[LIST_CFG_DEFAULT]);
 	}
 
 	return rt;
@@ -191,7 +191,7 @@ int32_t ISPListManager::StartById(int32_t id)
 	return rt;
 }
 
-int32_t ISPListManager::EnableNodebyType(int32_t id, PROCESS_TYPE type)
+int32_t ISPListManager::EnableNodebyType(int32_t id, ProcessType type)
 {
 	int32_t rt = ISP_SUCCESS;
 	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
@@ -208,7 +208,7 @@ int32_t ISPListManager::EnableNodebyType(int32_t id, PROCESS_TYPE type)
 	return rt;
 }
 
-int32_t ISPListManager::DisableNodebyType(int32_t id, PROCESS_TYPE type)
+int32_t ISPListManager::DisableNodebyType(int32_t id, ProcessType type)
 {
 	int32_t rt = ISP_SUCCESS;
 	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;

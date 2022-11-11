@@ -17,7 +17,7 @@
 #include <mutex>
 #include <condition_variable>
 
-enum CORE_STATE {
+enum CoreState {
 	CORE_IDLE = 0,
 	CORE_INITED,
 	CORE_PROCESSING,

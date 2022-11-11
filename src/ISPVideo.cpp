@@ -1,6 +1,6 @@
 // License: GPL-3.0-or-later
 /*
- * ISPVidoe aims to support video record in ISP.
+ * ISPVideo aims to support video record in ISP.
  *
  * Copyright (c) 2019 Peng Hao <635945005@qq.com>
  */
@@ -8,7 +8,14 @@
 #include "ISPVideo.h"
 #include "FileManager.h"
 
+#if DBG_OPENCV_ON
+#include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/highgui/highgui.hpp"
+
 using namespace cv;
+#endif
 using namespace std;
 
 ISPVideo::ISPVideo():
@@ -97,7 +104,7 @@ int32_t ISPVideo::DestroyThread()
 	return rt;
 }
 
-int32_t ISPVideo::Record(VideoWriter* pRecorder, int32_t w, int32_t h)
+int32_t ISPVideo::Record(void* pRecorder, int32_t w, int32_t h)
 {
 	int32_t rt = ISP_SUCCESS;
 
@@ -116,15 +123,22 @@ int32_t ISPVideo::Record(VideoWriter* pRecorder, int32_t w, int32_t h)
 		unique_lock <mutex> lock(mMutex);
 		mCond.wait(lock);
 		/* TODO: add shared buffer R&W lock */
-		Mat src = Mat(h, w, CV_8UC3, Scalar(0, 0, 0));
-		for (int32_t row = 0; row < h; row++) {
-			for (int32_t col = 0; col < w; col++) {
-				src.data[row * w * 3 + col * 3] = static_cast<uchar*>(pSrc)[row * w + col];
-				src.data[row * w * 3 + col * 3 + 1] = static_cast<uchar*>(pSrc)[w * h + row * w + col];
-				src.data[row * w * 3 + col * 3 + 2] = static_cast<uchar*>(pSrc)[2 * w * h + row * w + col];
+#if DBG_OPENCV_ON
+		VideoWriter* pVR = static_cast<VideoWriter*>(pRecorder);
+		if (pVR->isOpened()) {
+			Mat src = Mat(h, w, CV_8UC3, Scalar(0, 0, 0));
+			for (int32_t row = 0; row < h; row++) {
+				for (int32_t col = 0; col < w; col++) {
+					src.data[row * w * 3 + col * 3] = static_cast<uchar*>(pSrc)[row * w + col];
+					src.data[row * w * 3 + col * 3 + 1] = static_cast<uchar*>(pSrc)[w * h + row * w + col];
+					src.data[row * w * 3 + col * 3 + 2] = static_cast<uchar*>(pSrc)[2 * w * h + row * w + col];
+				}
 			}
+			*pVR << src;
 		}
-		*pRecorder << src;
+#else
+		ILOGW("Not support video recording");
+#endif
 	}
 
 	return rt;
@@ -168,10 +182,15 @@ void* VideoEncodeFunc(void* threadParam)
 	}
 
 	if (SUCCESS(rt)) {
-		VideoWriter vWriter(info.path, VideoWriter::fourcc('M', 'J', 'P', 'G'), info.fps, Size(info.width, info.height));
-		if (vWriter.isOpened()) {
+		void* pWriter = NULL;
+#if DBG_OPENCV_ON
+		pWriter = (void*) new vWriter(info.path, VideoWriter::fourcc('M', 'J', 'P', 'G'), info.fps, Size(info.width, info.height));
+#else
+		pWriter = (void*)pISPVideo;
+#endif
+		if (pWriter) {
 			for (int32_t frameCount = 1; frameCount <= info.frameNum; frameCount++) {
-				rt = pISPVideo->Record(&vWriter, info.width, info.height);
+				rt = pISPVideo->Record(pWriter, info.width, info.height);
 				ILOGD("Recording F:%d (%ds)", frameCount, frameCount / info.fps);
 				if (frameCount == info.frameNum) {
 					ILOGI("Video output path:%s", info.path);

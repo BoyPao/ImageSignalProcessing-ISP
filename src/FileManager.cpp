@@ -64,7 +64,7 @@ int32_t FileManager::Init()
 		rt = ISP_STATE_ERROR;
 		ILOGE("IO info buffer is null %d", rt);
 	} else {
-		memset(pDynamicInfo, 0, sizeof(MEDIA_INFO));
+		memset(pDynamicInfo, 0, sizeof(MediaInfo));
 	}
 
 	mState = Inited;
@@ -81,7 +81,7 @@ int32_t FileManager::DeInit()
 		rt = ISP_STATE_ERROR;
 		ILOGE("IO info buffer is null %d", rt);
 	} else {
-		memset(pDynamicInfo, 0, sizeof(MEDIA_INFO));
+		memset(pDynamicInfo, 0, sizeof(MediaInfo));
 	}
 
 	mState = Uninited;
@@ -403,7 +403,7 @@ int32_t FileManager::DestroyVideo()
 	return rt;
 }
 
-int32_t FileManager::Mipi10decode(void* src, void* dst, IMG_INFO* info)
+int32_t FileManager::Mipi10decode(void* src, void* dst, ImgInfo* info)
 {
 	int32_t rt = ISP_SUCCESS;
 
@@ -625,8 +625,8 @@ int32_t CheckImgSize(char* pCharW, char* pCharH, void* pInfo)
 			rt = ISP_INVALID_PARAM;
 			ILOGE("Invalid Size: %sx%s", pCharW, pCharH);
 		} else {
-			static_cast<MEDIA_INFO*>(pInfo)->img.width = w;
-			static_cast<MEDIA_INFO*>(pInfo)->img.height = h;
+			static_cast<MediaInfo*>(pInfo)->img.width = w;
+			static_cast<MediaInfo*>(pInfo)->img.height = h;
 			ILOGI("Size: %dx%d", w, h);
 		}
 	}
@@ -663,24 +663,24 @@ int32_t CheckImgFmt(char* pCharFmt, void* pInfo)
 			if (gSupportedFmt[i].fmt == fmt) {
 				ILOGI("Format: %s (%c%c%c%c)", gSupportedFmt[i].info,
 						fmt, fmt >> 8, fmt >> 16, fmt >> 24);
-				static_cast<MEDIA_INFO*>(pInfo)->img.bitspp = gSupportedFmt[i].bitWidth;
-				static_cast<MEDIA_INFO*>(pInfo)->img.bayerOrder = gSupportedFmt[i].order;
-				static_cast<MEDIA_INFO*>(pInfo)->img.stride = 0; /* 0 as default */
+				static_cast<MediaInfo*>(pInfo)->img.bitspp = gSupportedFmt[i].bitWidth;
+				static_cast<MediaInfo*>(pInfo)->img.bayerOrder = gSupportedFmt[i].order;
+				static_cast<MediaInfo*>(pInfo)->img.stride = 0; /* 0 as default */
 				if (fmt == V4L2_PIX_FMT_SBGGR10P ||
 						fmt == V4L2_PIX_FMT_SGBRG10P ||
 						fmt == V4L2_PIX_FMT_SGRBG10P ||
 						fmt == V4L2_PIX_FMT_SRGGB10P) {
-					static_cast<MEDIA_INFO*>(pInfo)->img.rawFormat = ANDROID_RAW10;
+					static_cast<MediaInfo*>(pInfo)->img.rawFormat = ANDROID_RAW10;
 				/* TODO: find v4l2 fmt for ORDINAL_RAW10 */
 //				} else if (fmt == ??)
-//					static_cast<MEDIA_INFO*>(pInfo)->img.rawFormat = ORDINAL_RAW10;
+//					static_cast<MediaInfo*>(pInfo)->img.rawFormat = ORDINAL_RAW10;
 				} else if (fmt == V4L2_PIX_FMT_SBGGR10 ||
 						fmt == V4L2_PIX_FMT_SGBRG10 ||
 						fmt == V4L2_PIX_FMT_SGRBG10 ||
 						fmt == V4L2_PIX_FMT_SRGGB10) {
-					static_cast<MEDIA_INFO*>(pInfo)->img.rawFormat = UNPACKAGED_RAW10_LSB;
+					static_cast<MediaInfo*>(pInfo)->img.rawFormat = UNPACKAGED_RAW10_LSB;
 				} else {
-					static_cast<MEDIA_INFO*>(pInfo)->img.rawFormat = RAW_FORMAT_NUM;
+					static_cast<MediaInfo*>(pInfo)->img.rawFormat = RAW_FORMAT_NUM;
 				}
 				break;
 			} else if (i == 0) {
@@ -710,7 +710,7 @@ int32_t CheckImgStride(char* pCharStride, void* pInfo)
 			rt = ISP_INVALID_PARAM;
 			ILOGE("Invalid stride: %s", pCharStride);
 		} else {
-			static_cast<MEDIA_INFO*>(pInfo)->img.stride = stride;
+			static_cast<MediaInfo*>(pInfo)->img.stride = stride;
 			ILOGI("stride: %u", stride);
 		}
 	}
@@ -848,10 +848,10 @@ int32_t FileManager::GetIOInfo(void* pInfo)
 	if (SUCCESS(rt)) {
 		switch(IOInfoFlag) {
 			case 0:
-				memcpy(pInfo, pDynamicInfo, sizeof(MEDIA_INFO));
+				memcpy(pInfo, pDynamicInfo, sizeof(MediaInfo));
 				break;
 			case 1:
-				memcpy(pInfo, pStaticInfo, sizeof(MEDIA_INFO));
+				memcpy(pInfo, pStaticInfo, sizeof(MediaInfo));
 				break;
 			default:
 				ILOGE("Invalid I/O flag:%d", IOInfoFlag);

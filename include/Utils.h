@@ -33,6 +33,11 @@
 #define VERSION 0
 #define SUB_VERSION 1
 
+#define DBG_OPENCV_ON 0
+#if !DBG_CONVOLUTION_ON
+typedef u_char uchar;
+#endif
+
 #define SERIAL_NUM_TAIL(n)  (n) == 1 ? "st" :\
 								((n) == 2 ? "nd" :\
 								((n) == 3 ? "rd" : "th"))

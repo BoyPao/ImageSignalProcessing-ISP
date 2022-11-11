@@ -15,7 +15,7 @@
 #endif
 
 #ifdef LINUX_SYSTEM
-#define ALG_DYNAMIC_LIB_PATH "/home2/penghao/test_project/ISP/ISP/lib/libbzalg.so"
+#define ALG_DYNAMIC_LIB_PATH "/home/hao/dev/ISP/ISP/lib/libbzalg.so"
 #elif defined WIN32_SYSTEM
 #define ALG_DYNAMIC_LIB_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\x64\\Debug\\libbzalg.dll"
 #endif
@@ -28,7 +28,7 @@
 				})							\
 				: ISP_FAILED)
 
-//static ISP_CALLBACKS gISPCallbacks;
+//static ISPCallbacks gISPCallbacks;
 
 const char LIB_SYMBLE[LIB_FUNCS_NUM][SYMBLE_SIZE_MAX] = {
 	"LibInit",
@@ -53,7 +53,7 @@ InterfaceWrapper::~InterfaceWrapper()
 	if (!SUCCESS(rt)) {
 		ILOGE("Fail to deinit!");
 	} else {
-		memset((void*)&mISPLibParams, 0, sizeof(LIB_PARAMS));
+		memset((void*)&mISPLibParams, 0, sizeof(BZParam));
 		pParamMgr = nullptr;
 	}
 }
@@ -78,7 +78,7 @@ int32_t InterfaceWrapper::DeInit()
 	int32_t rt = ISP_SUCCESS;
 
 	for (int32_t index = ISP_ALG_LIB; index < ISP_LIBS_NUM; index++) {
-		rt = InterfaceDeInit((ISP_LIBS_ID)index);
+		rt = InterfaceDeInit(index);
 		if (!SUCCESS(rt)) {
 			ILOGE("Failed to deinit interface:%d", index);
 			break;
@@ -86,7 +86,7 @@ int32_t InterfaceWrapper::DeInit()
 	}
 
 	for (int32_t index = ISP_ALG_LIB; index < ISP_LIBS_NUM; index++) {
-		rt = ReleaseLib((ISP_LIBS_ID)index);
+		rt = ReleaseLib(index);
 		if (!SUCCESS(rt)) {
 			ILOGE("Failed to release lib:%d", index);
 			break;
@@ -96,7 +96,7 @@ int32_t InterfaceWrapper::DeInit()
 	return rt;
 }
 
-int32_t InterfaceWrapper::LoadLib(ISP_LIBS_ID libId, const char* path)
+int32_t InterfaceWrapper::LoadLib(int32_t libId, const char* path)
 {
 	int32_t rt = ISP_SUCCESS;
 
@@ -146,7 +146,7 @@ int32_t InterfaceWrapper::LoadLib(ISP_LIBS_ID libId, const char* path)
 	return rt;
 }
 
-int32_t InterfaceWrapper::ReleaseLib(ISP_LIBS_ID libId)
+int32_t InterfaceWrapper::ReleaseLib(int32_t libId)
 {
 	int32_t rt = ISP_SUCCESS;
 
@@ -180,7 +180,7 @@ int32_t InterfaceWrapper::ReleaseLib(ISP_LIBS_ID libId)
 	return rt;
 }
 
-int32_t InterfaceWrapper::InterfaceInit(ISP_LIBS_ID libId)
+int32_t InterfaceWrapper::InterfaceInit(int32_t libId)
 {
 	int32_t rt = ISP_SUCCESS;
 
@@ -197,7 +197,7 @@ int32_t InterfaceWrapper::InterfaceInit(ISP_LIBS_ID libId)
 	return rt;
 }
 
-int32_t InterfaceWrapper::InterfaceDeInit(ISP_LIBS_ID libId)
+int32_t InterfaceWrapper::InterfaceDeInit(int32_t libId)
 {
 	int32_t rt = ISP_SUCCESS;
 
@@ -247,8 +247,8 @@ int32_t InterfaceWrapper::AlgInterfaceInit()
 	if (SUCCESS(rt)) {
 		if (funcs[2]) {
 			//TODO: add callbacks if need
-			ISP_CALLBACKS CBs = { 0 };
-			CBs.ISP_Notify = nullptr;
+			ISPCallbacks CBs = { 0 };
+			CBs.ISPNotify = nullptr;
 			CBs.UtilsFuncs.Log = LogBase;
 			CBs.UtilsFuncs.DumpDataInt = DumpDataInt;
 			CBs.UtilsFuncs.Alloc = ISPAlloc;
@@ -274,7 +274,7 @@ int32_t InterfaceWrapper::AlgInterfaceDeInit()
 	}
 
 	if (SUCCESS(rt)) {
-		memset(&mLibsOPS.algOPS, 0, sizeof(LIB_OPS));
+		memset(&mLibsOPS.algOPS, 0, sizeof(BZOps));
 	}
 
 	if (SUCCESS(rt)) {
@@ -340,8 +340,8 @@ int32_t InterfaceWrapper::AlgProcess(int32_t cmd, ...)
 
 	if (SUCCESS(rt)) {
 		va_start(va, cmd);
-		LIB_MSG tmpMsg;
-		tmpMsg.cmd = (LIB_CMD)cmd;
+		BZMsg tmpMsg;
+		tmpMsg.cmd = cmd;
 		tmpMsg.pSrc = static_cast<void*>(va_arg(va, void*));
 		if (cmd == ALG_CMD_CTS_RAW2RGB ||
 				cmd == ALG_CMD_CTS_RGB2YUV ||
@@ -354,7 +354,7 @@ int32_t InterfaceWrapper::AlgProcess(int32_t cmd, ...)
 		tmpMsg.enable = static_cast<bool>(va_arg(va, uint32_t));
 		va_end(va);
 
-		rt = CALL_OPS(mLibsOPS.algOPS, LIB_Event, (void*)&tmpMsg);
+		rt = CALL_OPS(mLibsOPS.algOPS, BZEvent, (void*)&tmpMsg);
 	}
 
 	return rt;

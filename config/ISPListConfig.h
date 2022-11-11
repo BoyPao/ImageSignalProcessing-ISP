@@ -8,7 +8,7 @@
 #pragma once
 #include "ISPList.h"
 
-static ISP_LIST_PROPERTY DefaultListConfig = {
+const ISPListProperty defaultListConfig = {
 	{{"BLC",			PROCESS_BLC,			NODE_ON},
 	 {"LSC",			PROCESS_LSC,			NODE_ON},
 	 {"Demosaic",		PROCESS_Demosaic,		NODE_ON},

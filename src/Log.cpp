@@ -14,7 +14,7 @@ void LogBase(const char* str, ...)
 {
 	bool needExtInfo = LOG_NEED_EXT_INFO;
 
-	va_list(va);
+	va_list va;
 	va_start(va, str);
 	LogAddInfo(needExtInfo, str, va);
 	va_end(va);

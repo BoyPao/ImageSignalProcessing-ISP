@@ -8,19 +8,21 @@
 #include "ISPCore.h"
 #include "ISPSingleton.h"
 
+#if DBG_OPENCV_ON
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/photo.hpp"
 
+using namespace cv;
+#endif
+
 /* For img display with UI window */
 #ifdef LINUX_SYSTEM
 #include <sys/ioctl.h>
 #include <termios.h>
 #endif
-
-using namespace cv;
 
 #define SRCNAME "Source"
 #define RESNAME "Result"
@@ -198,7 +200,7 @@ void* CoreFunc(void)
 	void* postData;
 	InputInfo inputInfo = { 0 };
 	OutputInfo outputInfo = { 0 };
-	MEDIA_INFO mediaInfo = { 0 };
+	MediaInfo mediaInfo = { 0 };
 	int32_t listId = 0;
 	int32_t frameNum = 0;
 	int32_t waitActiveCnt = 0;
@@ -229,8 +231,7 @@ void* CoreFunc(void)
 		} else {
 			pInfo = static_cast<IOInfo*>(core->mThreadParam);
 			rt = pFileManager->Input(*pInfo);
-			if (!SUCCESS(rt)) {
-				ILOGI("Please try: ./ISP -help");
+			if (rt != ISP_SUCCESS) {
 				return NULL;
 			}
 		}
@@ -348,8 +349,13 @@ void* CoreFunc(void)
 		winSizey = GetSystemMetrics(SM_CYSCREEN);
 		supportWin = true;
 #endif
+
 		if (supportWin) {
-			int32_t showSizex, showSizey;
+			int32_t showSizex = 0, showSizey = 0;
+			showSizey = winSizey * 2 / 3;
+			showSizex = showSizey * mediaInfo.img.width / mediaInfo.img.height;
+			ILOGDC("Display size(%dx%d)", showSizex, showSizey);
+#if DBG_OPENCV_ON
 			Mat dst = Mat(mediaInfo.img.height, mediaInfo.img.width, CV_8UC3, Scalar(0, 0, 0));
 			for (int32_t row = 0; row < mediaInfo.img.height; row++) {
 				for (int32_t col = 0; col < mediaInfo.img.width; col++) {
@@ -358,8 +364,6 @@ void* CoreFunc(void)
 					dst.data[row * mediaInfo.img.width * 3 + col * 3 + 2] = static_cast<uchar*>(postData)[2 * numPixel + row * mediaInfo.img.width + col];
 				}
 			}
-			showSizey = winSizey * 2 / 3;
-			showSizex = showSizey * mediaInfo.img.width / mediaInfo.img.height;
 			namedWindow(RESNAME, 0);
 			resizeWindow(RESNAME, showSizex, showSizey);
 			imshow(RESNAME, dst);
@@ -368,6 +372,7 @@ void* CoreFunc(void)
 			if (!dst.empty()) {
 				dst.release();
 			}
+#endif
 		}
 	}
 

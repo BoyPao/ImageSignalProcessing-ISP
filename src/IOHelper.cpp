@@ -10,7 +10,7 @@
 IOHelper::IOHelper()
 {
 	pStaticInfo = (void*)&defaultMediaInfo;
-	pDynamicInfo = (void*) new MEDIA_INFO;
+	pDynamicInfo = (void*) new MediaInfo;
 	if (!pDynamicInfo) {
 		ILOGE("Faild to malloc dynamic info buffer!");
 	}
@@ -20,7 +20,7 @@ IOHelper::~IOHelper()
 {
 	pStaticInfo = NULL;
 	if (pDynamicInfo) {
-		delete static_cast<MEDIA_INFO*>(pDynamicInfo);
+		delete static_cast<MediaInfo*>(pDynamicInfo);
 		pDynamicInfo = NULL;
 	}
 }

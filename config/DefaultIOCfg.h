@@ -7,8 +7,8 @@
 #include "ParamManager.h"
 
 #ifdef LINUX_SYSTEM
-#define INPUT_PATH "/home2/penghao/test_project/ISP/ISP/res/"
-#define OUTPUT_PATH "/home2/penghao/test_project/ISP/ISP/res/"
+#define INPUT_PATH "/home/hao/dev/ISP/ISP/res/"
+#define OUTPUT_PATH "/home/hao/dev/ISP/ISP/res/"
 #elif defined WIN32_SYSTEM
 #define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\"
 #define OUTPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\"
@@ -19,7 +19,7 @@
 #define OUTPUT_IMG_NAME DEFAULT_FILE_NAME".bmp"
 #define OUTPUT_VIDEO_NAME DEFAULT_FILE_NAME".avi"
 
-const MEDIA_INFO defaultMediaInfo {
+const MediaInfo defaultMediaInfo {
 	/* width, height, bitspp, stride, format, channel order */
 	{1920, 1080, 10, 0, ANDROID_RAW10, BO_BGGR},
 	/* FPS, max frame num*/

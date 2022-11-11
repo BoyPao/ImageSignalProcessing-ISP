@@ -10,7 +10,7 @@
 
 void LogBase(const char* str, ...)
 {
-	va_list(va);
+	va_list va;
 	va_start(va, str);
 	LogPrint(str, va);
 	va_end(va);
