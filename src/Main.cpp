@@ -26,7 +26,7 @@ using namespace cv;
 #define TMPNAME "Temp"
 
 int main(int argc, char* argv[], char* envp[]) {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	ISPCore core;
 	ISPParamManager* pParamManager = nullptr;
@@ -64,7 +64,7 @@ int main(int argc, char* argv[], char* envp[]) {
 				ioInfo.argv[i] = argv[i];
 				ioInfo.envp[i] = envp[i];
 			}
-			rt = (ISPResult)pFileManager->Input(ioInfo);
+			rt = pFileManager->Input(ioInfo);
 			if (rt == ISP_SKIP) {
 				return 0;
 			}

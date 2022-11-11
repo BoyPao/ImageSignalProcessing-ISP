@@ -116,23 +116,23 @@ public:
 	ISPParamManager();
 	~ISPParamManager();
 
-	ISPResult SelectParams(int32_t paramIndex);
-	ISPResult SetMediaInfo(MEDIA_INFO* info);
-	ISPResult SetImgInfo(IMG_INFO* info);
-	ISPResult SetVideoInfo(VIDEO_INFO* info);
-	ISPResult GetImgDimension(int32_t* width, int32_t* height);
-	ISPResult GetVideoFPS(int32_t* fps);
-	ISPResult GetVideoFrameNum(int32_t* num);
+	int32_t SelectParams(int32_t paramIndex);
+	int32_t SetMediaInfo(MEDIA_INFO* info);
+	int32_t SetImgInfo(IMG_INFO* info);
+	int32_t SetVideoInfo(VIDEO_INFO* info);
+	int32_t GetImgDimension(int32_t* width, int32_t* height);
+	int32_t GetVideoFPS(int32_t* fps);
+	int32_t GetVideoFrameNum(int32_t* num);
 
-	ISPResult GetImgInfo(void* pParams);
-	ISPResult GetParamByCMD(void* pParams, int32_t cmd);
-	ISPResult GetBLCParam(void* pParams);
-	ISPResult GetLSCParam(void* pParams);
-	ISPResult GetWBParam(void* pParams);
-	ISPResult GetCCParam(void* pParams);
-	ISPResult GetGAMMAParam(void* pParams);
-	ISPResult GetWNRParam(void* pParams);
-	ISPResult GetEEParam(void* pParams);
+	int32_t GetImgInfo(void* pParams);
+	int32_t GetParamByCMD(void* pParams, int32_t cmd);
+	int32_t GetBLCParam(void* pParams);
+	int32_t GetLSCParam(void* pParams);
+	int32_t GetWBParam(void* pParams);
+	int32_t GetCCParam(void* pParams);
+	int32_t GetGAMMAParam(void* pParams);
+	int32_t GetWNRParam(void* pParams);
+	int32_t GetEEParam(void* pParams);
 
 private:
 	ISP_Config_Params mISP_ConfigParams;

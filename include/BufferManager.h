@@ -9,8 +9,8 @@
 #include <mutex>
 #include "Utils.h"
 
-#define DBG_MEM_OVERWRITE_ON 0
-#if DBG_MEM_OVERWRITE_ON
+#define DBG_MEM_OVERWRITE_CHECK_ON 1
+#if DBG_MEM_OVERWRITE_CHECK_ON
 #include <thread>
 #endif
 
@@ -58,7 +58,7 @@ struct MemBlock {
 	list<MemSegment> busyList;
 };
 
-#if DBG_MEM_OVERWRITE_ON
+#if DBG_MEM_OVERWRITE_CHECK_ON
 #define OVERWRITE_CHECK_TIME_GAP_US (100)
 #define OVERWRITE_CHECK_SIZE	((8 + 1) * sizeof(char)) /* one for '\0' */
 const char gOverwiteSymbol[OVERWRITE_CHECK_SIZE] =
@@ -86,14 +86,14 @@ class MemoryPool
 		T* RevertBuffer(T* pBuffer);
 
 	private:
-		ISPResult AllocBlock(int32_t level);
-		ISPResult ReleaseBlock(int32_t level, u_int32_t index);
-		ISPResult PrintPool();
-		ISPResult MemoryRest(void* pAddr, size_t size);
+		int32_t AllocBlock(int32_t level);
+		int32_t ReleaseBlock(int32_t level, u_int32_t index);
+		int32_t PrintPool();
+		int32_t MemoryReset(void* pAddr, size_t size);
 		MemBlockInfo const* mMemBlockCfg[MEM_BLK_LEVEL_NUM];
 		vector<MemBlock> mUsageInfo[MEM_BLK_LEVEL_NUM];
 		mutex mUsageInfoLock;
-#if DBG_MEM_OVERWRITE_ON
+#if DBG_MEM_OVERWRITE_CHECK_ON
 		thread dbgThread;
 		MemThreadParam mThreadParam;
 #endif
@@ -106,7 +106,7 @@ MemoryPool<T>::MemoryPool()
 		mMemBlockCfg[level] = &gMemBlockCfg[level];
 	}
 
-#if DBG_MEM_OVERWRITE_ON
+#if DBG_MEM_OVERWRITE_CHECK_ON
 	for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
 		mThreadParam.pUsageInfo[level] = &mUsageInfo[level];
 	}
@@ -127,7 +127,7 @@ MemoryPool<T>::~MemoryPool()
 	}
 	PrintPool();
 
-#if DBG_MEM_OVERWRITE_ON
+#if DBG_MEM_OVERWRITE_CHECK_ON
 	mThreadParam.threadOn = 0;
 	dbgThread.join();
 	mThreadParam.pLock = NULL;
@@ -135,9 +135,9 @@ MemoryPool<T>::~MemoryPool()
 }
 
 template <typename T>
-ISPResult MemoryPool<T>::AllocBlock(int32_t level)
+int32_t MemoryPool<T>::AllocBlock(int32_t level)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mUsageInfo[level].size() >= mMemBlockCfg[level]->max) {
 		rt = ISP_INVALID_PARAM;
@@ -171,9 +171,9 @@ ISPResult MemoryPool<T>::AllocBlock(int32_t level)
 }
 
 template <typename T>
-ISPResult MemoryPool<T>::ReleaseBlock(int32_t level, u_int32_t index)
+int32_t MemoryPool<T>::ReleaseBlock(int32_t level, u_int32_t index)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (index >= mUsageInfo[level].size()) {
 		rt = ISP_INVALID_PARAM;
@@ -216,9 +216,9 @@ ISPResult MemoryPool<T>::ReleaseBlock(int32_t level, u_int32_t index)
 }
 
 template <typename T>
-ISPResult MemoryPool<T>::PrintPool()
+int32_t MemoryPool<T>::PrintPool()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 #if DBG_MEM_PRINT_ON
 	int32_t segCnt = 0;
 	for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
@@ -258,10 +258,10 @@ ISPResult MemoryPool<T>::PrintPool()
 template <typename T>
 T* MemoryPool<T>::RequireBuffer(size_t TSize)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	T* pBuffer = NULL;
 	size_t size = TSize * sizeof(T);
-#if DBG_MEM_OVERWRITE_ON
+#if DBG_MEM_OVERWRITE_CHECK_ON
 	size += OVERWRITE_CHECK_SIZE;
 #endif
 
@@ -294,7 +294,7 @@ T* MemoryPool<T>::RequireBuffer(size_t TSize)
 						MemSegment busySeg = {0};
 						busySeg.pAddr = seg->pAddr;
 						busySeg.size = size;
-						rt = MemoryRest(busySeg.pAddr, busySeg.size);
+						rt = MemoryReset(busySeg.pAddr, busySeg.size);
 						blk->busyList.push_front(busySeg);
 
 						pBuffer = static_cast<T*>(busySeg.pAddr);
@@ -313,7 +313,7 @@ T* MemoryPool<T>::RequireBuffer(size_t TSize)
 		}
 	}
 
-	/* 2. Allock new block */
+	/* 2. Alloc new block */
 	if (rt == ISP_SUCCESS) {
 		for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
 			if (size > mMemBlockCfg[level]->size) {
@@ -334,7 +334,7 @@ T* MemoryPool<T>::RequireBuffer(size_t TSize)
 					MemSegment busySeg = {0};
 					busySeg.pAddr = seg->pAddr;
 					busySeg.size = size;
-					rt = MemoryRest(busySeg.pAddr, busySeg.size);
+					rt = MemoryReset(busySeg.pAddr, busySeg.size);
 					blk->busyList.push_front(busySeg);
 
 					pBuffer = static_cast<T*>(busySeg.pAddr);
@@ -363,7 +363,7 @@ T* MemoryPool<T>::RequireBuffer(size_t TSize)
 template <typename T>
 T* MemoryPool<T>::RevertBuffer(T* pBuffer)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	size_t size = 0;
 	void *pVBuf = (void*)pBuffer;
 
@@ -443,10 +443,10 @@ T* MemoryPool<T>::RevertBuffer(T* pBuffer)
 }
 
 template <typename T>
-ISPResult MemoryPool<T>::MemoryRest(void* pAddr, size_t size)
+int32_t MemoryPool<T>::MemoryReset(void* pAddr, size_t size)
 {
-	ISPResult rt = ISP_SUCCESS;
-#if DBG_MEM_OVERWRITE_ON
+	int32_t rt = ISP_SUCCESS;
+#if DBG_MEM_OVERWRITE_CHECK_ON
 	memcpy(static_cast<u_char*>(pAddr) + size - OVERWRITE_CHECK_SIZE, gOverwiteSymbol, OVERWRITE_CHECK_SIZE);
 #endif
 	return rt;

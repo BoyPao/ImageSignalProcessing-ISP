@@ -55,9 +55,9 @@ FileManager::~FileManager()
 	mState = Uninited;
 }
 
-ISPResult FileManager::Init()
+int32_t FileManager::Init()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	mVTParam = { 0 };
 	if(!pDynamicInfo) {
@@ -72,9 +72,9 @@ ISPResult FileManager::Init()
 	return rt;
 }
 
-ISPResult FileManager::DeInit()
+int32_t FileManager::DeInit()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	mVTParam = { 0 };
 	if(!pDynamicInfo) {
@@ -89,9 +89,9 @@ ISPResult FileManager::DeInit()
 	return rt;
 }
 
-ISPResult FileManager::SetInputInfo(InputInfo info)
+int32_t FileManager::SetInputInfo(InputInfo info)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	memcpy(&mInputInfo, &info, sizeof(InputInfo));
 	strcat(mInputInfo.path, INPUT_PATH);
@@ -100,9 +100,9 @@ ISPResult FileManager::SetInputInfo(InputInfo info)
 	return rt;
 }
 
-ISPResult FileManager::SetOutputInfo(OutputInfo info)
+int32_t FileManager::SetOutputInfo(OutputInfo info)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	memcpy(&mOutputInfo, &info, sizeof(OutputInfo));
 	strcat(mOutputInfo.imgInfo.path, OUTPUT_PATH);
@@ -113,27 +113,27 @@ ISPResult FileManager::SetOutputInfo(OutputInfo info)
 	return rt;
 }
 
-ISPResult FileManager::SetOutputImgInfo(OutputImgInfo info)
+int32_t FileManager::SetOutputImgInfo(OutputImgInfo info)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	memcpy(&mOutputInfo.imgInfo, &info, sizeof(OutputImgInfo));
 
 	return rt;
 }
 
-ISPResult FileManager::SetOutputVideoInfo(OutputVideoInfo info)
+int32_t FileManager::SetOutputVideoInfo(OutputVideoInfo info)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	memcpy(&mOutputInfo.videoInfo, &info, sizeof(OutputVideoInfo));
 
 	return rt;
 }
 
-ISPResult FileManager::GetOutputVideoInfo(OutputVideoInfo* pInfo)
+int32_t FileManager::GetOutputVideoInfo(OutputVideoInfo* pInfo)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (!pInfo) {
 		rt = ISP_INVALID_PARAM;
@@ -147,9 +147,9 @@ ISPResult FileManager::GetOutputVideoInfo(OutputVideoInfo* pInfo)
 	return rt;
 }
 
-ISPResult FileManager::ReadData(uint8_t* buffer, int32_t bufferSize)
+int32_t FileManager::ReadData(uint8_t* buffer, int32_t bufferSize)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	switch(mInputInfo.type) {
 		case INPUT_FILE_TYPE_RAW:
@@ -164,9 +164,9 @@ ISPResult FileManager::ReadData(uint8_t* buffer, int32_t bufferSize)
 	return rt;
 }
 
-ISPResult FileManager::ReadRawData(uint8_t* buffer, int32_t bufferSize)
+int32_t FileManager::ReadRawData(uint8_t* buffer, int32_t bufferSize)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState == Uninited) {
 		rt = ISP_STATE_ERROR;
@@ -202,9 +202,9 @@ ISPResult FileManager::ReadRawData(uint8_t* buffer, int32_t bufferSize)
 	return rt;
 }
 
-ISPResult FileManager::SaveImgData(uint8_t* srcData)
+int32_t FileManager::SaveImgData(uint8_t* srcData)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	switch(mOutputInfo.imgInfo.type) {
 		case OUTPUT_FILE_TYPE_BMP:
@@ -219,9 +219,9 @@ ISPResult FileManager::SaveImgData(uint8_t* srcData)
 	return rt;
 }
 
-ISPResult FileManager::SaveBMPData(uint8_t* srcData, int32_t channels)
+int32_t FileManager::SaveBMPData(uint8_t* srcData, int32_t channels)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	if (mState == Uninited) {
 		rt = ISP_FAILED;
 		ILOGE("ImageFile didnot init");
@@ -244,9 +244,9 @@ ISPResult FileManager::SaveBMPData(uint8_t* srcData, int32_t channels)
 	return rt;
 }
 
-ISPResult FileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
+int32_t FileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	int32_t j = 0;
 	BYTE temp;
 
@@ -363,9 +363,9 @@ void FileManager::WriteBMP(BYTE* data, int32_t channels)
 	outputFile.close();
 }
 
-ISPResult FileManager::CreateVideo(void* dst)
+int32_t FileManager::CreateVideo(void* dst)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (!mVideo) {
 		mVideo = std::make_unique<ISPVideo>();
@@ -383,9 +383,9 @@ ISPResult FileManager::CreateVideo(void* dst)
 	return rt;
 }
 
-ISPResult FileManager::SaveVideoData(int32_t frameCount)
+int32_t FileManager::SaveVideoData(int32_t frameCount)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	rt = mVideo->Notify();
 	ILOGDF("Notify F:%d", frameCount);
@@ -394,18 +394,18 @@ ISPResult FileManager::SaveVideoData(int32_t frameCount)
 }
 
 
-ISPResult FileManager::DestroyVideo()
+int32_t FileManager::DestroyVideo()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	rt = mVideo->DestroyThread();
 
 	return rt;
 }
 
-ISPResult FileManager::Mipi10decode(void* src, void* dst, IMG_INFO* info)
+int32_t FileManager::Mipi10decode(void* src, void* dst, IMG_INFO* info)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	int32_t leftShift = 0;
 	int32_t alignedW = ALIGNx(info->width, info->bitspp, CHECK_PACKAGED(info->rawFormat), info->stride);
@@ -498,7 +498,7 @@ ISPResult FileManager::Mipi10decode(void* src, void* dst, IMG_INFO* info)
 void DumpDataInt(void* pData, ...
 		/* int32_t height, int32_t width, int32_t bitWidth, char* dumpPath */)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	int32_t width = 0;
 	int32_t height = 0;
 	int32_t bitWidth = 0;
@@ -553,9 +553,9 @@ void DumpDataInt(void* pData, ...
 	}
 }
 
-ISPResult CheckFilePath(char* pPath, void* pIn, void* pOut)
+int32_t CheckFilePath(char* pPath, void* pIn, void* pOut)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (!pPath || !pIn || !pOut) {
 		rt = ISP_INVALID_PARAM;
@@ -607,9 +607,9 @@ ISPResult CheckFilePath(char* pPath, void* pIn, void* pOut)
 	return rt;
 }
 
-ISPResult CheckImgSize(char* pCharW, char* pCharH, void* pInfo)
+int32_t CheckImgSize(char* pCharW, char* pCharH, void* pInfo)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (!pCharW || !pCharH || !pInfo) {
 		rt = ISP_INVALID_PARAM;
@@ -634,9 +634,9 @@ ISPResult CheckImgSize(char* pCharW, char* pCharH, void* pInfo)
 	return rt;
 }
 
-ISPResult CheckImgFmt(char* pCharFmt, void* pInfo)
+int32_t CheckImgFmt(char* pCharFmt, void* pInfo)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	uint32_t len = 0;
 	uint32_t fmt = 0x0;
 
@@ -693,9 +693,9 @@ ISPResult CheckImgFmt(char* pCharFmt, void* pInfo)
 	return rt;
 }
 
-ISPResult CheckImgStride(char* pCharStride, void* pInfo)
+int32_t CheckImgStride(char* pCharStride, void* pInfo)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (!pCharStride || !pInfo) {
 		rt = ISP_INVALID_PARAM;
@@ -720,9 +720,9 @@ ISPResult CheckImgStride(char* pCharStride, void* pInfo)
 
 int FileManager::Input(IO_INFO in)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
-	ISPResult checkResult = (ISPResult)CheckInput(in);
+	int32_t checkResult = CheckInput(in);
 	if (checkResult == ISP_FAILED) {
 		IOInfoFlag = 1;
 		ILOGI("Use default I/O config");
@@ -735,7 +735,7 @@ int FileManager::Input(IO_INFO in)
 
 int FileManager::CheckInput(IO_INFO ioInfo)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	MEDIA_INFO* pInfo = static_cast<MEDIA_INFO*>(pDynamicInfo);
 
 	if (!pInfo) {
@@ -851,9 +851,9 @@ void FileManager::HelpMenu()
 	ILOGI(" \t");
 }
 
-ISPResult FileManager::GetIOInfo(void* pInfo)
+int32_t FileManager::GetIOInfo(void* pInfo)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (!pInfo) {
 		rt = ISP_INVALID_PARAM;

@@ -26,9 +26,9 @@ ISPListManager::~ISPListManager()
 	DestoryAllList();
 }
 
-ISPResult ISPListManager::Init(ISPParamManager* pPM, InterfaceWrapper* pIW)
+int32_t ISPListManager::Init(ISPParamManager* pPM, InterfaceWrapper* pIW)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (!pPM || !pIW)
 	{
@@ -48,9 +48,9 @@ ISPResult ISPListManager::Init(ISPParamManager* pPM, InterfaceWrapper* pIW)
 	return rt;
 }
 
-ISPResult ISPListManager::CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pYUV, uint8_t* pPOST, int32_t cfgIndex, int32_t *id)
+int32_t ISPListManager::CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pYUV, uint8_t* pPOST, int32_t cfgIndex, int32_t *id)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	int32_t listId = 0;
 	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
 
@@ -121,9 +121,9 @@ ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* ISPListManager::FindListById(int3
 	return pIspList;
 }
 
-ISPResult ISPListManager::DestoryAllList()
+int32_t ISPListManager::DestoryAllList()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
 
 	while (mListMap.size()) {
@@ -144,9 +144,9 @@ ISPResult ISPListManager::DestoryAllList()
 	return rt;
 }
 
-ISPResult ISPListManager::DestoryListbyId(int32_t id)
+int32_t ISPListManager::DestoryListbyId(int32_t id)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
 
 	pIspList = FindListById(id);
@@ -164,9 +164,9 @@ ISPResult ISPListManager::DestoryListbyId(int32_t id)
 	return rt;
 }
 
-ISPResult ISPListManager::StartById(int32_t id)
+int32_t ISPListManager::StartById(int32_t id)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
 
 	if (!pItfWrapper) {
@@ -191,9 +191,9 @@ ISPResult ISPListManager::StartById(int32_t id)
 	return rt;
 }
 
-ISPResult ISPListManager::EnableNodebyType(int32_t id, PROCESS_TYPE type)
+int32_t ISPListManager::EnableNodebyType(int32_t id, PROCESS_TYPE type)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
 
 	pIspList = FindListById(id);
@@ -208,9 +208,9 @@ ISPResult ISPListManager::EnableNodebyType(int32_t id, PROCESS_TYPE type)
 	return rt;
 }
 
-ISPResult ISPListManager::DisableNodebyType(int32_t id, PROCESS_TYPE type)
+int32_t ISPListManager::DisableNodebyType(int32_t id, PROCESS_TYPE type)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
 
 	pIspList = FindListById(id);

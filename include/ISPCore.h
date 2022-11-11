@@ -24,8 +24,8 @@ class ISPCore {
 	public:
 		ISPCore();
 		~ISPCore();
-		ISPResult Init();
-		ISPResult Config();
+		int32_t Init();
+		int32_t Config();
 		void* GetParamManager();
 		void* GetFileManager();
 		void* GetListManager();

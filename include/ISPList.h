@@ -50,11 +50,11 @@ class ISPNode {
 public:
 	ISPNode();
 	virtual ~ISPNode();
-	virtual ISPResult GetNodeName(char* name);
-	virtual ISPResult Init(ISP_NODE_PROPERTY* cfg, T1* input, T2* output);
-	virtual ISPResult Process(void* pItf);
-	virtual ISPResult Enable();
-	virtual ISPResult Disable();
+	virtual int32_t GetNodeName(char* name);
+	virtual int32_t Init(ISP_NODE_PROPERTY* cfg, T1* input, T2* output);
+	virtual int32_t Process(void* pItf);
+	virtual int32_t Enable();
+	virtual int32_t Disable();
 	virtual bool isOn();
 	virtual ISP_NODE_PROPERTY GetProperty();
 
@@ -81,10 +81,10 @@ class ISPNecNode : public ISPNode<T1, T2> {
 public:
 	ISPNecNode();
 	~ISPNecNode();
-	ISPResult Init(ISP_NECNODE_PROPERTY* cfg, T1* input, T2* output);
-	ISPResult GetNodeName(char* name);
-	ISPResult Process(void* pItf);
-	ISPResult Disable();
+	int32_t Init(ISP_NECNODE_PROPERTY* cfg, T1* input, T2* output);
+	int32_t GetNodeName(char* name);
+	int32_t Process(void* pItf);
+	int32_t Disable();
 private:
 	ISP_NECNODE_PROPERTY mProperty;
 };
@@ -117,36 +117,36 @@ class ISPList {
 public:
 	ISPList(int32_t id);
 	~ISPList();
-	ISPResult Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T4* pPostBuf, void* pIW);
-	ISPResult SetListConfig(ISP_LIST_PROPERTY* pCfg);
-	ISPResult FindNodePropertyIndex(PROCESS_TYPE type, int32_t* index);
-	ISPResult FindNecNodePropertyIndex(NEC_PROCESS_TYPE type, int32_t* index);
-	ISPResult CreatISPList();
-	ISPResult AddNode(PROCESS_TYPE type);
+	int32_t Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T4* pPostBuf, void* pIW);
+	int32_t SetListConfig(ISP_LIST_PROPERTY* pCfg);
+	int32_t FindNodePropertyIndex(PROCESS_TYPE type, int32_t* index);
+	int32_t FindNecNodePropertyIndex(NEC_PROCESS_TYPE type, int32_t* index);
+	int32_t CreatISPList();
+	int32_t AddNode(PROCESS_TYPE type);
 	int32_t GetNodeNum();
-	ISPResult Process();
-	ISPResult EnableNodebyType(int32_t type);
-	ISPResult DisableNodebyType(int32_t type);
-	ISPResult EnableNecNodebyType(int32_t type);
-	ISPResult DisableNecNodebyType(int32_t type);
+	int32_t Process();
+	int32_t EnableNodebyType(int32_t type);
+	int32_t DisableNodebyType(int32_t type);
+	int32_t EnableNecNodebyType(int32_t type);
+	int32_t DisableNecNodebyType(int32_t type);
 
 private:
-	ISPResult CreateNecList();
-	ISPResult CreateRawList();
-	ISPResult CreateRgbList();
-	ISPResult CreateYuvList();
-	ISPResult CreatePostList();
-	ISPResult AddNodeToRawTail(ISPNode<T1, T1>* pNode);
-	ISPResult AddNodeToRgbTail(ISPNode<T2, T2>* pNode);
-	ISPResult AddNodeToYuvTail(ISPNode<T3, T3>* pNode);
-	ISPResult AddNodeToPostTail(ISPNode<T4, T4>* pNode);
-	ISPResult TriggerRgbProcess();
-	ISPResult RgbProcess();
-	ISPResult TriggerYuvProcess();
-	ISPResult YuvProcess();
-	ISPResult TriggerPostProcess();
-	ISPResult PostProcess();
-	ISPResult StateTransform(STATE_TRANS_ORIENTATION orientation);
+	int32_t CreateNecList();
+	int32_t CreateRawList();
+	int32_t CreateRgbList();
+	int32_t CreateYuvList();
+	int32_t CreatePostList();
+	int32_t AddNodeToRawTail(ISPNode<T1, T1>* pNode);
+	int32_t AddNodeToRgbTail(ISPNode<T2, T2>* pNode);
+	int32_t AddNodeToYuvTail(ISPNode<T3, T3>* pNode);
+	int32_t AddNodeToPostTail(ISPNode<T4, T4>* pNode);
+	int32_t TriggerRgbProcess();
+	int32_t RgbProcess();
+	int32_t TriggerYuvProcess();
+	int32_t YuvProcess();
+	int32_t TriggerPostProcess();
+	int32_t PostProcess();
+	int32_t StateTransform(STATE_TRANS_ORIENTATION orientation);
 
 	int32_t mId;
 	ISPNecNode<T1, T1>* mRawHead;

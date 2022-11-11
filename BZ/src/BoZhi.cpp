@@ -2,7 +2,7 @@
 /*
  * BoZhi object source file.
  *
- * Copyright (c) 2019 Peng Hao <635945005@qq.com>
+ * Copyright (c) 2019 Penint32_tHao <635945005@qq.com>
  */
 
 #include "Algorithm.h"
@@ -12,7 +12,7 @@ static BoZhi* gBZ = nullptr;
 
 int32_t WrapEvent(void* msg)
 {
-	BZResult rt = BZ_SUCCESS;
+	int32_t rt = BZ_SUCCESS;
 
 	if (!gBZ) {
 		rt = BZ_FAILED;
@@ -34,7 +34,7 @@ int32_t WrapEvent(void* msg)
 
 int32_t WrapGetOPS(void* pOPS)
 {
-	BZResult rt = BZ_SUCCESS;
+	int32_t rt = BZ_SUCCESS;
 
 	LIB_OPS* pLibOPS = static_cast<LIB_OPS*>(pOPS);
 	if (pLibOPS) {
@@ -50,7 +50,7 @@ int32_t WrapGetOPS(void* pOPS)
 
 int32_t WrapRegistCallbacks(void* pCBs)
 {
-	BZResult rt = BZ_SUCCESS;
+	int32_t rt = BZ_SUCCESS;
 
 	if (!gBZ) {
 		rt = BZ_FAILED;
@@ -66,7 +66,7 @@ int32_t WrapRegistCallbacks(void* pCBs)
 
 int32_t WrapLibInit(void* pOPS)
 {
-	BZResult rt = BZ_SUCCESS;
+	int32_t rt = BZ_SUCCESS;
 
 	if (gBZ) {
 		rt = BZ_FAILED;
@@ -82,7 +82,7 @@ int32_t WrapLibInit(void* pOPS)
 	}
 
 	if (SUCCESS(rt)) {
-		rt = (BZResult)WrapGetOPS(pOPS);
+		rt = WrapGetOPS(pOPS);
 	}
 
 	return (int32_t)rt;
@@ -90,7 +90,7 @@ int32_t WrapLibInit(void* pOPS)
 
 int32_t WrapLibDeInit()
 {
-	BZResult rt = BZ_SUCCESS;
+	int32_t rt = BZ_SUCCESS;
 
 	if (!gBZ) {
 		rt = BZ_FAILED;
@@ -163,9 +163,9 @@ BoZhi::~BoZhi()
 	memset(&mISPCBs, 0, sizeof(ISP_CALLBACKS));
 }
 
-BZResult BoZhi::Init()
+int32_t BoZhi::Init()
 {
-	BZResult rt = BZ_SUCCESS;
+	int32_t rt = BZ_SUCCESS;
 
 	if (mState != BZ_STATE_NEW) {
 		rt = BZ_STATE_ERROR;
@@ -184,9 +184,9 @@ BZResult BoZhi::Init()
 	return rt;
 }
 
-BZResult BoZhi::DeInit()
+int32_t BoZhi::DeInit()
 {
-	BZResult rt = BZ_SUCCESS;
+	int32_t rt = BZ_SUCCESS;
 
 	if (SUCCESS(rt)) {
 		memset(&mMsg, 0 , sizeof(LIB_MSG));
@@ -197,9 +197,9 @@ BZResult BoZhi::DeInit()
 	return rt;
 }
 
-BZResult BoZhi::ExecuteCMD()
+int32_t BoZhi::ExecuteCMD()
 {
-	BZResult rt = BZ_SUCCESS;
+	int32_t rt = BZ_SUCCESS;
 	bool enable = mMsg.enable;
 
 	BLOGDC("cmd:%d on:%d", mMsg.cmd, enable);
@@ -240,16 +240,16 @@ BZResult BoZhi::ExecuteCMD()
 			break;
 		case LIB_CMD_NUM:
 		default:
-			BLOGW("Nothing todo for cmd:%d", mMsg.cmd);
+			BLOGW("Nothinint32_ttodo for cmd:%d", mMsg.cmd);
 			break;
 	}
 
 	return rt;
 }
 
-BZResult BoZhi::RegisterCallbacks(void *pCBs)
+int32_t BoZhi::RegisterCallbacks(void *pCBs)
 {
-	BZResult rt = BZ_SUCCESS;
+	int32_t rt = BZ_SUCCESS;
 	ISP_CALLBACKS* pISPCBs = static_cast<ISP_CALLBACKS*>(pCBs);
 
 	if (pISPCBs) {

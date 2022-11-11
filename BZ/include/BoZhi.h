@@ -25,11 +25,11 @@ public:
 	BoZhi();
 	~BoZhi();
 
-	BZResult Init();
-	BZResult DeInit();
-	BZResult RegisterCallbacks(void *pCBs);
+	int32_t Init();
+	int32_t DeInit();
+	int32_t RegisterCallbacks(void *pCBs);
 	ISP_CALLBACKS const* GetCallbacks();
-	BZResult ExecuteCMD();
+	int32_t ExecuteCMD();
 	LIB_MSG mMsg;
 	ISP_CALLBACKS mISPCBs;
 

@@ -74,30 +74,30 @@ class FileManager:public IOHelper {
 public:
 	FileManager();
 	~FileManager();
-	ISPResult Init();
-	ISPResult DeInit();
+	int32_t Init();
+	int32_t DeInit();
 
 	InputInfo GetInputInfo() { return mInputInfo; };
 	OutputInfo GetOutputInfo() { return mOutputInfo; };
 	OutputImgInfo GetOutputImgInfo() { return mOutputInfo.imgInfo; };
-	ISPResult GetOutputVideoInfo(OutputVideoInfo* pInfo);
-	ISPResult SetInputInfo(InputInfo info);
-	ISPResult SetOutputInfo(OutputInfo info);
-	ISPResult SetOutputImgInfo(OutputImgInfo info);
-	ISPResult SetOutputVideoInfo(OutputVideoInfo info);
-	ISPResult ReadData(uint8_t* buffer, int32_t bufferSize);
-	ISPResult SaveImgData(uint8_t* srcData);
-	ISPResult CreateVideo(void* dst);
-	ISPResult SaveVideoData(int32_t frameCount);
-	ISPResult DestroyVideo();
-	ISPResult Mipi10decode(void* src, void* dst, IMG_INFO* info);
+	int32_t GetOutputVideoInfo(OutputVideoInfo* pInfo);
+	int32_t SetInputInfo(InputInfo info);
+	int32_t SetOutputInfo(OutputInfo info);
+	int32_t SetOutputImgInfo(OutputImgInfo info);
+	int32_t SetOutputVideoInfo(OutputVideoInfo info);
+	int32_t ReadData(uint8_t* buffer, int32_t bufferSize);
+	int32_t SaveImgData(uint8_t* srcData);
+	int32_t CreateVideo(void* dst);
+	int32_t SaveVideoData(int32_t frameCount);
+	int32_t DestroyVideo();
+	int32_t Mipi10decode(void* src, void* dst, IMG_INFO* info);
 	int32_t Input(IO_INFO in);
-	ISPResult GetIOInfo(void* pInfo);
+	int32_t GetIOInfo(void* pInfo);
 
 private:
-	ISPResult ReadRawData(uint8_t* buffer, int32_t bufferSize);
-	ISPResult SaveBMPData(uint8_t* srcData, int32_t channels);
-	ISPResult SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData);
+	int32_t ReadRawData(uint8_t* buffer, int32_t bufferSize);
+	int32_t SaveBMPData(uint8_t* srcData, int32_t channels);
+	int32_t SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData);
 	void WriteBMP(BYTE* data, int32_t channels);
 	void HelpMenu();
 	void SupportInfo();

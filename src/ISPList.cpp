@@ -74,9 +74,9 @@ ISPNode<T1, T2>::~ISPNode()
 }
 
 template<typename T1, typename T2>
-ISPResult ISPNode<T1, T2>::Init(ISP_NODE_PROPERTY *cfg, T1* input, T2* output)
+int32_t ISPNode<T1, T2>::Init(ISP_NODE_PROPERTY *cfg, T1* input, T2* output)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (!input || !output || !cfg) {
 		rt = ISP_INVALID_PARAM;
@@ -99,9 +99,9 @@ ISPResult ISPNode<T1, T2>::Init(ISP_NODE_PROPERTY *cfg, T1* input, T2* output)
 }
 
 template<typename T1, typename T2>
-ISPResult ISPNode<T1, T2>::Enable()
+int32_t ISPNode<T1, T2>::Enable()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	mProperty.enable = NODE_ON;
 
@@ -109,9 +109,9 @@ ISPResult ISPNode<T1, T2>::Enable()
 }
 
 template<typename T1, typename T2>
-ISPResult ISPNode<T1, T2>::Disable()
+int32_t ISPNode<T1, T2>::Disable()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	mProperty.enable = NODE_OFF;
 
@@ -125,9 +125,9 @@ bool ISPNode<T1, T2>::isOn()
 }
 
 template<typename T1, typename T2>
-ISPResult ISPNode<T1, T2>::GetNodeName(char* name)
+int32_t ISPNode<T1, T2>::GetNodeName(char* name)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mInited) {
 		memcpy(name, mProperty.name, sizeof(char) * NODE_NAME_MAX_SZIE);
@@ -146,9 +146,9 @@ ISP_NODE_PROPERTY ISPNode<T1, T2>::GetProperty()
 }
 
 template<typename T1, typename T2>
-ISPResult ISPNode<T1, T2>::Process(void* pItf)
+int32_t ISPNode<T1, T2>::Process(void* pItf)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	InterfaceWrapper* pIW = nullptr;
 	char name[NODE_NAME_MAX_SZIE];
 	GetNodeName(name);
@@ -195,9 +195,9 @@ ISPNecNode<T1, T2>::~ISPNecNode()
 }
 
 template<typename T1, typename T2>
-ISPResult ISPNecNode<T1, T2>::Init(ISP_NECNODE_PROPERTY *cfg, T1* input, T2* output)
+int32_t ISPNecNode<T1, T2>::Init(ISP_NECNODE_PROPERTY *cfg, T1* input, T2* output)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (!input || !output || !cfg) {
 		rt = ISP_INVALID_PARAM;
@@ -220,9 +220,9 @@ ISPResult ISPNecNode<T1, T2>::Init(ISP_NECNODE_PROPERTY *cfg, T1* input, T2* out
 }
 
 template<typename T1, typename T2>
-ISPResult ISPNecNode<T1, T2>::GetNodeName(char* name)
+int32_t ISPNecNode<T1, T2>::GetNodeName(char* name)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	if (this->mInited) {
 		memcpy(name, mProperty.name, sizeof(char) * NODE_NAME_MAX_SZIE);
 	}
@@ -233,9 +233,9 @@ ISPResult ISPNecNode<T1, T2>::GetNodeName(char* name)
 }
 
 template<typename T1, typename T2>
-ISPResult ISPNecNode<T1, T2>::Process(void* pItf)
+int32_t ISPNecNode<T1, T2>::Process(void* pItf)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	InterfaceWrapper* pIW = nullptr;
 	char name[NODE_NAME_MAX_SZIE];
 	GetNodeName(name);
@@ -272,9 +272,9 @@ ISPResult ISPNecNode<T1, T2>::Process(void* pItf)
 }
 
 template<typename T1, typename T2>
-ISPResult ISPNecNode<T1, T2>::Disable()
+int32_t ISPNecNode<T1, T2>::Disable()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	char name[NODE_NAME_MAX_SZIE];
 	this->GetNodeName(name);
@@ -359,9 +359,9 @@ ISPList<T1, T2, T3, T4>::~ISPList()
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::StateTransform(STATE_TRANS_ORIENTATION orientation)
+int32_t ISPList<T1, T2, T3, T4>::StateTransform(STATE_TRANS_ORIENTATION orientation)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	ISP_LIST_STATE currentState = mState;
 
 	if (orientation == STATE_TRANS_FORWARD) {
@@ -412,9 +412,9 @@ ISPResult ISPList<T1, T2, T3, T4>::StateTransform(STATE_TRANS_ORIENTATION orient
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T4* pPostBuf, void* pIW)
+int32_t ISPList<T1, T2, T3, T4>::Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T4* pPostBuf, void* pIW)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != ISP_LIST_NEW) {
 		rt = ISP_STATE_ERROR;
@@ -445,9 +445,9 @@ ISPResult ISPList<T1, T2, T3, T4>::Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::SetListConfig(ISP_LIST_PROPERTY* pCfg)
+int32_t ISPList<T1, T2, T3, T4>::SetListConfig(ISP_LIST_PROPERTY* pCfg)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != ISP_LIST_INITED) {
 		rt = ISP_STATE_ERROR;
@@ -472,9 +472,9 @@ ISPResult ISPList<T1, T2, T3, T4>::SetListConfig(ISP_LIST_PROPERTY* pCfg)
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::FindNodePropertyIndex(PROCESS_TYPE type, int32_t* index)
+int32_t ISPList<T1, T2, T3, T4>::FindNodePropertyIndex(PROCESS_TYPE type, int32_t* index)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (index) {
 		for (int32_t i = 0; i < PROCESS_TYPE_NUM; i++)
@@ -495,9 +495,9 @@ ISPResult ISPList<T1, T2, T3, T4>::FindNodePropertyIndex(PROCESS_TYPE type, int3
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::FindNecNodePropertyIndex(NEC_PROCESS_TYPE type, int32_t* index)
+int32_t ISPList<T1, T2, T3, T4>::FindNecNodePropertyIndex(NEC_PROCESS_TYPE type, int32_t* index)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (index) {
 		for (int32_t i = 0; i < NEC_PROCESS_TYPE_NUM - NEC_PROCESS_HEAD; i++)
@@ -518,9 +518,9 @@ ISPResult ISPList<T1, T2, T3, T4>::FindNecNodePropertyIndex(NEC_PROCESS_TYPE typ
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::CreatISPList()
+int32_t ISPList<T1, T2, T3, T4>::CreatISPList()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != ISP_LIST_CONFIGED) {
 		rt = ISP_STATE_ERROR;
@@ -557,9 +557,9 @@ ISPResult ISPList<T1, T2, T3, T4>::CreatISPList()
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::CreateNecList()
+int32_t ISPList<T1, T2, T3, T4>::CreateNecList()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	int32_t nodePropertyIndex = 0;
 
 	if (mState != ISP_LIST_CONFIGED) {
@@ -635,9 +635,9 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateNecList()
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::CreateRawList()
+int32_t ISPList<T1, T2, T3, T4>::CreateRawList()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	int32_t nodePropertyIndex = -1;
 	ISPNode<T1, T1>* pNewNode = nullptr;
@@ -692,9 +692,9 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateRawList()
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::AddNodeToRawTail(ISPNode<T1, T1>* pNode)
+int32_t ISPList<T1, T2, T3, T4>::AddNodeToRawTail(ISPNode<T1, T1>* pNode)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	ISPNode<T1, T1>* pTmp = mRawHead;
 
 	if (mState != ISP_LIST_CONFIGED) {
@@ -720,9 +720,9 @@ ISPResult ISPList<T1, T2, T3, T4>::AddNodeToRawTail(ISPNode<T1, T1>* pNode)
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::CreateRgbList()
+int32_t ISPList<T1, T2, T3, T4>::CreateRgbList()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	int32_t nodePropertyIndex = -1;
 	ISPNode<T2, T2>* pNewNode = nullptr;
@@ -779,9 +779,9 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateRgbList()
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::AddNodeToRgbTail(ISPNode<T2, T2>* pNode)
+int32_t ISPList<T1, T2, T3, T4>::AddNodeToRgbTail(ISPNode<T2, T2>* pNode)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	ISPNode<T2, T2>* pTmp = mRgbHead->pNext;
 
 	if (mState != ISP_LIST_CONFIGED) {
@@ -811,9 +811,9 @@ ISPResult ISPList<T1, T2, T3, T4>::AddNodeToRgbTail(ISPNode<T2, T2>* pNode)
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::CreateYuvList()
+int32_t ISPList<T1, T2, T3, T4>::CreateYuvList()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	int32_t nodePropertyIndex = -1;
 	ISPNode<T3, T3>* pNewNode = nullptr;
@@ -871,9 +871,9 @@ ISPResult ISPList<T1, T2, T3, T4>::CreateYuvList()
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::AddNodeToYuvTail(ISPNode<T3, T3>* pNode)
+int32_t ISPList<T1, T2, T3, T4>::AddNodeToYuvTail(ISPNode<T3, T3>* pNode)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	ISPNode<T3, T3>* pTmp = mYuvHead->pNext;
 
 	if (mState != ISP_LIST_CONFIGED) {
@@ -903,9 +903,9 @@ ISPResult ISPList<T1, T2, T3, T4>::AddNodeToYuvTail(ISPNode<T3, T3>* pNode)
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::CreatePostList()
+int32_t ISPList<T1, T2, T3, T4>::CreatePostList()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	int32_t nodePropertyIndex = -1;
 	ISPNode<T4, T4>* pNewNode = nullptr;
@@ -962,9 +962,9 @@ ISPResult ISPList<T1, T2, T3, T4>::CreatePostList()
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::AddNodeToPostTail(ISPNode<T4, T4>* pNode)
+int32_t ISPList<T1, T2, T3, T4>::AddNodeToPostTail(ISPNode<T4, T4>* pNode)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	ISPNode<T4, T4>* pTmp = mPostHead->pNext;
 
 	if (mState != ISP_LIST_CONFIGED) {
@@ -994,9 +994,9 @@ ISPResult ISPList<T1, T2, T3, T4>::AddNodeToPostTail(ISPNode<T4, T4>* pNode)
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::Process()
+int32_t ISPList<T1, T2, T3, T4>::Process()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	ISPNode<T1, T1>* pNode = mRawHead;
 
 	if (mState != ISP_LIST_CONSTRUCTED) {
@@ -1032,9 +1032,9 @@ ISPResult ISPList<T1, T2, T3, T4>::Process()
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::TriggerRgbProcess()
+int32_t ISPList<T1, T2, T3, T4>::TriggerRgbProcess()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != ISP_LIST_RUNNING) {
 		rt = ISP_STATE_ERROR;
@@ -1049,9 +1049,9 @@ ISPResult ISPList<T1, T2, T3, T4>::TriggerRgbProcess()
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::RgbProcess()
+int32_t ISPList<T1, T2, T3, T4>::RgbProcess()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != ISP_LIST_RUNNING) {
 		rt = ISP_STATE_ERROR;
@@ -1087,9 +1087,9 @@ ISPResult ISPList<T1, T2, T3, T4>::RgbProcess()
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::TriggerYuvProcess()
+int32_t ISPList<T1, T2, T3, T4>::TriggerYuvProcess()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != ISP_LIST_RUNNING) {
 		rt = ISP_STATE_ERROR;
@@ -1104,9 +1104,9 @@ ISPResult ISPList<T1, T2, T3, T4>::TriggerYuvProcess()
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::YuvProcess()
+int32_t ISPList<T1, T2, T3, T4>::YuvProcess()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != ISP_LIST_RUNNING) {
 		rt = ISP_STATE_ERROR;
@@ -1142,9 +1142,9 @@ ISPResult ISPList<T1, T2, T3, T4>::YuvProcess()
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::TriggerPostProcess()
+int32_t ISPList<T1, T2, T3, T4>::TriggerPostProcess()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != ISP_LIST_RUNNING) {
 		rt = ISP_STATE_ERROR;
@@ -1159,9 +1159,9 @@ ISPResult ISPList<T1, T2, T3, T4>::TriggerPostProcess()
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::PostProcess()
+int32_t ISPList<T1, T2, T3, T4>::PostProcess()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != ISP_LIST_RUNNING) {
 		rt = ISP_STATE_ERROR;
@@ -1197,9 +1197,9 @@ ISPResult ISPList<T1, T2, T3, T4>::PostProcess()
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::EnableNodebyType(int32_t type)
+int32_t ISPList<T1, T2, T3, T4>::EnableNodebyType(int32_t type)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	bool needFind = true;
 
 	if (mState != ISP_LIST_CONSTRUCTED) {
@@ -1269,9 +1269,9 @@ ISPResult ISPList<T1, T2, T3, T4>::EnableNodebyType(int32_t type)
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::DisableNodebyType(int32_t type)
+int32_t ISPList<T1, T2, T3, T4>::DisableNodebyType(int32_t type)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	bool needFind = true;
 
 	if (mState != ISP_LIST_CONSTRUCTED) {
@@ -1341,9 +1341,9 @@ ISPResult ISPList<T1, T2, T3, T4>::DisableNodebyType(int32_t type)
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::EnableNecNodebyType(int32_t type)
+int32_t ISPList<T1, T2, T3, T4>::EnableNecNodebyType(int32_t type)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != ISP_LIST_CONSTRUCTED) {
 		rt = ISP_STATE_ERROR;
@@ -1369,9 +1369,9 @@ ISPResult ISPList<T1, T2, T3, T4>::EnableNecNodebyType(int32_t type)
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-ISPResult ISPList<T1, T2, T3, T4>::DisableNecNodebyType(int32_t type)
+int32_t ISPList<T1, T2, T3, T4>::DisableNecNodebyType(int32_t type)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != ISP_LIST_CONSTRUCTED) {
 		rt = ISP_STATE_ERROR;

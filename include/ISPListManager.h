@@ -22,13 +22,13 @@ public:
 	ISPListManager();
 	~ISPListManager();
 
-	ISPResult Init(ISPParamManager* pPM, InterfaceWrapper* pIW);
-	ISPResult CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pYUV, uint8_t* pPOST, int32_t cfgIndex, int32_t* id);
-	ISPResult DestoryListbyId(int32_t id);
-	ISPResult DestoryAllList();
-	ISPResult StartById(int32_t id);
-	ISPResult EnableNodebyType(int32_t id, PROCESS_TYPE type);
-	ISPResult DisableNodebyType(int32_t id, PROCESS_TYPE type);
+	int32_t Init(ISPParamManager* pPM, InterfaceWrapper* pIW);
+	int32_t CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pYUV, uint8_t* pPOST, int32_t cfgIndex, int32_t* id);
+	int32_t DestoryListbyId(int32_t id);
+	int32_t DestoryAllList();
+	int32_t StartById(int32_t id);
+	int32_t EnableNodebyType(int32_t id, PROCESS_TYPE type);
+	int32_t DisableNodebyType(int32_t id, PROCESS_TYPE type);
 
 private:
 	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* FindListById(int32_t id);

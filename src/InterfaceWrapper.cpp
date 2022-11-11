@@ -46,7 +46,7 @@ InterfaceWrapper::InterfaceWrapper()
 
 InterfaceWrapper::~InterfaceWrapper()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	rt = DeInit();
 
@@ -58,9 +58,9 @@ InterfaceWrapper::~InterfaceWrapper()
 	}
 }
 
-ISPResult InterfaceWrapper::Init()
+int32_t InterfaceWrapper::Init()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	rt = LoadLib(ISP_ALG_LIB, ALG_DYNAMIC_LIB_PATH);
 	if (SUCCESS(rt)) {
@@ -73,9 +73,9 @@ ISPResult InterfaceWrapper::Init()
 	return rt;
 }
 
-ISPResult InterfaceWrapper::DeInit()
+int32_t InterfaceWrapper::DeInit()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	for (int32_t index = ISP_ALG_LIB; index < ISP_LIBS_NUM; index++) {
 		rt = InterfaceDeInit((ISP_LIBS_ID)index);
@@ -96,9 +96,9 @@ ISPResult InterfaceWrapper::DeInit()
 	return rt;
 }
 
-ISPResult InterfaceWrapper::LoadLib(ISP_LIBS_ID libId, const char* path)
+int32_t InterfaceWrapper::LoadLib(ISP_LIBS_ID libId, const char* path)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	void** pLib = nullptr;
 
@@ -146,9 +146,9 @@ ISPResult InterfaceWrapper::LoadLib(ISP_LIBS_ID libId, const char* path)
 	return rt;
 }
 
-ISPResult InterfaceWrapper::ReleaseLib(ISP_LIBS_ID libId)
+int32_t InterfaceWrapper::ReleaseLib(ISP_LIBS_ID libId)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	void** pLib = nullptr;
 
@@ -180,9 +180,9 @@ ISPResult InterfaceWrapper::ReleaseLib(ISP_LIBS_ID libId)
 	return rt;
 }
 
-ISPResult InterfaceWrapper::InterfaceInit(ISP_LIBS_ID libId)
+int32_t InterfaceWrapper::InterfaceInit(ISP_LIBS_ID libId)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	switch(libId) {
 		case ISP_ALG_LIB:
@@ -197,9 +197,9 @@ ISPResult InterfaceWrapper::InterfaceInit(ISP_LIBS_ID libId)
 	return rt;
 }
 
-ISPResult InterfaceWrapper::InterfaceDeInit(ISP_LIBS_ID libId)
+int32_t InterfaceWrapper::InterfaceDeInit(ISP_LIBS_ID libId)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	switch(libId) {
 		case ISP_ALG_LIB:
@@ -214,9 +214,9 @@ ISPResult InterfaceWrapper::InterfaceDeInit(ISP_LIBS_ID libId)
 	return rt;
 }
 
-ISPResult InterfaceWrapper::AlgInterfaceInit()
+int32_t InterfaceWrapper::AlgInterfaceInit()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	LIB_VOID_FUNC_ADDR funcs[LIB_FUNCS_NUM] = {nullptr};
 
 	if (!mLibs.pAlgLib) {
@@ -263,9 +263,9 @@ ISPResult InterfaceWrapper::AlgInterfaceInit()
 	return rt;
 }
 
-ISPResult InterfaceWrapper::AlgInterfaceDeInit()
+int32_t InterfaceWrapper::AlgInterfaceDeInit()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	LIB_VOID_FUNC_ADDR funcs[LIB_FUNCS_NUM] = {nullptr};
 
 	if (!mLibs.pAlgLib) {
@@ -300,9 +300,9 @@ ISPResult InterfaceWrapper::AlgInterfaceDeInit()
 	return rt;
 }
 
-ISPResult InterfaceWrapper::ISPLibConfig(void* pPM, ...)
+int32_t InterfaceWrapper::ISPLibConfig(void* pPM, ...)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	pParamMgr = pPM;
 	if (!pParamMgr) {
@@ -321,9 +321,9 @@ ISPResult InterfaceWrapper::ISPLibConfig(void* pPM, ...)
 	return rt;
 }
 
-ISPResult InterfaceWrapper::AlgProcess(int32_t cmd, ...)
+int32_t InterfaceWrapper::AlgProcess(int32_t cmd, ...)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	ISPParamManager* pPM = nullptr;
 	va_list va;
 

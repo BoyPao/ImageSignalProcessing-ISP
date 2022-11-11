@@ -21,16 +21,16 @@ ISPVideo::~ISPVideo()
 {
 }
 
-ISPResult ISPVideo::StatusTransform()
+int32_t ISPVideo::StatusTransform()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	return rt;
 }
 
-ISPResult ISPVideo::Init(void* pData)
+int32_t ISPVideo::Init(void* pData)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != VIDEO_NEW) {
 		rt = ISP_STATE_ERROR;
@@ -56,9 +56,9 @@ ISPResult ISPVideo::Init(void* pData)
 }
 
 
-ISPResult ISPVideo::CreateThread(void* pThreadParam)
+int32_t ISPVideo::CreateThread(void* pThreadParam)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != VIDEO_INITED) {
 		rt = ISP_STATE_ERROR;
@@ -77,9 +77,9 @@ ISPResult ISPVideo::CreateThread(void* pThreadParam)
 	return rt;
 }
 
-ISPResult ISPVideo::DestroyThread()
+int32_t ISPVideo::DestroyThread()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState == VIDEO_LOCK || mState == VIDEO_WAIT_FRAME_DONE) {
 		ILOGI("Waite video thread finish", mState);
@@ -97,9 +97,9 @@ ISPResult ISPVideo::DestroyThread()
 	return rt;
 }
 
-ISPResult ISPVideo::Record(VideoWriter* pRecorder, int32_t w, int32_t h)
+int32_t ISPVideo::Record(VideoWriter* pRecorder, int32_t w, int32_t h)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (!pRecorder) {
 		rt = ISP_INVALID_PARAM;
@@ -130,9 +130,9 @@ ISPResult ISPVideo::Record(VideoWriter* pRecorder, int32_t w, int32_t h)
 	return rt;
 }
 
-ISPResult ISPVideo::Notify()
+int32_t ISPVideo::Notify()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (SUCCESS(rt))
 	{
@@ -145,7 +145,7 @@ ISPResult ISPVideo::Notify()
 
 void* VideoEncodeFunc(void* threadParam)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	VideoThreadParam* pParam = static_cast<VideoThreadParam*>(threadParam);
 	ISPVideo* pISPVideo = nullptr;
 	FileManager* pFileMgr = nullptr;

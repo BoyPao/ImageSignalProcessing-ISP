@@ -32,20 +32,20 @@ public:
 	ISPVideo();
 	~ISPVideo();
 
-	ISPResult Init(void* pData);
-	ISPResult CreateThread(void* pThreadParam);
-	ISPResult DestroyThread();
+	int32_t Init(void* pData);
+	int32_t CreateThread(void* pThreadParam);
+	int32_t DestroyThread();
 
-	ISPResult Record(cv::VideoWriter* pRecorder, int32_t w, int32_t h);
-	ISPResult Lock();
-	ISPResult Unlock();
-	ISPResult Wait();
-	ISPResult Notify();
-	
+	int32_t Record(cv::VideoWriter* pRecorder, int32_t w, int32_t h);
+	int32_t Lock();
+	int32_t Unlock();
+	int32_t Wait();
+	int32_t Notify();
+
 	void* pSrc;
 
 private:
-	ISPResult StatusTransform();
+	int32_t StatusTransform();
 
 	VIDEO_STATE mState;
 

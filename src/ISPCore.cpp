@@ -27,9 +27,9 @@ ISPCore::~ISPCore()
 {
 }
 
-ISPResult ISPCore::Init()
+int32_t ISPCore::Init()
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != CORE_IDLE) {
 		rt = ISP_FAILED;

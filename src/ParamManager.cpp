@@ -36,9 +36,9 @@ ISPParamManager::~ISPParamManager()
 {
 }
 
-ISPResult ISPParamManager::SetMediaInfo(MEDIA_INFO* info)
+int32_t ISPParamManager::SetMediaInfo(MEDIA_INFO* info)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (!info) {
 		rt = ISP_INVALID_PARAM;
@@ -56,9 +56,9 @@ ISPResult ISPParamManager::SetMediaInfo(MEDIA_INFO* info)
 	return rt;
 }
 
-ISPResult ISPParamManager::SetImgInfo(IMG_INFO* info)
+int32_t ISPParamManager::SetImgInfo(IMG_INFO* info)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (info) {
 		memcpy(&mMediaInfo.img, info, sizeof(IMG_INFO));
@@ -71,9 +71,9 @@ ISPResult ISPParamManager::SetImgInfo(IMG_INFO* info)
 	return rt;
 }
 
-ISPResult ISPParamManager::SetVideoInfo(VIDEO_INFO* info)
+int32_t ISPParamManager::SetVideoInfo(VIDEO_INFO* info)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (info) {
 		memcpy(&mMediaInfo.video, info, sizeof(VIDEO_INFO));
@@ -86,9 +86,9 @@ ISPResult ISPParamManager::SetVideoInfo(VIDEO_INFO* info)
 	return rt;
 }
 
-ISPResult ISPParamManager::GetImgDimension(int32_t* width, int32_t* height)
+int32_t ISPParamManager::GetImgDimension(int32_t* width, int32_t* height)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != PM_SELECTED) {
 		rt = ISP_STATE_ERROR;
@@ -109,9 +109,9 @@ ISPResult ISPParamManager::GetImgDimension(int32_t* width, int32_t* height)
 	return rt;
 }
 
-ISPResult ISPParamManager::GetVideoFPS(int32_t* fps)
+int32_t ISPParamManager::GetVideoFPS(int32_t* fps)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != PM_SELECTED) {
 		rt = ISP_STATE_ERROR;
@@ -131,9 +131,9 @@ ISPResult ISPParamManager::GetVideoFPS(int32_t* fps)
 	return rt;
 }
 
-ISPResult ISPParamManager::GetVideoFrameNum(int32_t* num)
+int32_t ISPParamManager::GetVideoFrameNum(int32_t* num)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (mState != PM_SELECTED) {
 		rt = ISP_STATE_ERROR;
@@ -153,9 +153,9 @@ ISPResult ISPParamManager::GetVideoFrameNum(int32_t* num)
 	return rt;
 }
 
-ISPResult ISPParamManager::SelectParams(int32_t paramIndex)
+int32_t ISPParamManager::SelectParams(int32_t paramIndex)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (paramIndex >= PARAM_INDEX_NUM) {
 		rt = ISP_INVALID_PARAM;
@@ -175,9 +175,9 @@ ISPResult ISPParamManager::SelectParams(int32_t paramIndex)
 	return rt;
 }
 
-ISPResult ISPParamManager::GetImgInfo(void* pParams)
+int32_t ISPParamManager::GetImgInfo(void* pParams)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	LIB_PARAMS* param = nullptr;
 
 	param = static_cast<LIB_PARAMS*>(pParams);
@@ -198,9 +198,9 @@ ISPResult ISPParamManager::GetImgInfo(void* pParams)
 	return rt;
 }
 
-ISPResult ISPParamManager::GetParamByCMD(void* pParams, int32_t cmd)
+int32_t ISPParamManager::GetParamByCMD(void* pParams, int32_t cmd)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 
 	if (!pParams) {
 		rt = ISP_INVALID_PARAM;
@@ -249,9 +249,9 @@ ISPResult ISPParamManager::GetParamByCMD(void* pParams, int32_t cmd)
 	return rt;
 }
 
-ISPResult ISPParamManager::GetBLCParam(void* pParams)
+int32_t ISPParamManager::GetBLCParam(void* pParams)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	LIB_PARAMS* param = nullptr;
 
 	param = static_cast<LIB_PARAMS*>(pParams);
@@ -273,9 +273,9 @@ ISPResult ISPParamManager::GetBLCParam(void* pParams)
 	return rt;
 }
 
-ISPResult ISPParamManager::GetLSCParam(void* pParams)
+int32_t ISPParamManager::GetLSCParam(void* pParams)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	LIB_PARAMS* param = nullptr;
 
 	param = static_cast<LIB_PARAMS*>(pParams);
@@ -295,9 +295,9 @@ ISPResult ISPParamManager::GetLSCParam(void* pParams)
 	return rt;
 }
 
-ISPResult ISPParamManager::GetWBParam(void* pParams)
+int32_t ISPParamManager::GetWBParam(void* pParams)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	LIB_PARAMS* param = nullptr;
 
 	param = static_cast<LIB_PARAMS*>(pParams);
@@ -315,9 +315,9 @@ ISPResult ISPParamManager::GetWBParam(void* pParams)
 	return rt;
 }
 
-ISPResult ISPParamManager::GetCCParam(void* pParams)
+int32_t ISPParamManager::GetCCParam(void* pParams)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	LIB_PARAMS* param = nullptr;
 
 	param = static_cast<LIB_PARAMS*>(pParams);
@@ -336,9 +336,9 @@ ISPResult ISPParamManager::GetCCParam(void* pParams)
 	return rt;
 }
 
-ISPResult ISPParamManager::GetGAMMAParam(void* pParams)
+int32_t ISPParamManager::GetGAMMAParam(void* pParams)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	LIB_PARAMS* param = nullptr;
 
 	param = static_cast<LIB_PARAMS*>(pParams);
@@ -354,9 +354,9 @@ ISPResult ISPParamManager::GetGAMMAParam(void* pParams)
 	return rt;
 }
 
-ISPResult ISPParamManager::GetWNRParam(void* pParams)
+int32_t ISPParamManager::GetWNRParam(void* pParams)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	LIB_PARAMS* param = nullptr;
 
 	param = static_cast<LIB_PARAMS*>(pParams);
@@ -376,9 +376,9 @@ ISPResult ISPParamManager::GetWNRParam(void* pParams)
 	return rt;
 }
 
-ISPResult ISPParamManager::GetEEParam(void* pParams)
+int32_t ISPParamManager::GetEEParam(void* pParams)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	LIB_PARAMS* param = nullptr;
 
 	param = static_cast<LIB_PARAMS*>(pParams);

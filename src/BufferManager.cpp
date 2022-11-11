@@ -7,10 +7,10 @@
 
 #include "BufferManager.h"
 
-#if DBG_MEM_OVERWRITE_ON
+#if DBG_MEM_OVERWRITE_CHECK_ON
 void* OverwriteCheckingFunc(void* param)
 {
-	ISPResult rt = ISP_SUCCESS;
+	int32_t rt = ISP_SUCCESS;
 	MemThreadParam *pParam = static_cast<MemThreadParam*>(param);
 	ILOGDM("Overwrite checking start");
 
