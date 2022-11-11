@@ -390,7 +390,7 @@ ISPResult ISPParamManager::GetEEParam(void* pParams)
 	if (SUCCESS(rt)) {
 		param->EE_param.alpha = mISP_ConfigParams.pEE_param->alpha;
 		param->EE_param.coreSize = mISP_ConfigParams.pEE_param->coreSize;
-		param->EE_param.delta = mISP_ConfigParams.pEE_param->delta;
+		param->EE_param.sigma = mISP_ConfigParams.pEE_param->sigma;
 	}
 
 	return rt;

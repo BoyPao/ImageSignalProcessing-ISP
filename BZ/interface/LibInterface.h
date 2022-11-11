@@ -82,7 +82,7 @@ struct LIB_WNR_PARAM {
 struct LIB_EE_PARAM {
 	float alpha;
 	int32_t coreSize;
-	int32_t delta;
+	int32_t sigma;
 };
 
 struct LIB_PARAMS {

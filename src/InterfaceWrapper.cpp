@@ -247,7 +247,7 @@ ISPResult InterfaceWrapper::AlgInterfaceInit()
 	if (SUCCESS(rt)) {
 		if (funcs[2]) {
 			//TODO: add callbacks if need
-			ISP_CALLBACKS CBs;
+			ISP_CALLBACKS CBs = { 0 };
 			CBs.ISP_Notify = nullptr;
 			CBs.UtilsFuncs.Log = LogBase;
 			CBs.UtilsFuncs.DumpDataInt = DumpDataInt;

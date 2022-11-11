@@ -13,7 +13,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/photo.hpp"
 
-#define DBG_SHOW_ON true
+#define DBG_SHOW_ON false
 #define DBG_DUMP_ON false
 #ifdef LINUX_SYSTEM
 #define DUMP_PATH "~/HAO/test_project/ISP/ISP/res/out/output.txt"
@@ -22,6 +22,9 @@
 #endif
 
 using namespace cv;
+
+#define VMASK_UCHAR(v) ((v) & 0xff)
+#define VFIX_UCHAR(v) ((v) > 255 ? 255 : ((v < 0) ? 0 : (v)))
 
 /* Bayer Process */
 BZResult BZ_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...);
@@ -313,7 +316,7 @@ enum PixelDataType {
 void WrapIMGShow(void* pData, int32_t w, int32_t h, int32_t chNum, PixelDataType DT)
 {
 	int32_t type = chNum == 1 ? CV_8U: CV_8UC3;
-	
+
 	if (!pData) {
 		BLOGE("Input is null");
 		return;
@@ -1160,150 +1163,6 @@ BZResult BZ_GammaCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 	return rt;
 }
 
-enum WAVELET_TYPE {
-	haar = 0,
-	dbl,
-	sym2
-};
-
-//生成不同类型的小波
-void wavelet(WAVELET_TYPE type, Mat& _lowFilter, Mat& _highFilter)
-{
-	if (type == haar || type == dbl)
-	{
-		int N = 2;
-		_lowFilter = Mat::zeros(1, N, CV_32F);
-		_highFilter = Mat::zeros(1, N, CV_32F);
-
-		_lowFilter.at<float>(0, 0) = 1 / sqrtf(N);
-		_lowFilter.at<float>(0, 1) = 1 / sqrtf(N);
-
-		_highFilter.at<float>(0, 0) = -1 / sqrtf(N);
-		_highFilter.at<float>(0, 1) = 1 / sqrtf(N);
-	}
-	if (type == sym2)
-	{
-		int N = 4;
-		float h[] = { -0.483, 0.836, -0.224, -0.129 };
-		float l[] = { -0.129, 0.224,    0.837, 0.483 };
-
-		_lowFilter = Mat::zeros(1, N, CV_32F);
-		_highFilter = Mat::zeros(1, N, CV_32F);
-
-		for (int i = 0; i < N; i++)
-		{
-			_lowFilter.at<float>(0, i) = l[i];
-			_highFilter.at<float>(0, i) = h[i];
-		}
-	}
-}
-
-//小波分解
-Mat waveletDecompose(Mat _src, Mat _lowFilter, Mat _highFilter)
-{
-	//assert(_src.rows == 1 && _lowFilter.rows == 1 && _highFilter.rows == 1);
-	//assert(_src.cols >= _lowFilter.cols && _src.cols >= _highFilter.cols);
-	Mat& src = _src;
-
-	int D = src.cols;
-
-	Mat& lowFilter = _lowFilter;
-	Mat& highFilter = _highFilter;
-
-	//频域滤波或时域卷积；ifft( fft(x) * fft(filter)) = cov(x,filter)
-	Mat dst1 = Mat::zeros(1, D, src.type());
-	Mat dst2 = Mat::zeros(1, D, src.type());
-
-	filter2D(src, dst1, -1, lowFilter);
-	filter2D(src, dst2, -1, highFilter);
-
-	//下采样
-	Mat downDst1 = Mat::zeros(1, D / 2, src.type());
-	Mat downDst2 = Mat::zeros(1, D / 2, src.type());
-
-	resize(dst1, downDst1, downDst1.size());
-	resize(dst2, downDst2, downDst2.size());
-
-	//数据拼接
-	for (int i = 0; i < D / 2; i++)
-	{
-		src.at<float>(0, i) = downDst1.at<float>(0, i);
-		src.at<float>(0, i + D / 2) = downDst2.at<float>(0, i);
-
-	}
-	return src;
-}
-
-Mat WDT(const Mat& _src, WAVELET_TYPE type, const int _level)
-{
-	Mat src = Mat_<float>(_src);
-	Mat dst = Mat::zeros(src.rows, src.cols, src.type());
-	int N = src.rows;
-	int D = src.cols;
-	//高通低通滤波器
-	Mat lowFilter;
-	Mat highFilter;
-	wavelet(type, lowFilter, highFilter);
-	//小波变换
-	int t = 1;
-	int row = N;
-	int col = D;
-	while (t <= _level)
-	{
-		//先进行 行小波变换
-		for (int i = 0; i < row; i++)
-		{
-			//取出src中要处理的数据的一行
-			Mat oneRow = Mat::zeros(1, col, src.type());
-			for (int j = 0; j < col; j++)
-			{
-				oneRow.at<float>(0, j) = src.at<float>(i, j);
-			}
-			oneRow = waveletDecompose(oneRow, lowFilter, highFilter);
-			for (int j = 0; j < col; j++)
-			{
-				dst.at<float>(i, j) = oneRow.at<float>(0, j);
-			}
-		}
-		//char s[10];
-		//_itoa_s(t, s, 10);
-		//imshow(s, dst);
-		//waitKey();
-#if 0
-		//    normalize(dst,dst,0,255,NORM_MINMAX);
-		IplImage dstImg1 = IplImage(dst);
-		cvSaveImage("dst1.jpg", &dstImg1);
-#endif
-
-		//小波列变换
-		for (int j = 0; j < col; j++)
-		{
-			Mat oneCol = Mat::zeros(row, 1, src.type());
-			for (int i = 0; i < row; i++)
-			{
-				oneCol.at<float>(i, 0) = dst.at<float>(i, j);//dst,not src
-			}
-			oneCol = (waveletDecompose(oneCol.t(), lowFilter, highFilter)).t();
-			for (int i = 0; i < row; i++)
-			{
-				dst.at<float>(i, j) = oneCol.at<float>(i, 0);
-			}
-		}
-#if 0
-		//    normalize(dst,dst,0,255,NORM_MINMAX);
-		IplImage dstImg2 = IplImage(dst);
-		cvSaveImage("dst2.jpg", &dstImg2);
-#endif
-		//更新
-		row /= 2;
-		col /= 2;
-		t++;
-		src = dst;
-
-	}
-	return dst;
-}
-
 BZResult WaveletDecomposition(void* src, void* dst, int32_t bufW, int32_t bufH, int32_t depth)
 {
 	BZResult rt = BZ_SUCCESS;
@@ -1526,8 +1385,8 @@ BZResult BZ_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	}
 
 	if (SUCCESS(rt)) {
-		float *pIn = static_cast<float*>(WrapAlloc(w*h, sizeof(float)));
-		float *pOut = static_cast<float*>(WrapAlloc(w*h, sizeof(float)));
+		float *pIn = static_cast<float*>(WrapAlloc(w * h, sizeof(float)));
+		float *pOut = static_cast<float*>(WrapAlloc(w * h, sizeof(float)));
 
 		for (int32_t ch = 0; ch < 3; ch++) {
 			for (int32_t i = 0; i < w * h; i++) {
@@ -1539,7 +1398,6 @@ BZResult BZ_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 				memcpy(pIn, pOut, w * h * sizeof(float));
 			}
 
-			if (ch == 0)
 			rt = WaveletNoiseReduction(pIn, w, h, strength[ch]);
 
 			for (int32_t depth = WNR_DEPTH; depth > 0; depth--) {
@@ -1560,10 +1418,178 @@ BZResult BZ_WaveletNR(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 	return rt;
 }
 
+struct FilterKernel2D {
+	vector<float> kx;
+	vector<float> ky;
+};
+
+struct FilterKernel1DConfig {
+	float k3[3];
+	float k5[5];
+	float k7[7];
+};
+
+static FilterKernel1DConfig gDefaultGaussionKernel {
+	{0.25, 0.5, 0.25},
+	{0.0625, 0.25, 0.375, 0.25, 0.0625},
+	{0.03125, 0.109375, 0.21875, 0.28125, 0.21875, 0.109375, 0.03125}
+};
+
+BZResult CreatGaussion2DKernel(FilterKernel2D* pK, size_t size, int32_t sigma)
+{
+	BZResult rt = BZ_SUCCESS;
+
+	if (!pK) {
+		rt = BZ_INVALID_PARAM;
+		BLOGE("Input is null");
+	}
+
+	if (size / 2 == 0) {
+		rt = BZ_INVALID_PARAM;
+		BLOGE("Invalid kernel size:%u", size);
+	}
+
+	if (!pK->kx.empty() || !pK->ky.empty()) {
+		vector<float>().swap(pK->kx);
+		vector<float>().swap(pK->ky);
+	}
+
+	if (SUCCESS(rt)) {
+		if (sigma <= 0) {
+			switch(size) {
+				case 3:
+					for (size_t i = 0; i < size; i++) {
+						pK->kx.push_back(gDefaultGaussionKernel.k3[i]);
+						pK->ky.push_back(gDefaultGaussionKernel.k3[i]);
+					}
+					break;
+				case 5:
+					for (size_t i = 0; i < size; i++) {
+						pK->kx.push_back(gDefaultGaussionKernel.k5[i]);
+						pK->ky.push_back(gDefaultGaussionKernel.k5[i]);
+					}
+					break;
+				case 7:
+					for (size_t i = 0; i < size; i++) {
+						pK->kx.push_back(gDefaultGaussionKernel.k7[i]);
+						pK->ky.push_back(gDefaultGaussionKernel.k7[i]);
+					}
+					break;
+				default:
+					rt = BZ_INVALID_PARAM;
+					BLOGE("Not support kernel size:%u", size);
+					break;
+			}
+		} else {
+			float sumx = 0.0, sumy= 0.0;
+			for (size_t i = size / 2; i != 0; i--) {
+				pK->kx.push_back(1 / (sqrt(2 * M_PI)  * sigma) * exp(-0.5 * i * i / (sigma * sigma)));
+				pK->ky.push_back(1 / (sqrt(2 * M_PI)  * sigma) * exp(-0.5 * i * i / (sigma * sigma)));
+			}
+			pK->kx.push_back(1 / (sqrt(2 * M_PI) * sigma));
+			pK->ky.push_back(1 / (sqrt(2 * M_PI) * sigma));
+			for (size_t i = 0; i < size / 2; i++) {
+				pK->kx.push_back(pK->kx[size / 2 - 1 - i]);
+				pK->ky.push_back(pK->kx[size / 2 - 1 - i]);
+			}
+			for(size_t i = 0; i < pK->kx.size(); i++) {
+				sumx += pK->kx[i];
+				sumy += pK->ky[i];
+			}
+			for(size_t i = 0; i < pK->kx.size(); i++) {
+				pK->kx[i] /= sumx ;
+				pK->ky[i] /= sumy ;
+			}
+		}
+	}
+
+	for(size_t i = 0; i < pK->kx.size(); i++) {
+		BLOGDA("kx[%d]:%f ky[%d]:%f", i, pK->kx[i], i,pK->ky[i]);
+	}
+
+	return rt;
+}
+
+BZResult Convolution2D(void* pData, size_t w, size_t h, FilterKernel2D* pK)
+{
+	BZResult rt = BZ_SUCCESS;
+
+	if (!pData || !pK) {
+		rt = BZ_INVALID_PARAM;
+		BLOGE("Input is NULL");
+		return rt;
+	}
+
+	float* pHCov = static_cast<float*>(WrapAlloc(w * h, sizeof(float)));
+	float* pWCov = static_cast<float*>(WrapAlloc(w * h, sizeof(float)));
+	size_t index = 0;
+	size_t indexMax = 0;
+
+	for (size_t row = 0; row < h; row++) {
+		for (size_t col = 0; col < w; col++) {
+			if (row < (pK->ky.size() - 1) / 2) {
+				index = (pK->ky.size() - 1) / 2 - row;
+				indexMax = pK->ky.size();
+			} else if (row >= h - (pK->ky.size() - 1) / 2) {
+				index = 0;
+				indexMax = pK->ky.size() - 1 - (row - (h - (pK->ky.size() - 1) / 2));
+			} else {
+				index = 0;
+				indexMax = pK->ky.size();
+			}
+			while(index < indexMax) {
+				pHCov[row * w + col] +=
+					static_cast<uchar*>(pData)[(row + index - ((pK->ky.size() - 1) / 2)) * w + col] *
+					pK->ky[index];
+				index++;
+			}
+		}
+	}
+
+	for (size_t row = 0; row < h; row++) {
+		for (size_t col = 0; col < w; col++) {
+			if (col < (pK->kx.size() - 1) / 2) {
+				index = (pK->kx.size() - 1) / 2 - col;
+				indexMax = pK->kx.size();
+			} else if (col >= w - (pK->kx.size() - 1) / 2) {
+				index = 0;
+				indexMax = pK->kx.size() - 1 - (col - (w - (pK->kx.size() - 1) / 2));
+			} else {
+				index = 0;
+				indexMax = pK->kx.size();
+			}
+			while(index < indexMax) {
+				pWCov[row * w + col] += pHCov[row * w + col + index - ((pK->kx.size() - 1) / 2)] *
+					pK->kx[index];
+				index++;
+			}
+		}
+	}
+
+	for (size_t i = 0; i < w * h; i++) {
+		pWCov[i] = pWCov[i] < 0 ? 0 : pWCov[i];
+		static_cast<uchar*>(pData)[i] = pWCov[i] > 255 ? 255 : (int)pWCov[i];
+	}
+
+#if DBG_SHOW_ON
+	WrapIMGShow(pData, w, h, 1, DT_UCHAR);
+#endif
+
+	pHCov = static_cast<float*>(WrapFree((void*)pHCov));
+	pWCov = static_cast<float*>(WrapFree((void*)pWCov));
+
+	return rt;
+}
+
 BZResult BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult rt = BZ_SUCCESS;
 	(void)CBs;
+	int32_t w, h;
+	float alpha;
+	int32_t coreSzie;
+	int32_t sigma;
+	FilterKernel2D kernel;
 
 	if (!data || !pParams) {
 		rt = BZ_INVALID_PARAM;
@@ -1571,44 +1597,40 @@ BZResult BZ_EdgeEnhancement(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, 
 	}
 
 	if (SUCCESS(rt)) {
-		int32_t width, height;
-		float alpha;
-		int32_t coreSzie;
-		int32_t delta;
-		width = pParams->info.width;
-		height = pParams->info.height;
+		w = pParams->info.width;
+		h = pParams->info.height;
 		alpha = pParams->EE_param.alpha;
 		coreSzie = pParams->EE_param.coreSize;
-		delta = pParams->EE_param.delta;
-		BLOGDA("width:%d height:%d", width, height);
-		BLOGDA("alpha:%f coreSzie:%d delta:%d", alpha, coreSzie, delta);
-		if (width && height) {
-			Mat blurred;
-			Mat Y(height, width, CV_8UC1, Scalar(0));
-			int32_t i, j;
-			int32_t mask;
-			for (i = 0; i < height; i++) {
-				for (j = 0; j < width; j++) {
-					Y.data[i * width + j] = static_cast<uchar*>(data)[i * 3 * width + 3 * j];
-				}
+		sigma = pParams->EE_param.sigma;
+		BLOGDA("width:%d height:%d", w, h);
+		BLOGDA("alpha:%f coreSzie:%d sigma:%d", alpha, coreSzie, sigma);
+	}
+
+	if (SUCCESS(rt)) {
+		rt = CreatGaussion2DKernel(&kernel, coreSzie, sigma);
+	}
+
+	if (SUCCESS(rt)) {
+		uchar* pTmp = static_cast<uchar*>(WrapAlloc(w * h));
+		int32_t mask;
+		for (int32_t ch = 0; ch < 3; ch++) {
+			if (ch > 0) {
+				break; /* It is better to do EE only for Y channel */
 			}
+			memcpy(pTmp, static_cast<uchar*>(data) + w * h * ch, w * h);
 
-			GaussianBlur(Y, blurred, Size(coreSzie, coreSzie), delta, delta);
+			rt = Convolution2D(pTmp, w, h, &kernel);
 
-			for (i = 0; i < height; i++) {
-				for (j = 0; j < width; j++) {
-					mask = Y.data[i * width + j] - blurred.data[i * width + j];
-					mask = (int)(static_cast<uchar*>(data)[i * 3 * width + 3 * j] + (int)(alpha * mask));
-					if (mask > 255) {
-						mask = 255;
-					}
-					else if (mask < 0) {
-						mask = 0;
-					}
-					static_cast<uchar*>(data)[i * 3 * width + 3 * j] = mask & 255;
+			for (int32_t row = 0; row < h; row++) {
+				for (int32_t col = 0; col < w; col++) {
+					mask = static_cast<uchar*>(data)[w * h * ch + row * w + col] - pTmp[row * w + col];
+					mask = (int)(static_cast<uchar*>(data)[w * h * ch + row * w + col] + (int)(alpha * mask));
+					mask = VFIX_UCHAR(mask);
+					static_cast<uchar*>(data)[w * h * ch + row * w + col] = VMASK_UCHAR(mask);
 				}
 			}
 		}
+		pTmp = static_cast<uchar*>(WrapFree((void*)pTmp));
 	}
 
 	return rt;
@@ -1761,26 +1783,24 @@ void Compress10to8(uint16_t* src, unsigned char* dst, int32_t size, bool need_42
 	}
 }
 
-#define VMASK_uchar(v) ((v) & 0xff)
-#define VFIX_uchar(v) ((v) > 255 ? 255 : ((v < 0) ? 0 : (v)))
 /* RGB to YUV fallow below formulor			*/
 /* Y =  0.299 * R + 0.587 * G + 0.114 * B;	*/
 /* U = -0.169 * R - 0.331 * G + 0.5 * B ;	*/
 /* V =  0.5 * R - 0.419 * G - 0.081 * B;	*/
-#define RGB2Y(r, g, b) VFIX_uchar((77 * (r) + 150 * (g) + 29 *(b)) >> 8)
-#define RGB2U(r, g, b) VFIX_uchar(((131 * (b) - 44 * (r) - 87 * (g)) >> 8) + 128)
-#define RGB2V(r, g, b) VFIX_uchar(((131 * (r) - 110 * (g) - 21 * (b)) >> 8) + 128)
+#define RGB2Y(r, g, b) VFIX_UCHAR((77 * (r) + 150 * (g) + 29 *(b)) >> 8)
+#define RGB2U(r, g, b) VFIX_UCHAR(((131 * (b) - 44 * (r) - 87 * (g)) >> 8) + 128)
+#define RGB2V(r, g, b) VFIX_UCHAR(((131 * (r) - 110 * (g) - 21 * (b)) >> 8) + 128)
 
 /* YUV to RGB fallow below formulor		*/
 /* R = Y + 1.4075 * V;					*/
 /* G = Y - (0.3455 * U + 0.7169 * V);	*/
 /* B = Y + 1.779 * U;					*/
-#define YUV2R(y, u ,v) VFIX_uchar((y) + ((360 * ((v) - 128)) >> 8))
-#define YUV2G(y, u ,v) VFIX_uchar((y) - ((88 * ((u) - 128) + 184 * ((v) - 128)) >> 8))
-#define YUV2B(y, u ,v) VFIX_uchar((y) + ((455 * ((u) - 128)) >> 8))
-#define YUV2R_uchar(y, u ,v) YUV2R(VMASK_uchar(y), VMASK_uchar(u), VMASK_uchar(v))
-#define YUV2G_uchar(y, u ,v) YUV2G(VMASK_uchar(y), VMASK_uchar(u), VMASK_uchar(v))
-#define YUV2B_uchar(y, u ,v) YUV2B(VMASK_uchar(y), VMASK_uchar(u), VMASK_uchar(v))
+#define YUV2R(y, u ,v) VFIX_UCHAR((y) + ((360 * ((v) - 128)) >> 8))
+#define YUV2G(y, u ,v) VFIX_UCHAR((y) - ((88 * ((u) - 128) + 184 * ((v) - 128)) >> 8))
+#define YUV2B(y, u ,v) VFIX_UCHAR((y) + ((455 * ((u) - 128)) >> 8))
+#define YUV2R_uchar(y, u ,v) YUV2R(VMASK_UCHAR(y), VMASK_UCHAR(u), VMASK_UCHAR(v))
+#define YUV2G_uchar(y, u ,v) YUV2G(VMASK_UCHAR(y), VMASK_UCHAR(u), VMASK_UCHAR(v))
+#define YUV2B_uchar(y, u ,v) YUV2B(VMASK_UCHAR(y), VMASK_UCHAR(u), VMASK_UCHAR(v))
 
 
 BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
@@ -1858,16 +1878,6 @@ BZResult BZ_CST_RGB2YUV(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 						pV[row * w + col] = RGB2V(pR8[row * w + col], pG8[row * w + col], pB8[row * w + col]);
 					}
 				}
-
-				/* TMP: using Mat */
-//				for (uint32_t row = 0; row < h; row++) {
-//					for (uint32_t col = 0; col < w; col++) {
-//						pTmp[row * w * 3 + col * 3] = static_cast<uchar*>(dst)[row * w + col];
-//						pTmp[row * w * 3 + col * 3 + 1] = static_cast<uchar*>(dst)[w * h + row * w + col];
-//						pTmp[row * w * 3 + col * 3 + 2] = static_cast<uchar*>(dst)[w * h * 2 + row * w + col];
-//					}
-//				}
-//				memcpy(dst, pTmp, 3 * w * h);
 			}
 		}
 		else {
@@ -1928,17 +1938,6 @@ BZResult BZ_CST_YUV2RGB(void* src, void* dst, LIB_PARAMS* pParams, ISP_CALLBACKS
 
 	if (SUCCESS(rt)) {
 		pTmp = (src == dst) ? static_cast<uchar*>(WrapAlloc(w * h * 3)) : static_cast<uchar*>(dst);
-
-		/* TMP: using Mat */
-//		for (uint32_t row = 0; row < h; row++) {
-//			for (uint32_t col = 0; col < w; col++) {
-//				pTmp[row * w + col] = static_cast<uchar*>(src)[row * w * 3 + col * 3];
-//				pTmp[w * h + row * w + col] = static_cast<uchar*>(src)[row * w * 3 + col * 3 + 1];
-//				pTmp[2 * w * h + row * w + col] = static_cast<uchar*>(src)[row * w * 3 + col * 3 + 2];
-//			}
-//		}
-//		memcpy(src, pTmp, w * h * 3);
-//		memset(pTmp, 0, w * h * 3);
 	}
 
 	if (SUCCESS(rt)) {

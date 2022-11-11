@@ -58,5 +58,5 @@ struct WNR_PARAM {
 struct EE_PARAM {
 	float alpha;
 	int32_t coreSize;
-	int32_t delta;
+	int32_t sigma;
 };
