@@ -824,14 +824,14 @@ void FileManager::HelpMenu()
 	ILOGI(" ISP v%d.%d", VERSION, SUB_VERSION);
 	ILOGI(" Copyright (c) 2019 Peng Hao <635945005@qq.com>");
 	ILOGI("==================================================================");
-	ILOGI(" ISP User Guide:");
-	ILOGI(" 1. To get help, use cmd: ./v -h or ./v -help");
-	ILOGI(" 2. To check format list, use cmd: ./v -l or ./v -list");
-	ILOGI(" 3. To view an image, use cmd like this: ./v $path $width $height $fmt ($stride)");
-	ILOGI(" \tpath\t: Target image path, like: /usr/bin/example.yuv");
+	ILOGI(" User Guide:");
+	ILOGI(" 1. To get help, use cmd: ./ISP -h or ./ISP -help");
+	ILOGI(" 2. To check format list, use cmd: ./ISP -l or ./ISP -list");
+	ILOGI(" 3. To view an image, use cmd like this: ./ISP $path $width $height $fmt ($stride)");
+	ILOGI(" \tpath\t: Target image path, like: /usr/bin/example.raw");
 	ILOGI(" \twidth\t: Image width, like: 640");
 	ILOGI(" \theight\t: Image height, like: 480");
-	ILOGI(" \tfmt\t: Image format, like: NV21. Please check <FMT Param> column in format list.");
+	ILOGI(" \tfmt\t: Image format, like: pBAA. Please check <FMT Param> column in format list.");
 	ILOGI(" \tstride\t: Optional param. If need, set stride for image");
 	ILOGI(" \t");
 }

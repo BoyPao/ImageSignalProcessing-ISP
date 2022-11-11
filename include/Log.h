@@ -9,7 +9,7 @@
 #include "Utils.h"
 
 #define LOG_ON 1
-#define LOG_LEVEL (0x1 + 0x2 + 0x4)
+#define LOG_LEVEL (0x1 + 0x2 + 0x4 + 0x8)
 #define DBG_LEVEL (0x1)
 #define LOG_FOR_RELEASE
 
@@ -32,11 +32,11 @@ enum ISPLogMask {
 
 enum ISPDbgMask {
 	DBG_BASE_MASK = 0x1,
-	DBG_CORE_MASK = DBG_BASE_MASK,
-	DBG_FILE_MASK = DBG_BASE_MASK << 1,
-	DBG_LIST_MASK = DBG_BASE_MASK << 2,
-	DBG_INTF_MASK = DBG_BASE_MASK << 3,
-	DBG_MEMY_MASK = DBG_BASE_MASK << 4,
+	DBG_CORE_MASK = DBG_BASE_MASK << 1,
+	DBG_FILE_MASK = DBG_BASE_MASK << 2,
+	DBG_LIST_MASK = DBG_BASE_MASK << 3,
+	DBG_INTF_MASK = DBG_BASE_MASK << 4,
+	DBG_MEMY_MASK = DBG_BASE_MASK << 5,
 };
 
 #ifdef LOG_FOR_RELEASE
