@@ -7,6 +7,7 @@
 
 #include "ISPListManager.h"
 #include "ISPListConfig.h"
+#include "ISPList.cpp"
 
 ISP_LIST_PROPERTY* gISPListConfigs[LIST_CFG_NUM] = {
 	&DefaultListConfig

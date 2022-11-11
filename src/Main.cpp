@@ -25,17 +25,6 @@ using namespace cv;
 #define RESNAME "Result"
 #define TMPNAME "Temp"
 
-static ISPCore* gpCore = NULL;
-void SetCore(void* pCore)
-{
-	 gpCore = static_cast<ISPCore*>(pCore);
-}
-
-void* GetCore()
-{
-	return gpCore;
-}
-
 int main(int argc, char* argv[], char* envp[]) {
 	ISPResult rt = ISP_SUCCESS;
 
@@ -98,14 +87,12 @@ int main(int argc, char* argv[], char* envp[]) {
 		ILOGI("Align (%d,%d) bufferSize:%d", alignedW, mediaInfo.img.height, bufferSize);
 
 		mipiRawData = static_cast<void*>(pBufferManager->RequireBuffer(bufferSize));
-		rawData		= static_cast<void*>(pBufferManager->RequireBuffer(numPixel, sizeof(uint16_t)));
-		bgrData		= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * 3, sizeof(uint16_t)));
+		rawData		= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * sizeof(uint16_t) / sizeof (uchar)));
+		bgrData		= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * 3 * sizeof(uint16_t) / sizeof(uchar)));
 		yuvData		= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * 3));
 		postData	= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * 3));
-		if (mipiRawData && rawData && bgrData && yuvData && postData) {
-			ILOGDC("buffer addr(%p %p %p %p %p)", mipiRawData, rawData, bgrData, yuvData, postData);
-		}
-		else {
+		ILOGDC("buffer addr(%p %p %p %p %p)", mipiRawData, rawData, bgrData, yuvData, postData);
+		if (!mipiRawData || !rawData || !bgrData || !yuvData || !postData) {
 			rt = ISP_MEMORY_ERROR;
 			ILOGE("Failed to alloc buffers!");
 		}
@@ -131,7 +118,7 @@ int main(int argc, char* argv[], char* envp[]) {
 
 	if (SUCCESS(rt)) {
 		if (mediaInfo.type >= VIDEO_MEDIA && mediaInfo.type < MEDIA_TYPE_NUM) {
-			pFileManager->CreateVideo(postData);
+			rt = pFileManager->CreateVideo(postData);
 		}
 	}
 
@@ -144,7 +131,7 @@ int main(int argc, char* argv[], char* envp[]) {
 		}
 
 		for (int32_t frameCount = 1; frameCount <= frameNum; frameCount++) {
-			ILOGI("[%d]=========================== %d(%d) ==========================", listId, frameCount, frameNum);
+			ILOGI("L%d =========================== %d(%d) ==========================", listId, frameCount, frameNum);
 			if (SUCCESS(rt)) {
 				rt = pFileManager->ReadData((uint8_t*)mipiRawData, bufferSize);
 				if (SUCCESS(rt)) {

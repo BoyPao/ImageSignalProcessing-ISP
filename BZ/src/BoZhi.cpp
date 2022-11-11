@@ -125,7 +125,7 @@ void* WrapAlloc(size_t size, size_t num)
 	}
 
 	if (pBZ->mISPCBs.UtilsFuncs.Alloc) {
-		return pBZ->mISPCBs.UtilsFuncs.Alloc(size, num);
+		return pBZ->mISPCBs.UtilsFuncs.Alloc(size * num);
 	} else {
 		return (void*) new u_char[size * num];
 	}

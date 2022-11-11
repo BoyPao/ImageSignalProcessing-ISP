@@ -7,6 +7,17 @@
 
 #include "ISPCore.h"
 
+static ISPCore* gpCore = NULL;
+void SetCore(void* pCore)
+{
+	 gpCore = static_cast<ISPCore*>(pCore);
+}
+
+void* GetCore()
+{
+	return gpCore;
+}
+
 ISPCore::ISPCore():
 	mState(CORE_IDLE)
 {
@@ -101,12 +112,7 @@ void* ISPAlloc(size_t size, ...)
 		ILOGE("Failed to get memory pool");
 		return NULL;
 	} else {
-		size_t num = 1;
-		va_list va_param;
-		va_start(va_param, size);
-		num = va_arg(va_param, size_t);
-		va_end(va_param);
-		return pBufMgr->RequireBuffer(size, num);
+		return pBufMgr->RequireBuffer(size);
 	}
 }
 

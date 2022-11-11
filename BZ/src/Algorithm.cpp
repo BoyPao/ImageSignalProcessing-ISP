@@ -359,32 +359,6 @@ void WrapIMGShow(void* pData, int32_t w, int32_t h, int32_t chNum, PixelDataType
 	waitKey(0); /* for the possibility of interacting with window, keep the value as 0 */
 }
 
-//BF not used, it use opencvlib. it should be develop with self alg
-/*void BF(unsigned char* b, unsigned char* g, unsigned char* r, int dec, int Colorsigma, int Spacesigma, bool enable)
-{
-	if (enable == true) {
-		int32_t WIDTH;
-		int32_t HEIGHT;
-		gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
-		Mat ABFsrc(HEIGHT, WIDTH, CV_8UC1);
-		Mat ABFb(HEIGHT, WIDTH, CV_8UC1);
-		Mat ABFg(HEIGHT, WIDTH, CV_8UC1);
-		Mat ABFr(HEIGHT, WIDTH, CV_8UC1);
-		ABFsrc.data = b;
-		bilateralFilter(ABFsrc, ABFb, dec, Colorsigma, Spacesigma, BORDER_DEFAULT);
-		ABFsrc.data = g;
-		bilateralFilter(ABFsrc, ABFg, dec, Colorsigma, Spacesigma, BORDER_DEFAULT);
-		ABFsrc.data = r;
-		bilateralFilter(ABFsrc, ABFr, dec, Colorsigma, Spacesigma, BORDER_DEFAULT);
-		for (int i = 0; i < HEIGHT * WIDTH; i++) {
-			b[i] = ABFb.data[i];
-			g[i] = ABFg.data[i];
-			r[i] = ABFr.data[i];
-		}
-		ISPLogi("finished");
-	}
-}*/
-
 BZResult BZ_BlackLevelCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS CBs, ...)
 {
 	BZResult rt = BZ_SUCCESS;
@@ -511,54 +485,6 @@ BZResult BZ_LensShadingCorrection(void* data, LIB_PARAMS* pParams, ISP_CALLBACKS
 
 	return rt;
 }
-
-//GCC now is too simple, it should be considered more
-/*ISPrt GreenChannelsCorrection(void* gdata, int32_t argNum, ...)
-{
-	ISPrt rt = ISP_SUCCESS;
-
-	int32_t WIDTH, HEIGHT;
-	double GCCWeight;
-
-	rt = gParamManager.GetIMGDimension(&WIDTH, &HEIGHT);
-	if (SUCCESS(rt)) {
-		rt = gParamManager.GetGCCParam(&GCCWeight);
-		if(!SUCCESS(rt)) {
-			ISPLoge("get GCCWeight failed. rt:%d", rt);
-		}
-	}
-	else {
-		ISPLoge("get IMG Dimension failed. rt:%d", rt);
-	}
-
-	if (SUCCESS(rt)) {
-		float temp = 1.0;
-		for (int32_t i = 0; i < HEIGHT; i++) {
-			for (int32_t j = 1; j < WIDTH; j++) {
-				if (i % 2 == 0 && j % 2 == 1 && i > 0 &&
-					i < HEIGHT - 1 && j > 0 && j < WIDTH - 1) {
-					temp = (static_cast<uint16_t*>(gdata)[(i - 1) * WIDTH + j - 1] +
-						static_cast<uint16_t*>(gdata)[(i - 1) * WIDTH + j + 1] +
-						static_cast<uint16_t*>(gdata)[(i + 1) * WIDTH + j - 1] +
-						static_cast<uint16_t*>(gdata)[(i + 1) * WIDTH + j + 1]) << 2;
-					temp = (static_cast<uint16_t*>(gdata)[i * WIDTH + j] << 2) - temp / 4.0;
-					if (temp >= 0) {
-						static_cast<uint16_t*>(gdata)[i * WIDTH + j] =
-							((static_cast<uint16_t*>(gdata)[i * WIDTH + j] << 2) - (uint16_t)(temp * GCCWeight)) >> 2 & 0xffff;
-					}
-					else {
-						temp = -temp;
-						static_cast<uint16_t*>(gdata)[i * WIDTH + j] =
-							((static_cast<uint16_t*>(gdata)[i * WIDTH + j] << 2) + (uint16_t)(temp * GCCWeight)) >> 2 & 0xffff;
-					}
-				}
-			}
-		}
-		ISPLogi("finished");
-	}
-
-	return rt;
-}*/
 
 void FirstPixelInsertProcess(uint16_t* src, uint16_t* dst, int32_t width, int32_t height)
 {
@@ -1430,9 +1356,9 @@ struct FilterKernel1DConfig {
 };
 
 static FilterKernel1DConfig gDefaultGaussionKernel {
-	{0.25, 0.5, 0.25},
-	{0.0625, 0.25, 0.375, 0.25, 0.0625},
-	{0.03125, 0.109375, 0.21875, 0.28125, 0.21875, 0.109375, 0.03125}
+	{0.25,		0.5,		0.25},
+	{0.0625,	0.25,		0.375,		0.25,		0.0625},
+	{0.03125,	0.109375,	0.21875,	0.28125,	0.21875,	0.109375,	0.03125}
 };
 
 BZResult CreatGaussion2DKernel(FilterKernel2D* pK, size_t size, int32_t sigma)

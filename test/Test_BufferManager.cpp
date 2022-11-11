@@ -3,6 +3,7 @@
 
 int main() {
 	void* gMemPool = new MemoryPool<char>;
+	ILOGI("MEM TEST");
 
 	if (gMemPool) {
 		char* p1 = static_cast<MemoryPool<char>*>(gMemPool)->RequireBuffer(1920 * 1080);

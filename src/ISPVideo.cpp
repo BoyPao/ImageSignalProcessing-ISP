@@ -116,7 +116,7 @@ ISPResult ISPVideo::Record(VideoWriter* pRecorder, int32_t w, int32_t h)
 		unique_lock <mutex> lock(mMutex);
 		mCond.wait(lock);
 		/* TODO: add shared buffer R&W lock */
-		Mat	src = Mat(h, w, CV_8UC3, Scalar(0, 0, 0));
+		Mat src = Mat(h, w, CV_8UC3, Scalar(0, 0, 0));
 		for (int32_t row = 0; row < h; row++) {
 			for (int32_t col = 0; col < w; col++) {
 				src.data[row * w * 3 + col * 3] = static_cast<uchar*>(pSrc)[row * w + col];

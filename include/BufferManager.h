@@ -8,7 +8,7 @@
 #include <list>
 #include "Utils.h"
 
-#define DBG_MEMORY 0
+#define DBG_MEMORY_ON 0
 
 #define MEM_BLK_L0_MAX_NUM 16
 #define MEM_BLK_L1_MAX_NUM 8
@@ -59,8 +59,7 @@ class MemoryPool
 		MemoryPool();
 		~MemoryPool();
 
-		T* RequireBuffer(size_t sSize);
-		T* RequireBuffer(size_t sSize, size_t num);
+		T* RequireBuffer(size_t TSize);
 		T* RevertBuffer(T* pBuffer);
 
 	private:
@@ -103,8 +102,8 @@ ISPResult MemoryPool<T>::AllocBlock(int32_t level)
 	}
 
 	if (SUCCESS(rt)) {
-		MemBlock blk = {0};
-		blk.blockBase = new T[mMemBlockCfg[level]->size];
+		MemBlock blk = { 0 };
+		blk.blockBase = new u_char[mMemBlockCfg[level]->size];
 		if (!blk.blockBase) {
 			rt = ISP_MEMORY_ERROR;
 			ILOGE("Level:%d alloc %u failed!", level, mMemBlockCfg[level]->size);
@@ -118,8 +117,8 @@ ISPResult MemoryPool<T>::AllocBlock(int32_t level)
 			idleSeg.size = blk.blockSize;
 			blk.idleList.push_back(idleSeg);
 			mUsageInfo[level].push_back(blk);
-			memset(blk.blockBase, 0, sizeof(T) * blk.blockSize);
-			ILOGDM("L%d B%d: alloc %u", level, mUsageInfo[level].size() - 1, mMemBlockCfg[level]->size);
+			memset(blk.blockBase, 0, blk.blockSize);
+			ILOGDM("L%d B%d: alloc %u", level, mUsageInfo[level].size() - 1, blk.blockSize);
 		}
 	}
 
@@ -137,7 +136,7 @@ ISPResult MemoryPool<T>::ReleaseBlock(int32_t level, u_int32_t index)
 	}
 
 	if (SUCCESS(rt)) {
-		T* p = static_cast<T*>(mUsageInfo[level][index].blockBase);
+		u_char* p = static_cast<u_char*>(mUsageInfo[level][index].blockBase);
 		if (p) {
 			while(mUsageInfo[level][index].idleList.begin() !=
 					mUsageInfo[level][index].idleList.end()) {
@@ -152,10 +151,14 @@ ISPResult MemoryPool<T>::ReleaseBlock(int32_t level, u_int32_t index)
 			}
 
 			delete[] p;
+			size_t blkSize = mUsageInfo[level][index].blockSize;
 			mUsageInfo[level][index].blockSize = 0;
 			mUsageInfo[level][index].busySize = 0;
 			mUsageInfo[level].erase(mUsageInfo[level].begin() + index);
-			ILOGDM("L%d B%d: released. Rest:%u", level, index, mUsageInfo[level].size());
+			ILOGDM("L%d B%d: release %u", level, index, blkSize);
+			if (!mUsageInfo[level].size()) {
+				ILOGDM("L%d all released", level);
+			}
 		} else {
 			rt = ISP_FAILED;
 			ILOGE("Fatal ERROR!");
@@ -205,57 +208,53 @@ ISPResult MemoryPool<T>::PrintPool()
 }
 
 template <typename T>
-T* MemoryPool<T>::RequireBuffer(size_t sSize)
-{
-	return RequireBuffer(sSize, 1);
-}
-
-template <typename T>
-T* MemoryPool<T>::RequireBuffer(size_t sSize, size_t num)
+T* MemoryPool<T>::RequireBuffer(size_t TSize)
 {
 	ISPResult rt = ISP_SUCCESS;
 	T* pBuffer = NULL;
-	size_t size = sSize * num;
+	size_t size = TSize * sizeof(T);
 
 	if (!size || size > mMemBlockCfg[MEM_BLK_LEVEL_NUM - 1]->size) {
 		rt = ISP_INVALID_PARAM;
-		ILOGE("Require invalid size:%u num:%u", size, num);
+		ILOGE("Require invalid size:C%u (N%u x T%u) ", size, sizeof(T), TSize);
 	}
 
 	/* 1. Search valid segment */
 	if (SUCCESS(rt)) {
 		for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
-			if (size < mMemBlockCfg[level]->size) {
-				for (auto blk = mUsageInfo[level].begin(); blk != mUsageInfo[level].end(); blk++) {
-					if (size < blk->blockSize - blk->busySize) {
-						for (auto seg = blk->idleList.begin(); seg != blk->idleList.end(); seg++) {
-							if (size < seg->size) {
-								MemSegment idleSeg = {0};
-								MemSegment busySeg = {0};
-								busySeg.pAddr = seg->pAddr;
-								busySeg.size = size;
-								blk->busyList.push_front(busySeg);
+			if (rt == ISP_SKIP) {
+				break;
+			}
+			if (size > mMemBlockCfg[level]->size) {
+				continue;
+			}
+			for (auto blk = mUsageInfo[level].begin(); blk != mUsageInfo[level].end(); blk++) {
+				if (rt == ISP_SKIP) {
+					break;
+				}
+				if (size > blk->blockSize - blk->busySize) {
+					continue;
+				}
+				for (auto seg = blk->idleList.begin(); seg != blk->idleList.end(); seg++) {
+					if (size <= seg->size) {
+						MemSegment idleSeg = {0};
+						MemSegment busySeg = {0};
+						busySeg.pAddr = seg->pAddr;
+						busySeg.size = size;
+						blk->busyList.push_front(busySeg);
 
-								pBuffer = static_cast<T*>(busySeg.pAddr);
+						pBuffer = static_cast<T*>(busySeg.pAddr);
 
-								idleSeg.pAddr = (void*)(static_cast<T*>(seg->pAddr) + size * sizeof(T));
-								idleSeg.size = seg->size - size;
-								blk->idleList.erase(seg);
-								blk->idleList.push_front(idleSeg);
+						idleSeg.pAddr = (void*)(static_cast<T*>(seg->pAddr) + size);
+						idleSeg.size = seg->size - size;
+						blk->idleList.erase(seg);
+						blk->idleList.push_front(idleSeg);
 
-								blk->busySize += size;
-								rt = ISP_SKIP;
-								break;
-							}
-						}
-					}
-					if (rt == ISP_SKIP) {
+						blk->busySize += size;
+						rt = ISP_SKIP;
 						break;
 					}
 				}
-			}
-			if (rt == ISP_SKIP) {
-				break;
 			}
 		}
 	}
@@ -263,7 +262,12 @@ T* MemoryPool<T>::RequireBuffer(size_t sSize, size_t num)
 	/* 2. Allock new block */
 	if (rt == ISP_SUCCESS) {
 		for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
-			if (size < mMemBlockCfg[level]->size) {
+			if (size > mMemBlockCfg[level]->size) {
+				if (level == MEM_BLK_LEVEL_NUM - 1) {
+					rt = ISP_MEMORY_ERROR;
+					ILOGE("Reguire buffer(%u) failed!", size);
+				}
+			} else {
 				rt = AllocBlock(level);
 				if (SUCCESS(rt)) {
 					MemBlock* blk = &mUsageInfo[level].back();
@@ -278,7 +282,7 @@ T* MemoryPool<T>::RequireBuffer(size_t sSize, size_t num)
 
 					pBuffer = static_cast<T*>(busySeg.pAddr);
 
-					idleSeg.pAddr = (void*)(static_cast<T*>(seg->pAddr) + size * sizeof(T));
+					idleSeg.pAddr = (void*)(static_cast<T*>(seg->pAddr) + size);
 					idleSeg.size = seg->size - size;
 					blk->idleList.erase(seg);
 					blk->idleList.push_front(idleSeg);
@@ -288,17 +292,12 @@ T* MemoryPool<T>::RequireBuffer(size_t sSize, size_t num)
 					break;
 				}
 			}
-
-			if (level == MEM_BLK_LEVEL_NUM - 1) {
-				rt = ISP_MEMORY_ERROR;
-				ILOGE("Reguire buffer(%u) failed!", size);
-			}
 		}
 	}
 
 	if (SUCCESS(rt)) {
-		ILOGDM("%u is required", size);
-#if DBG_MEMORY
+		ILOGDM("C%u (N%u x T%u) is required", size, sizeof(T), TSize);
+#if DBG_MEMORY_ON
 		rt = PrintPool();
 #endif
 	}
@@ -311,6 +310,7 @@ T* MemoryPool<T>::RevertBuffer(T* pBuffer)
 {
 	ISPResult rt = ISP_SUCCESS;
 	size_t size = 0;
+	void *pVBuf = (void*)pBuffer;
 
 	if (!pBuffer) {
 		rt = ISP_INVALID_PARAM;
@@ -318,68 +318,68 @@ T* MemoryPool<T>::RevertBuffer(T* pBuffer)
 	}
 
 	for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
-		for (auto blk = mUsageInfo[level].begin(); blk != mUsageInfo[level].end(); blk++) {
-			if (pBuffer >= blk->blockBase && pBuffer < static_cast<T*>(blk->blockBase) + blk->blockSize * sizeof(T)) {
-				for (auto seg = blk->busyList.begin(); seg != blk->busyList.end(); seg++) {
-					if (pBuffer == seg->pAddr) {
-						bool isNewSeg = true;
-						size = seg->size;
-						memset(seg->pAddr, 0, sizeof(T) * seg->size);
-
-						MemSegment tmpSeg = {0};
-						tmpSeg.pAddr = (void*)seg->pAddr;
-						tmpSeg.size = seg->size;
-
-						/* 1. Forward merge */
-						T* nextAddr = static_cast<T*>(tmpSeg.pAddr) + tmpSeg.size * sizeof(T);
-						for (auto idleSeg = blk->idleList.begin(); idleSeg != blk->idleList.end(); idleSeg++) {
-							if (nextAddr == idleSeg->pAddr) {
-								tmpSeg.size += idleSeg->size;
-								blk->idleList.erase(idleSeg);
-								break;
-							}
-						}
-
-						/* 2. Backward merge */
-						for (auto idleSeg = blk->idleList.begin(); idleSeg != blk->idleList.end(); idleSeg++) {
-							T* lastAddr = static_cast<T*>(idleSeg->pAddr) + idleSeg->size * sizeof(T);
-							if (lastAddr == tmpSeg.pAddr) {
-								idleSeg->size += tmpSeg.size;
-								isNewSeg = false;
-								break;
-							}
-						}
-
-						if (isNewSeg) {
-							blk->idleList.push_front(tmpSeg);
-						}
-						blk->busyList.erase(seg);
-						blk->busySize -= size;
-						pBuffer = NULL;
-						rt = ISP_SKIP;
-						break;
-					}
-				}
-				if (rt == ISP_SKIP) {
-					break;
-				} else {
-					rt = ISP_INVALID_PARAM;
-					ILOGE("Invalid buffer:%p not in segment", pBuffer);
-				}
-			}
-		}
 		if (rt != ISP_SUCCESS) {
 			break;
 		}
-		if (level == MEM_BLK_LEVEL_NUM - 1) {
+		for (auto blk = mUsageInfo[level].begin(); blk != mUsageInfo[level].end(); blk++) {
+			if (static_cast<u_char*>(pVBuf) < blk->blockBase || static_cast<u_char*>(pVBuf) >= static_cast<u_char*>(blk->blockBase) + blk->blockSize) {
+				continue;
+			}
+			for (auto seg = blk->busyList.begin(); seg != blk->busyList.end(); seg++) {
+				if (static_cast<u_char*>(pVBuf) == seg->pAddr) {
+					bool isNewSeg = true;
+					size = seg->size;
+					memset(seg->pAddr, 0, seg->size);
+
+					MemSegment tmpSeg = {0};
+					tmpSeg.pAddr = (void*)seg->pAddr;
+					tmpSeg.size = seg->size;
+
+					/* 1. Forward merge */
+					u_char* nextAddr = static_cast<u_char*>(tmpSeg.pAddr) + tmpSeg.size;
+					for (auto idleSeg = blk->idleList.begin(); idleSeg != blk->idleList.end(); idleSeg++) {
+						if (nextAddr == idleSeg->pAddr) {
+							tmpSeg.size += idleSeg->size;
+							blk->idleList.erase(idleSeg);
+							break;
+						}
+					}
+
+					/* 2. Backward merge */
+					for (auto idleSeg = blk->idleList.begin(); idleSeg != blk->idleList.end(); idleSeg++) {
+						u_char* lastAddr = static_cast<u_char*>(idleSeg->pAddr) + idleSeg->size;
+						if (lastAddr == tmpSeg.pAddr) {
+							idleSeg->size += tmpSeg.size;
+							isNewSeg = false;
+							break;
+						}
+					}
+
+					if (isNewSeg) {
+						blk->idleList.push_front(tmpSeg);
+					}
+					blk->busyList.erase(seg);
+					blk->busySize -= size;
+					pBuffer = NULL;
+					rt = ISP_SKIP;
+					break;
+				}
+			}
+			if (rt != ISP_SKIP) {
+				rt = ISP_INVALID_PARAM;
+				ILOGE("Fatal Error: cannot match buffer:%p in segment", pBuffer);
+			}
+			break;
+		}
+		if (rt != ISP_SKIP && level == MEM_BLK_LEVEL_NUM - 1) {
 			rt = ISP_INVALID_PARAM;
 			ILOGE("Invalid buffer:%p not in pool", pBuffer);
 		}
 	}
 
 	if (SUCCESS(rt)) {
-		ILOGDM("%u is reverted", size);
-#if DBG_MEMORY
+		ILOGDM("C%u (N%u x T%u) is reverted", size, sizeof(T), size / sizeof(T));
+#if DBG_MEMORY_ON
 		rt = PrintPool();
 #endif
 	}
