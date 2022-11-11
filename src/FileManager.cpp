@@ -93,9 +93,12 @@ int32_t FileManager::SetInputInfo(InputInfo info)
 {
 	int32_t rt = ISP_SUCCESS;
 
-	memcpy(&mInputInfo, &info, sizeof(InputInfo));
-	strcat(mInputInfo.path, INPUT_PATH);
-	strcat(mInputInfo.path, INPUT_NAME);
+	mInputInfo.type = info.type;
+	mInputInfo.size = info.size;
+	if (IOInfoFlag) {
+		strcat(mInputInfo.path, INPUT_PATH);
+		strcat(mInputInfo.path, INPUT_NAME);
+	}
 
 	return rt;
 }
@@ -104,11 +107,22 @@ int32_t FileManager::SetOutputInfo(OutputInfo info)
 {
 	int32_t rt = ISP_SUCCESS;
 
-	memcpy(&mOutputInfo, &info, sizeof(OutputInfo));
-	strcat(mOutputInfo.imgInfo.path, OUTPUT_PATH);
-	strcat(mOutputInfo.imgInfo.path, OUTPUT_IMG_NAME);
-	strcat(mOutputInfo.videoInfo.path, OUTPUT_PATH);
-	strcat(mOutputInfo.videoInfo.path, OUTPUT_VIDEO_NAME);
+	mOutputInfo.imgInfo.type = info.imgInfo.type;
+	mOutputInfo.imgInfo.size = info.imgInfo.size;
+	mOutputInfo.imgInfo.width = info.imgInfo.width;
+	mOutputInfo.imgInfo.height = info.imgInfo.height;
+	mOutputInfo.imgInfo.channels = info.imgInfo.channels;
+	mOutputInfo.videoInfo.type = info.videoInfo.type;
+	mOutputInfo.videoInfo.width = info.videoInfo.width;
+	mOutputInfo.videoInfo.height = info.videoInfo.height;
+	mOutputInfo.videoInfo.fps = info.videoInfo.fps;
+	mOutputInfo.videoInfo.frameNum = info.videoInfo.frameNum;
+	if (IOInfoFlag) {
+		strcat(mOutputInfo.imgInfo.path, OUTPUT_PATH);
+		strcat(mOutputInfo.imgInfo.path, OUTPUT_IMG_NAME);
+		strcat(mOutputInfo.videoInfo.path, OUTPUT_PATH);
+		strcat(mOutputInfo.videoInfo.path, OUTPUT_VIDEO_NAME);
+	}
 
 	return rt;
 }
@@ -252,7 +266,7 @@ int32_t FileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
 
 	if(channels != 3 && channels != 1) {
 		rt = ISP_INVALID_PARAM;
-		ILOGE("Invalid BMP output channnels:%d", channels);
+		ILOGE("Invalid BMP output channels:%d", channels);
 		//TODO: does it need to be support?
 	}
 
