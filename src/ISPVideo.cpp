@@ -108,11 +108,6 @@ int32_t ISPVideo::Record(void* pRecorder, int32_t w, int32_t h)
 {
 	int32_t rt = ISP_SUCCESS;
 
-	if (!pRecorder) {
-		rt = ISP_INVALID_PARAM;
-		ILOGE("Input param is null");
-	}
-
 	if (!w || !h) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Invalid param");
@@ -124,17 +119,24 @@ int32_t ISPVideo::Record(void* pRecorder, int32_t w, int32_t h)
 		mCond.wait(lock);
 		/* TODO: add shared buffer R&W lock */
 #if DBG_OPENCV_ON
-		VideoWriter* pVR = static_cast<VideoWriter*>(pRecorder);
-		if (pVR->isOpened()) {
-			Mat src = Mat(h, w, CV_8UC3, Scalar(0, 0, 0));
-			for (int32_t row = 0; row < h; row++) {
-				for (int32_t col = 0; col < w; col++) {
-					src.data[row * w * 3 + col * 3] = static_cast<uchar*>(pSrc)[row * w + col];
-					src.data[row * w * 3 + col * 3 + 1] = static_cast<uchar*>(pSrc)[w * h + row * w + col];
-					src.data[row * w * 3 + col * 3 + 2] = static_cast<uchar*>(pSrc)[2 * w * h + row * w + col];
+		if (!pRecorder) {
+			rt = ISP_INVALID_PARAM;
+			ILOGE("Input param is null");
+		}
+
+		if (SUCCESS(rt)) {
+			VideoWriter* pVR = static_cast<VideoWriter*>(pRecorder);
+			if (pVR->isOpened()) {
+				Mat src = Mat(h, w, CV_8UC3, Scalar(0, 0, 0));
+				for (int32_t row = 0; row < h; row++) {
+					for (int32_t col = 0; col < w; col++) {
+						src.data[row * w * 3 + col * 3] = static_cast<uchar*>(pSrc)[row * w + col];
+						src.data[row * w * 3 + col * 3 + 1] = static_cast<uchar*>(pSrc)[w * h + row * w + col];
+						src.data[row * w * 3 + col * 3 + 2] = static_cast<uchar*>(pSrc)[2 * w * h + row * w + col];
+					}
 				}
+				*pVR << src;
 			}
-			*pVR << src;
 		}
 #else
 		ILOGW("Not support video recording");
@@ -164,6 +166,7 @@ void* VideoEncodeFunc(void* threadParam)
 	ISPVideo* pISPVideo = nullptr;
 	FileManager* pFileMgr = nullptr;
 	OutputVideoInfo info = { 0 };
+	void* pWriter = NULL;
 
 	if (!pParam) {
 		rt = ISP_INVALID_PARAM;
@@ -182,11 +185,8 @@ void* VideoEncodeFunc(void* threadParam)
 	}
 
 	if (SUCCESS(rt)) {
-		void* pWriter = NULL;
 #if DBG_OPENCV_ON
-		pWriter = (void*) new vWriter(info.path, VideoWriter::fourcc('M', 'J', 'P', 'G'), info.fps, Size(info.width, info.height));
-#else
-		pWriter = (void*)pISPVideo;
+		pWriter = (void*) new VideoWriter(info.path, VideoWriter::fourcc('M', 'J', 'P', 'G'), info.fps, Size(info.width, info.height));
 #endif
 		if (pWriter) {
 			for (int32_t frameCount = 1; frameCount <= info.frameNum; frameCount++) {
@@ -203,6 +203,12 @@ void* VideoEncodeFunc(void* threadParam)
 	}
 	else {
 		ILOGE("Video func not init!");
+	}
+
+	if (pWriter) {
+#if DBG_OPENCV_ON
+		delete static_cast<VideoWriter*>(pWriter);
+#endif
 	}
 
 	return 0;
