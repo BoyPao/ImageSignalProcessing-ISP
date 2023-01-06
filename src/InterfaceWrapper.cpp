@@ -36,12 +36,30 @@ const char LIB_SYMBLE[LIB_FUNCS_NUM][SYMBLE_SIZE_MAX] = {
 	"RegistCallbacks"
 };
 
+InterfaceWrapper* InterfaceWrapper::GetInstance()
+{
+	static InterfaceWrapper gInstance;
+	return gInstance.IsReady() ? &gInstance : NULL;
+}
+
+int32_t InterfaceWrapper::IsReady()
+{
+	return mState;
+}
+
 InterfaceWrapper::InterfaceWrapper()
 {
 	mLibs = { nullptr };
 	mLibsOPS = { 0 };
 	mISPLibParams = { 0 };
 	pParamMgr = nullptr;
+	mState = ITFWRAPPER_STATE_NOT_READY;
+
+	int32_t rt = Init();
+
+	if (SUCCESS(rt)) {
+		mState = ITFWRAPPER_STATE_READY;
+	}
 }
 
 InterfaceWrapper::~InterfaceWrapper()
@@ -77,19 +95,21 @@ int32_t InterfaceWrapper::DeInit()
 {
 	int32_t rt = ISP_SUCCESS;
 
-	for (int32_t index = ISP_ALG_LIB; index < ISP_LIBS_NUM; index++) {
-		rt = InterfaceDeInit(index);
-		if (!SUCCESS(rt)) {
-			ILOGE("Failed to deinit interface:%d", index);
-			break;
+	if (mState == ITFWRAPPER_STATE_READY) {
+		for (int32_t index = ISP_ALG_LIB; index < ISP_LIBS_NUM; index++) {
+			rt = InterfaceDeInit(index);
+			if (!SUCCESS(rt)) {
+				ILOGE("Failed to deinit interface:%d", index);
+				break;
+			}
 		}
-	}
 
-	for (int32_t index = ISP_ALG_LIB; index < ISP_LIBS_NUM; index++) {
-		rt = ReleaseLib(index);
-		if (!SUCCESS(rt)) {
-			ILOGE("Failed to release lib:%d", index);
-			break;
+		for (int32_t index = ISP_ALG_LIB; index < ISP_LIBS_NUM; index++) {
+			rt = ReleaseLib(index);
+			if (!SUCCESS(rt)) {
+				ILOGE("Failed to release lib:%d", index);
+				break;
+			}
 		}
 	}
 

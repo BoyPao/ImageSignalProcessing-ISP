@@ -70,31 +70,54 @@ struct VideoThreadParam {
 	FileManager* pFileMgr;
 };
 
-class FileManager:public IOHelper {
+class FileManagerItf : public IOHelper {
 public:
-	FileManager();
-	~FileManager();
-	int32_t Init();
-	int32_t DeInit();
+	virtual ~FileManagerItf() {};
 
-	InputInfo GetInputInfo() { return mInputInfo; };
-	OutputInfo GetOutputInfo() { return mOutputInfo; };
-	OutputImgInfo GetOutputImgInfo() { return mOutputInfo.imgInfo; };
-	int32_t GetOutputVideoInfo(OutputVideoInfo* pInfo);
-	int32_t SetInputInfo(InputInfo info);
-	int32_t SetOutputInfo(OutputInfo info);
-	int32_t SetOutputImgInfo(OutputImgInfo info);
-	int32_t SetOutputVideoInfo(OutputVideoInfo info);
-	int32_t ReadData(uint8_t* buffer, int32_t bufferSize);
-	int32_t SaveImgData(uint8_t* srcData);
-	int32_t CreateVideo(void* dst);
-	int32_t SaveVideoData(int32_t frameCount);
-	int32_t DestroyVideo();
-	int32_t Mipi10decode(void* src, void* dst, ImgInfo* info);
-	int32_t Input(IOInfo in);
-	int32_t GetIOInfo(void* pInfo);
+	virtual InputInfo GetInputInfo() = 0;
+	virtual OutputInfo GetOutputInfo() = 0;
+	virtual OutputImgInfo GetOutputImgInfo() = 0;
+	virtual int32_t GetOutputVideoInfo(OutputVideoInfo* pInfo) = 0;
+	virtual int32_t SetInputInfo(InputInfo info) = 0;
+	virtual int32_t SetOutputInfo(OutputInfo info) = 0;
+	virtual int32_t SetOutputImgInfo(OutputImgInfo info) = 0;
+	virtual int32_t SetOutputVideoInfo(OutputVideoInfo info) = 0;
+	virtual int32_t ReadData(uint8_t* buffer, int32_t bufferSize) = 0;
+	virtual int32_t SaveImgData(uint8_t* srcData) = 0;
+	virtual int32_t CreateVideo(void* dst) = 0;
+	virtual int32_t SaveVideoData(int32_t frameCount) = 0;
+	virtual int32_t DestroyVideo() = 0;
+	virtual int32_t Mipi10decode(void* src, void* dst, ImgInfo* info) = 0;
+	virtual int32_t Input(IOInfo in) = 0;
+	virtual int32_t GetIOInfo(void* pInfo) = 0;
+};
+
+class FileManager : public FileManagerItf {
+public:
+	static FileManager* GetInstance();
+	virtual InputInfo GetInputInfo() { return mInputInfo; };
+	virtual OutputInfo GetOutputInfo() { return mOutputInfo; };
+	virtual OutputImgInfo GetOutputImgInfo() { return mOutputInfo.imgInfo; };
+	virtual int32_t GetOutputVideoInfo(OutputVideoInfo* pInfo);
+	virtual int32_t SetInputInfo(InputInfo info);
+	virtual int32_t SetOutputInfo(OutputInfo info);
+	virtual int32_t SetOutputImgInfo(OutputImgInfo info);
+	virtual int32_t SetOutputVideoInfo(OutputVideoInfo info);
+	virtual int32_t ReadData(uint8_t* buffer, int32_t bufferSize);
+	virtual int32_t SaveImgData(uint8_t* srcData);
+	virtual int32_t CreateVideo(void* dst);
+	virtual int32_t SaveVideoData(int32_t frameCount);
+	virtual int32_t DestroyVideo();
+	virtual int32_t Mipi10decode(void* src, void* dst, ImgInfo* info);
+	virtual int32_t Input(IOInfo in);
+	virtual int32_t GetIOInfo(void* pInfo);
 
 private:
+	FileManager();
+	virtual ~FileManager();
+
+	int32_t Init();
+	int32_t DeInit();
 	int32_t ReadRawData(uint8_t* buffer, int32_t bufferSize);
 	int32_t SaveBMPData(uint8_t* srcData, int32_t channels);
 	int32_t SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData);

@@ -20,35 +20,27 @@ void* OverwriteCheckingFunc(void* param)
 	}
 
 	if (SUCCESS(rt)) {
-		while(1 && (pParam->threadOn == 1)) {
+		uint8_t overwriteDetected = 0;
+		while(1 && !pParam->exit) {
 			{
 				unique_lock <mutex> lock(*(pParam->pLock));
-				for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
-					if (!pParam->pUsageInfo[level]->size()) {
-						continue;
-					}
-					for (auto blk = pParam->pUsageInfo[level]->begin(); blk != pParam->pUsageInfo[level]->end(); blk++) {
-						if (!blk->busyList.size()) {
-							continue;
+
+				if (!pParam->pSymbolMap->empty()) {
+					for (auto it = pParam->pSymbolMap->begin(); it != pParam->pSymbolMap->end(); it++) {
+						overwriteDetected = 0;
+						for(size_t index = 0; index < OVERWRITE_CHECK_SIZE; index++) {
+							overwriteDetected |=
+								~(static_cast<u_char*>(it->second)[index]) &
+								gOverwiteSymbol[index];
 						}
-						int32_t segCnt = 0;
-						for (auto seg = blk->busyList.begin(); seg != blk->busyList.end(); seg++) {
-							uint8_t overwriteDetected = 0;
-							for(size_t index = 0; index < OVERWRITE_CHECK_SIZE; index++) {
-								overwriteDetected |=
-									~(static_cast<u_char*>(seg->pAddr)[seg->size - OVERWRITE_CHECK_SIZE + index]) &
-									gOverwiteSymbol[index];
-							}
-							if (overwriteDetected) {
-								ILOGE("Fatal Error 0x%x: ================ MEMORY OVERWRITE DETECTED ==============", overwriteDetected);
-								ILOGE("L%d B%d(%u) busy S%d(%u) addr:%p symbleAddr: %p symble:%s",
-										level, blk - pParam->pUsageInfo[level]->begin(),
-										pParam->pUsageInfo[level]->size(),
-										segCnt, blk->busyList.size(), seg->pAddr,
-										static_cast<u_char*>(seg->pAddr) + seg->size - OVERWRITE_CHECK_SIZE,
-										static_cast<u_char*>(seg->pAddr) + seg->size - OVERWRITE_CHECK_SIZE);
-							}
-							segCnt++;
+						if (overwriteDetected) {
+							ILOGE("Fatal Error 0x%x: ================ MEMORY OVERWRITE DETECTED ==============",
+									overwriteDetected);
+							ILOGE("addr:%p symbleAddr:%p symble:%s",
+									it->first, it->second,
+									it->second);
+							std::abort();
+							break;
 						}
 					}
 				}

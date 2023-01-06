@@ -8,6 +8,8 @@
 #include "ISPListManager.h"
 #include "ISPListConfig.h"
 #include "ISPList.hpp"
+#include "ParamManager.h"
+#include "InterfaceWrapper.h"
 
 void *gISPListConfigs[LIST_CFG_NUM] = {
 	(void *)&defaultListConfig
@@ -19,6 +21,7 @@ ISPListManager::ISPListManager():
 	pItfWrapper(nullptr),
 	pISPListConfigs(nullptr)
 {
+	Init();
 }
 
 ISPListManager::~ISPListManager()
@@ -26,19 +29,19 @@ ISPListManager::~ISPListManager()
 	DestoryAllList();
 }
 
-int32_t ISPListManager::Init(ISPParamManager* pPM, InterfaceWrapper* pIW)
+ISPListManager* ISPListManager::GetInstance()
+{
+	static ISPListManager gListMgr;
+	return &gListMgr;
+}
+
+int32_t ISPListManager::Init()
 {
 	int32_t rt = ISP_SUCCESS;
 
-	if (!pPM || !pIW)
-	{
-		rt = ISP_INVALID_PARAM;
-		ILOGE("pPM is null. %d", rt);
-	}
-
 	if (SUCCESS(rt)) {
-		pParamManager = pPM;
-		pItfWrapper = pIW;
+		pParamManager = ISPParamManager::GetInstance();
+		pItfWrapper = InterfaceWrapper::GetInstance();
 	}
 
 	if (SUCCESS(rt)) {

@@ -110,30 +110,54 @@ struct ISPCfgParams {
 	void *pEeParam;
 };
 
-class ISPParamManager {
+class ISPParamManagerItf {
 public:
-	ISPParamManager();
-	~ISPParamManager();
+	virtual ~ISPParamManagerItf() {};
 
-	int32_t SelectParams(int32_t paramIndex);
-	int32_t SetMediaInfo(MediaInfo* info);
-	int32_t SetImgInfo(ImgInfo* info);
-	int32_t SetVideoInfo(VideoInfo* info);
-	int32_t GetImgDimension(int32_t* width, int32_t* height);
-	int32_t GetVideoFPS(int32_t* fps);
-	int32_t GetVideoFrameNum(int32_t* num);
+	virtual int32_t SelectParams(int32_t paramIndex) = 0;
+	virtual int32_t SetMediaInfo(MediaInfo* info) = 0;
+	virtual int32_t SetImgInfo(ImgInfo* info) = 0;
+	virtual int32_t SetVideoInfo(VideoInfo* info) = 0;
+	virtual int32_t GetImgDimension(int32_t* width, int32_t* height) = 0;
+	virtual int32_t GetVideoFPS(int32_t* fps) = 0;
+	virtual int32_t GetVideoFrameNum(int32_t* num) = 0;
 
-	int32_t GetImgInfo(void* pParams);
-	int32_t GetParamByCMD(void* pParams, int32_t cmd);
-	int32_t GetBLCParam(void* pParams);
-	int32_t GetLSCParam(void* pParams);
-	int32_t GetWBParam(void* pParams);
-	int32_t GetCCParam(void* pParams);
-	int32_t GetGAMMAParam(void* pParams);
-	int32_t GetWNRParam(void* pParams);
-	int32_t GetEEParam(void* pParams);
+	virtual int32_t GetImgInfo(void* pParams) = 0;
+	virtual int32_t GetParamByCMD(void* pParams, int32_t cmd) = 0;
+	virtual int32_t GetBLCParam(void* pParams) = 0;
+	virtual int32_t GetLSCParam(void* pParams) = 0;
+	virtual int32_t GetWBParam(void* pParams) = 0;
+	virtual int32_t GetCCParam(void* pParams) = 0;
+	virtual int32_t GetGAMMAParam(void* pParams) = 0;
+	virtual int32_t GetWNRParam(void* pParams) = 0;
+	virtual int32_t GetEEParam(void* pParams) = 0;
+};
+
+class ISPParamManager : public ISPParamManagerItf {
+public:
+	static ISPParamManager* GetInstance();
+	virtual int32_t SelectParams(int32_t paramIndex);
+	virtual int32_t SetMediaInfo(MediaInfo* info);
+	virtual int32_t SetImgInfo(ImgInfo* info);
+	virtual int32_t SetVideoInfo(VideoInfo* info);
+	virtual int32_t GetImgDimension(int32_t* width, int32_t* height);
+	virtual int32_t GetVideoFPS(int32_t* fps);
+	virtual int32_t GetVideoFrameNum(int32_t* num);
+
+	virtual int32_t GetImgInfo(void* pParams);
+	virtual int32_t GetParamByCMD(void* pParams, int32_t cmd);
+	virtual int32_t GetBLCParam(void* pParams);
+	virtual int32_t GetLSCParam(void* pParams);
+	virtual int32_t GetWBParam(void* pParams);
+	virtual int32_t GetCCParam(void* pParams);
+	virtual int32_t GetGAMMAParam(void* pParams);
+	virtual int32_t GetWNRParam(void* pParams);
+	virtual int32_t GetEEParam(void* pParams);
 
 private:
+	ISPParamManager();
+	virtual ~ISPParamManager();
+
 	ISPCfgParams mISPConfigParams;
 	MediaInfo mMediaInfo;
 	int32_t mState;

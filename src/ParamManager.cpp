@@ -22,6 +22,12 @@ static ISPCfgParams gISPConfigueParams[PARAM_INDEX_NUM] {
 	},
 };
 
+ISPParamManager* ISPParamManager::GetInstance()
+{
+	static ISPParamManager gInstance;
+	return &gInstance;
+}
+
 ISPParamManager::ISPParamManager()
 {
 	mMediaInfo.img = { 0 };

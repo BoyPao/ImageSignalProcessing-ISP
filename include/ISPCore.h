@@ -12,6 +12,7 @@
 #include "ParamManager.h"
 #include "ISPListManager.h"
 #include "BufferManager.h"
+#include "ISPItf.h"
 
 #include <thread>
 #include <mutex>
@@ -24,30 +25,22 @@ enum CoreState {
 	CORE_STATE_NUM
 };
 
-class ISPCore {
+class ISPCore : public ISPItf {
 	public:
-		ISPCore();
-		~ISPCore();
-		void *GetParamManager();
-		void *GetFileManager();
-		void *GetListManager();
-		void *GetBufferManager();
-		int32_t Process(IOInfo *pInfo, ...);
-		bool IsActive();
-
-		void *mThreadParam;
-		bool mExit;
+		static ISPCore* GetInstance();
+		virtual int32_t Process(void *pInfo, ...);
+		virtual bool IsActive();
+		virtual bool NeedExit();
+		virtual void* GetThreadParam();
 
 	private:
-		void Init();
-		void DeInit();
-		std::shared_ptr<ISPParamManager> mParamMgr;
-		std::shared_ptr<FileManager> mFileMgr;
-		std::shared_ptr<InterfaceWrapper> mItfWrapper;
-		std::shared_ptr<ISPListManager> mListMgr;
-		std::shared_ptr<MemoryPool<uchar>> mBufferMgr;
+		ISPCore();
+		virtual ~ISPCore();
+
+		bool mExit;
 		int32_t mState;
 		thread mThread;
+		IOInfo mThreadParam;
 };
 
 void* ISPAlloc(size_t size, ...);

@@ -38,6 +38,12 @@ const ImgFmtInfo gSupportedFmt[] = {
 	{V4L2_PIX_FMT_SRGGB12P, 12, CS_Bayer,	BO_RGGB,	DPT_Packaged,	"Raw12-rggb-packed"  	},
 };
 
+FileManager* FileManager::GetInstance()
+{
+	static FileManager gInstance;
+	return &gInstance;
+}
+
 FileManager::FileManager()
 {
 	memset(&mInputInfo, 0, sizeof(InputInfo));
@@ -45,10 +51,12 @@ FileManager::FileManager()
 	IOInfoFlag = 0;
 
 	mState = Uninited;
+	Init();
 }
 
 FileManager::~FileManager()
 {
+	DeInit();
 	memset(&mInputInfo, 0, sizeof(InputInfo));
 	memset(&mOutputInfo, 0, sizeof(OutputInfo));
 

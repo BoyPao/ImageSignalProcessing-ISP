@@ -6,7 +6,6 @@
  */
 
 #include "ISPCore.h"
-#include "ISPSingleton.h"
 
 #if DBG_OPENCV_ON
 #include "opencv2/core/core.hpp"
@@ -32,20 +31,16 @@ using namespace cv;
 
 void* CoreFunc(void);
 
+ISPCore* ISPCore::GetInstance()
+{
+	static ISPCore gInstance;
+	return &gInstance;
+}
+
+
 ISPCore::ISPCore():
-	mThreadParam(NULL),
 	mExit(false),
 	mState(CORE_IDLE)
-{
-	Init();
-}
-
-ISPCore::~ISPCore()
-{
-	DeInit();
-}
-
-void ISPCore::Init()
 {
 	int32_t rt = ISP_SUCCESS;
 
@@ -54,40 +49,9 @@ void ISPCore::Init()
 		ILOGE("Invalid core state:%d", mState);
 	}
 
-	if(SUCCESS(rt)) {
-		if (!mParamMgr) {
-			mParamMgr = std::make_shared<ISPParamManager>();
-		}
-	}
 
 	if (SUCCESS(rt)) {
-		if (!mFileMgr) {
-			mFileMgr = std::make_shared<FileManager>();
-		}
-		rt = mFileMgr->Init();
-	}
-
-	if (SUCCESS(rt)) {
-		if (!mItfWrapper) {
-			mItfWrapper = std::make_shared<InterfaceWrapper>();
-		}
-		rt = mItfWrapper->Init();
-	}
-
-	if (SUCCESS(rt)) {
-		if (!mListMgr) {
-			mListMgr = std::make_shared<ISPListManager>();
-		}
-		rt = mListMgr->Init(mParamMgr.get(), mItfWrapper.get());
-	}
-
-	if (SUCCESS(rt)) {
-		if (!mBufferMgr) {
-			mBufferMgr = std::make_shared<MemoryPool<uchar>>();
-		}
-	}
-
-	if (SUCCESS(rt)) {
+		memset(&mThreadParam, 0, sizeof(IOInfo));
 		mState = CORE_INITED;
 		mThread = thread(CoreFunc);
 	}
@@ -95,14 +59,13 @@ void ISPCore::Init()
 	return;
 }
 
-void ISPCore::DeInit()
+ISPCore::~ISPCore()
 {
 	mExit = true;
 	if (mState != CORE_IDLE) {
 		mThread.join();
 		mState = CORE_IDLE;
 	}
-	mThreadParam = NULL;
 }
 
 bool ISPCore::IsActive()
@@ -110,47 +73,29 @@ bool ISPCore::IsActive()
 	return mState == CORE_PROCESSING;
 }
 
-void* ISPCore::GetParamManager()
+bool ISPCore::NeedExit()
 {
-	return (mState == CORE_PROCESSING) ? (void*) mParamMgr.get() : NULL;
+	return mExit;
 }
 
-void* ISPCore::GetFileManager()
-{
-	return (mState == CORE_PROCESSING) ? (void*) mFileMgr.get() : NULL;
-}
-
-void* ISPCore::GetListManager()
-{
-	return (mState == CORE_PROCESSING) ? (void*) mListMgr.get() : NULL;
-}
-
-void* ISPCore::GetBufferManager()
-{
-	return (mState == CORE_PROCESSING) ? (void*) mBufferMgr.get() : NULL;
-}
-
-int32_t ISPCore::Process(IOInfo *pInfo, ...)
+int32_t ISPCore::Process(void *pInfo, ...)
 {
 	int32_t rt = ISP_SUCCESS;
 
-	mThreadParam = (void*)pInfo;
+	memcpy(&mThreadParam, pInfo, sizeof(IOInfo));
 	mState = mState == CORE_INITED ? mState + 1 : mState;
 
 	return rt;
 }
 
+void* ISPCore::GetThreadParam()
+{
+	return &mThreadParam;
+}
+
 void* ISPAlloc(size_t size, ...)
 {
-	ISPCore* pCore = ISPSingleton::GetInstance();
-	MemoryPool<uchar>* pBufMgr = NULL;
-
-	if (!pCore) {
-		ILOGE("Faild to get core");
-		return NULL;
-	} else {
-		pBufMgr = static_cast<MemoryPool<uchar>*>(pCore->GetBufferManager());
-	}
+	MemoryPoolItf<uchar>* pBufMgr = MemoryPool<uchar>::GetInstance();
 
 	if (!pBufMgr) {
 		ILOGE("Failed to get memory pool");
@@ -162,15 +107,7 @@ void* ISPAlloc(size_t size, ...)
 
 void* ISPFree(void* pBuf, ...)
 {
-	ISPCore* pCore = ISPSingleton::GetInstance();
-	MemoryPool<uchar>* pBufMgr = NULL;
-
-	if (!pCore) {
-		ILOGE("Faild to get core");
-		return NULL;
-	} else {
-		pBufMgr = static_cast<MemoryPool<uchar>*>(pCore->GetBufferManager());
-	}
+	MemoryPoolItf<uchar>* pBufMgr = MemoryPool<uchar>::GetInstance();
 
 	if (!pBufMgr) {
 		ILOGE("Failed to get memory pool");
@@ -184,11 +121,12 @@ void* CoreFunc(void)
 {
 	int32_t rt = ISP_SUCCESS;
 
-	ISPCore* core = ISPSingleton::GetInstance();
-	ISPParamManager* pParamManager = NULL;
-	FileManager* pFileManager = NULL;
-	ISPListManager* pListManager = NULL;
-	MemoryPool<uchar>* pBufferManager = NULL;
+	ISPItf* ispItf = ISPCore::GetInstance();
+	ISPParamManagerItf* pParamManager = ISPParamManager::GetInstance();
+	FileManagerItf* pFileManager = FileManager::GetInstance();
+	InterfaceWrapperBase* pItfWrapper = InterfaceWrapper::GetInstance();
+	ISPListManagerItf* pListManager = ISPListManager::GetInstance();
+	MemoryPoolItf<uchar>* pBufferManager = MemoryPool<uchar>::GetInstance();
 	IOInfo* pInfo = NULL;
 	int32_t numPixel = 0;
 	int32_t alignedW = 0;
@@ -205,31 +143,22 @@ void* CoreFunc(void)
 	int32_t frameNum = 0;
 	int32_t waitActiveCnt = 0;
 
-	while(!core->IsActive()) {
-		if (core->mExit) {
+	while(!ispItf->IsActive()) {
+		if (ispItf->NeedExit()) {
 			return NULL;
 		}
 		waitActiveCnt++;
 		usleep(WAIT_ACTIVE_GAP_US);
-		ILOGDC("Waiting for core ready... (%d)", waitActiveCnt);
-	}
-
-	if (!core->mThreadParam) {
-		rt = ISP_INVALID_PARAM;
-		ILOGE("Cannot get IO info");
+		ILOGDC("Waiting for ISP ready... (%d)", waitActiveCnt);
 	}
 
 	if (SUCCESS(rt)) {
-		pParamManager = static_cast<ISPParamManager*>(core->GetParamManager());
-		pFileManager = static_cast<FileManager*>(core->GetFileManager());
-		pListManager = static_cast<ISPListManager*>(core->GetListManager());
-		pBufferManager = static_cast<MemoryPool<uchar>*>(core->GetBufferManager());
-		if (!pParamManager || !pFileManager || !pListManager || !pBufferManager) {
+		if (!pParamManager || !pFileManager || !pListManager || !pBufferManager || !pItfWrapper) {
 			rt = ISP_FAILED;
-			ILOGE("ParamManager:%p FileManager:%p ListManager:%p BufferManager:%p",
-					pParamManager, pFileManager, pListManager, pBufferManager);
+			ILOGE("ParamMgr:%p FileMgr:%p ListMgr:%p BufferMgr:%p ItfWrapper:%p",
+					pParamManager, pFileManager, pListManager, pBufferManager, pItfWrapper);
 		} else {
-			pInfo = static_cast<IOInfo*>(core->mThreadParam);
+			pInfo = static_cast<IOInfo*>(ispItf->GetThreadParam());
 			rt = pFileManager->Input(*pInfo);
 			if (rt != ISP_SUCCESS) {
 				return NULL;
@@ -256,10 +185,9 @@ void* CoreFunc(void)
 		bgrData		= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * 3 * sizeof(uint16_t) / sizeof(uchar)));
 		yuvData		= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * 3));
 		postData	= static_cast<void*>(pBufferManager->RequireBuffer(numPixel * 3));
-		ILOGDC("buffer addr(%p %p %p %p %p)", mipiRawData, rawData, bgrData, yuvData, postData);
 		if (!mipiRawData || !rawData || !bgrData || !yuvData || !postData) {
 			rt = ISP_MEMORY_ERROR;
-			ILOGE("Failed to alloc buffers!");
+			ILOGE("Failed to alloc buffers!(%p %p %p %p %p)", mipiRawData, rawData, bgrData, yuvData, postData);
 		}
 	}
 

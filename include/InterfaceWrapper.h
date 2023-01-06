@@ -7,11 +7,7 @@
 
 #pragma once
 #include "Utils.h"
-#ifdef LINUX_SYSTEM
-#include "../BZ/interface/LibInterface.h"
-#elif defined WIN32_SYSTEM
-#include "../../libbzalg/BZ/interface/LibInterface.h"
-#endif
+#include "LibInterface.h"
 
 enum AlgProcessCmd {
 	ALG_CMD_BLC = 0,
@@ -46,19 +42,34 @@ struct ISPLibsOps {
 	/* TODO: Add lib if need */
 };
 
-class InterfaceWrapper {
+enum ItfWrapperState {
+	ITFWRAPPER_STATE_NOT_READY = 0,
+	ITFWRAPPER_STATE_READY
+};
+
+class InterfaceWrapperBase {
 	public:
-		InterfaceWrapper();
-		~InterfaceWrapper();
+		~InterfaceWrapperBase() {};
 
-		int32_t Init();
-		int32_t DeInit();
-		int32_t ISPLibConfig(void* pPM, ...);
-		int32_t AlgProcess(int32_t cmd, ...);
+		virtual int32_t ISPLibConfig(void* pPM, ...) = 0;
+		virtual int32_t AlgProcess(int32_t cmd, ...) = 0;
+		virtual int32_t NotifyMain() = 0;
+		virtual int32_t IsReady() = 0;
+};
 
-		int32_t NotifyMain();
+class InterfaceWrapper : public InterfaceWrapperBase {
+	public:
+		static InterfaceWrapper* GetInstance();
+		virtual int32_t ISPLibConfig(void* pPM, ...);
+		virtual int32_t AlgProcess(int32_t cmd, ...);
+		virtual int32_t NotifyMain() { return 0; };
+		virtual int32_t IsReady();
 
 	private:
+		InterfaceWrapper();
+		virtual ~InterfaceWrapper();
+		int32_t Init();
+		int32_t DeInit();
 		int32_t LoadLib(int32_t libId, const char* path);
 		int32_t ReleaseLib(int32_t libId);
 		int32_t InterfaceInit(int32_t libId);
@@ -69,5 +80,6 @@ class InterfaceWrapper {
 		ISPLibsOps mLibsOPS;
 		BZParam mISPLibParams;
 		void* pParamMgr;
+		int32_t mState;
 };
 

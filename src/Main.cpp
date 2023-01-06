@@ -5,7 +5,7 @@
  * Copyright (c) 2019 Peng Hao <635945005@qq.com>
  */
 
-#include "ISPSingleton.h"
+#include "ISPCore.h"
 
 int main(int argc, char *argv[], char *envp[])
 {
@@ -18,12 +18,10 @@ int main(int argc, char *argv[], char *envp[])
 		ioInfo.envp[i] = envp[i];
 	}
 
-	ISPCore* core = ISPSingleton::GetInstance();
-	if (core) {
-		rt = core->Process(&ioInfo);
+	ISPItf* ispItf = ISPCore::GetInstance();
+	if (ispItf) {
+		rt = ispItf->Process(&ioInfo);
 	}
-
-	ISPSingleton::ReleaseInstance();
 
 	return rt;
 }

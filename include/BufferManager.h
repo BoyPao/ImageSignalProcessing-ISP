@@ -7,6 +7,7 @@
 #include <vector>
 #include <list>
 #include <mutex>
+#include <unordered_map>
 #include "Utils.h"
 
 #define DBG_MEM_OVERWRITE_CHECK_ON 1
@@ -58,6 +59,12 @@ struct MemBlock {
 	list<MemSegment> busyList;
 };
 
+enum MemSybmolOperations {
+	MSO_PUSH = 0,
+	MSO_POP,
+	MSO_NUM
+};
+
 #if DBG_MEM_OVERWRITE_CHECK_ON
 #define OVERWRITE_CHECK_TIME_GAP_US (100)
 #define OVERWRITE_CHECK_SIZE	((8 + 1) * sizeof(char)) /* one for '\0' */
@@ -67,8 +74,8 @@ const char gOverwiteSymbol[OVERWRITE_CHECK_SIZE] =
 		 '\0'};
 
 struct MemThreadParam {
-	vector<MemBlock>* pUsageInfo[MEM_BLK_LEVEL_NUM];
-	uint32_t threadOn;
+	unordered_map<void*, void*>* pSymbolMap;
+	uint32_t exit;
 	mutex* pLock;
 };
 
@@ -76,28 +83,45 @@ void* OverwriteCheckingFunc(void* param);
 #endif
 
 template <typename T>
-class MemoryPool
+class MemoryPoolItf
 {
 	public:
-		MemoryPool();
-		~MemoryPool();
+		virtual ~MemoryPoolItf() {};
+		virtual T* RequireBuffer(size_t TSize) = 0;
+		virtual T* RevertBuffer(T* pBuffer) = 0;
+};
 
-		T* RequireBuffer(size_t TSize);
-		T* RevertBuffer(T* pBuffer);
+template <typename T>
+class MemoryPool : public MemoryPoolItf<T>
+{
+	public:
+		static MemoryPool<T>* GetInstance();
+		virtual T* RequireBuffer(size_t TSize);
+		virtual T* RevertBuffer(T* pBuffer);
 
 	private:
+		MemoryPool();
+		virtual ~MemoryPool();
 		int32_t AllocBlock(int32_t level);
 		int32_t ReleaseBlock(int32_t level, u_int32_t index);
 		int32_t PrintPool();
-		int32_t MemoryReset(void* pAddr, size_t size);
+		int32_t MemoryReset(void* pAddr, size_t size, int32_t operation);
 		MemBlockInfo const* mMemBlockCfg[MEM_BLK_LEVEL_NUM];
 		vector<MemBlock> mUsageInfo[MEM_BLK_LEVEL_NUM];
 		mutex mUsageInfoLock;
 #if DBG_MEM_OVERWRITE_CHECK_ON
+		unordered_map<void*, void*> mSymbolMap;
 		thread dbgThread;
 		MemThreadParam mThreadParam;
 #endif
 };
+
+template <typename T>
+MemoryPool<T>* MemoryPool<T>::GetInstance()
+{
+	static MemoryPool<T> gInstance;
+	return &gInstance;
+}
 
 template <typename T>
 MemoryPool<T>::MemoryPool()
@@ -107,10 +131,8 @@ MemoryPool<T>::MemoryPool()
 	}
 
 #if DBG_MEM_OVERWRITE_CHECK_ON
-	for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
-		mThreadParam.pUsageInfo[level] = &mUsageInfo[level];
-	}
-	mThreadParam.threadOn = 1;
+	mThreadParam.pSymbolMap = &mSymbolMap;
+	mThreadParam.exit = 0;
 	mThreadParam.pLock = &mUsageInfoLock;
 	dbgThread = thread(OverwriteCheckingFunc, (void*)&mThreadParam);
 #endif
@@ -128,7 +150,7 @@ MemoryPool<T>::~MemoryPool()
 	PrintPool();
 
 #if DBG_MEM_OVERWRITE_CHECK_ON
-	mThreadParam.threadOn = 0;
+	mThreadParam.exit = 1;
 	dbgThread.join();
 	mThreadParam.pLock = NULL;
 #endif
@@ -193,7 +215,9 @@ int32_t MemoryPool<T>::ReleaseBlock(int32_t level, u_int32_t index)
 			while(mUsageInfo[level][index].busyList.begin() !=
 					mUsageInfo[level][index].busyList.end()) {
 				auto seg = mUsageInfo[level][index].busyList.end();
-				ILOGDM("%u is reverted", (--seg)->size);
+				seg--;
+				rt = MemoryReset(seg->pAddr, seg->size, MSO_POP);
+				ILOGDM("%u is reverted", seg->size);
 				mUsageInfo[level][index].busyList.pop_back();
 			}
 
@@ -295,7 +319,7 @@ T* MemoryPool<T>::RequireBuffer(size_t TSize)
 						MemSegment busySeg = {0};
 						busySeg.pAddr = seg->pAddr;
 						busySeg.size = size;
-						rt = MemoryReset(busySeg.pAddr, busySeg.size);
+						rt = MemoryReset(busySeg.pAddr, busySeg.size, MSO_PUSH);
 						blk->busyList.push_front(busySeg);
 
 						pBuffer = static_cast<T*>(busySeg.pAddr);
@@ -335,7 +359,7 @@ T* MemoryPool<T>::RequireBuffer(size_t TSize)
 					MemSegment busySeg = {0};
 					busySeg.pAddr = seg->pAddr;
 					busySeg.size = size;
-					rt = MemoryReset(busySeg.pAddr, busySeg.size);
+					rt = MemoryReset(busySeg.pAddr, busySeg.size, MSO_PUSH);
 					blk->busyList.push_front(busySeg);
 
 					pBuffer = static_cast<T*>(busySeg.pAddr);
@@ -388,6 +412,7 @@ T* MemoryPool<T>::RevertBuffer(T* pBuffer)
 					bool isNewSeg = true;
 					size = seg->size;
 					memset(seg->pAddr, 0, seg->size);
+					rt = MemoryReset(seg->pAddr, seg->size, MSO_POP);
 
 					MemSegment tmpSeg = {0};
 					tmpSeg.pAddr = (void*)seg->pAddr;
@@ -444,11 +469,18 @@ T* MemoryPool<T>::RevertBuffer(T* pBuffer)
 }
 
 template <typename T>
-int32_t MemoryPool<T>::MemoryReset(void* pAddr, size_t size)
+int32_t MemoryPool<T>::MemoryReset(void* pAddr, size_t size, int32_t operation)
 {
 	int32_t rt = ISP_SUCCESS;
 #if DBG_MEM_OVERWRITE_CHECK_ON
-	memcpy(static_cast<u_char*>(pAddr) + size - OVERWRITE_CHECK_SIZE, gOverwiteSymbol, OVERWRITE_CHECK_SIZE);
+	if (operation == MSO_PUSH) {
+		memcpy(static_cast<u_char*>(pAddr) + size - OVERWRITE_CHECK_SIZE, gOverwiteSymbol, OVERWRITE_CHECK_SIZE);
+		mSymbolMap.insert(pair<void*, void*>(pAddr, static_cast<u_char*>(pAddr) + size - OVERWRITE_CHECK_SIZE));
+	} else if (operation == MSO_POP) {
+		mSymbolMap.erase(pAddr);
+	} else {
+		ILOGE("Invalid operation:%d", operation);
+	}
 #endif
 	return rt;
 }
