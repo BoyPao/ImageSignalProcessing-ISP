@@ -6,6 +6,7 @@
  */
 
 #include "Algorithm.h"
+#include "BZConfig.h"
 #include <vector>
 
 #if DBG_OPENCV_ON
@@ -25,11 +26,7 @@ using namespace std;
 #define DBG_SHOW_ON false
 #define DBG_DUMP_ON false
 #define DBG_CONVOLUTION_ON false
-#ifdef LINUX_SYSTEM
-#define DUMP_PATH "~/HAO/test_project/ISP/ISP/res/out/output.txt"
-#elif defined WIN32_SYSTEM
-#define DUMP_PATH "D:\\test_project\\ISP\\local\\output\\output.txt"
-#endif
+#define DBG_DUMP_PATH (WORK_PATH DUMP_PATH PATH_FMT DUMP_FILE_NAME)
 
 #define VMASK_UCHAR(v) ((v) & 0xff)
 #define VFIX_UCHAR(v) ((v) > 255 ? 255 : ((v < 0) ? 0 : (v)))
@@ -1703,7 +1700,7 @@ int32_t BZ_CST_RAW2RGB(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs,
 		BoZhi* pBZ = static_cast<BoZhi*>(WrapGetBoZhi());
 		if (pBZ->mISPCBs.UtilsFuncs.DumpDataInt) {
 			BLOGDA("Raw dump as int");
-			pBZ->mISPCBs.UtilsFuncs.DumpDataInt((void*)src, width, height, (int32_t)sizeof(uint16_t), DUMP_PATH);
+			pBZ->mISPCBs.UtilsFuncs.DumpDataInt((void*)src, width, height, (int32_t)sizeof(uint16_t), DBG_DUMP_PATH);
 		}
 	}
 #endif

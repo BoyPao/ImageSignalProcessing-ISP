@@ -8,17 +8,14 @@
 #include "InterfaceWrapper.h"
 #include "FileManager.h"
 #include "ISPCore.h"
+#include "ISPConfig.h"
 #ifdef LINUX_SYSTEM
 #include <dlfcn.h>
 #elif defined WIN32_SYSTEM
 #include <WINDOWS.H>
 #endif
 
-#ifdef LINUX_SYSTEM
-#define ALG_DYNAMIC_LIB_PATH "/home/hao/dev/ISP/ISP/lib/libbzalg.so"
-#elif defined WIN32_SYSTEM
-#define ALG_DYNAMIC_LIB_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\x64\\Debug\\libbzalg.dll"
-#endif
+#define ALG_DYNAMIC_LIB_PATH (WORK_PATH LIB_PATH PATH_FMT ALG_LIB_NAME DYNAMIC_LIB_FMT)
 
 #define CALL_OPS(ops, op, params...)		\
 				(((ops).op) ?				\

@@ -5,14 +5,10 @@
  * Copyright (c) 2019 Peng Hao <635945005@qq.com>
  */
 #include "ParamManager.h"
+#include "ISPConfig.h"
 
-#ifdef LINUX_SYSTEM
-#define INPUT_PATH "/home/hao/dev/ISP/ISP/res/"
-#define OUTPUT_PATH "/home/hao/dev/ISP/ISP/res/"
-#elif defined WIN32_SYSTEM
-#define INPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\"
-#define OUTPUT_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\res\\"
-#endif
+#define INPUT_PATH (WORK_PATH RES_PATH PATH_FMT)
+#define OUTPUT_PATH (WORK_PATH RES_PATH PATH_FMT)
 
 #define DEFAULT_FILE_NAME "1MCC_IMG_20181229_001526_1"
 #define INPUT_NAME DEFAULT_FILE_NAME".raw"
