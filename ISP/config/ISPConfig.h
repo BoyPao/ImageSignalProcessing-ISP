@@ -8,7 +8,7 @@
 #ifdef LINUX_SYSTEM
 #define PATH_FMT "/"
 #define DYNAMIC_LIB_FMT ".so"
-#define WORK_PATH "/home2/penghao/test_project/ISP/"
+#define WORK_PATH "/home/hao/dev/ISP/ISP/"
 #elif defined WIN32_SYSTEM
 #define PATH_FMT "\\"
 #define DYNAMIC_LIB_FMT ".dll"
