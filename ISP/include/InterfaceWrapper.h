@@ -7,7 +7,7 @@
 
 #pragma once
 #include "Utils.h"
-#include "LibInterface.h"
+#include "BZInterface.h"
 
 enum AlgProcessCmd {
 	ALG_CMD_BLC = 0,

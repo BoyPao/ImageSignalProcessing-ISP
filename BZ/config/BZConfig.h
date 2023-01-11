@@ -8,7 +8,7 @@
 
 #ifdef LINUX_SYSTEM
 #define PATH_FMT "/"
-#define WORK_PATH "/home/hao/dev/ISP/ISP/"
+#define WORK_PATH "/home/hao/dev/ISP/"
 #elif defined WIN32_SYSTEM
 #define PATH_FMT "\\"
 #define WORK_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\"

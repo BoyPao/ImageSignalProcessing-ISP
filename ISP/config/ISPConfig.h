@@ -8,15 +8,15 @@
 #ifdef LINUX_SYSTEM
 #define PATH_FMT "/"
 #define DYNAMIC_LIB_FMT ".so"
-#define WORK_PATH "/home/hao/dev/ISP/ISP/"
+#define WORK_PATH "/home2/penghao/test_project/ISP/"
 #elif defined WIN32_SYSTEM
 #define PATH_FMT "\\"
 #define DYNAMIC_LIB_FMT ".dll"
-#define WORL_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\"
+#define WORK_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\"
 #endif
 
 
-#define LIB_PATH "lib"
+#define LIB_PATH "bin"
 #define RES_PATH "res"
 
 #define ALG_LIB_NAME "libbzalg"

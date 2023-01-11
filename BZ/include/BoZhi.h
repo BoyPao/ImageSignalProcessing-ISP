@@ -10,7 +10,7 @@
 #include <atomic>
 #include <condition_variable>
 
-#include "LibInterface.h"
+#include "BZInterface.h"
 #include "BZUtils.h"
 #include <cuchar>
 

@@ -5,7 +5,7 @@
  * Copyright (c) 2019 Peng Hao <635945005@qq.com>
  */
 
-#include "LibInterface.h"
+#include "BZInterface.h"
 #include "BoZhi.h"
 
 #ifdef LINUX_SYSTEM

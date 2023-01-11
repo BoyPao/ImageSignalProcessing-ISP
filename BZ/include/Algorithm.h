@@ -8,7 +8,7 @@
 #pragma once
 
 #include "BZLog.h"
-#include "LibInterface.h"
+#include "BZInterface.h"
 
 #define CHECK_PACKAGED(format)                          (((format) == BZ_UNPACKAGED_RAW10_LSB) ||                          \
 														((format) == BZ_UNPACKAGED_RAW10_MSB)) ? 0 : 1
