@@ -11,8 +11,6 @@
 #define LOG_ON 1
 #define LOG_LEVEL (0x1 + 0x2 + 0x4 + 0x8)
 #define DBG_LEVEL (0x1)
-#define LOG_FOR_RELEASE
-
 
 #define LOG_BUFFER_SIZE				256
 #define LOG_BUFFER_PERSERVE_SIZE	2		/* 2 preserve for \0 and \n */
@@ -37,12 +35,12 @@ enum BZDbgMask {
 	DBG_ALGO_MASK = DBG_BASE_MASK << 3,
 };
 
-#ifdef LOG_FOR_RELEASE
-#define LOG_FORMAT " | "
-#define LOG_FMT_PARAM
-#else
+#ifdef LOG_FOR_DBG
 #define LOG_FORMAT " %d:%s: "
 #define LOG_FMT_PARAM , __LINE__, __func__
+#else
+#define LOG_FORMAT " | "
+#define LOG_FMT_PARAM
 #endif
 
 #define LOG_MODULE " BZ "

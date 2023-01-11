@@ -10,7 +10,6 @@
 #include <unordered_map>
 #include "Utils.h"
 
-#define DBG_MEM_OVERWRITE_CHECK_ON 1
 #if DBG_MEM_OVERWRITE_CHECK_ON
 #include <thread>
 #endif

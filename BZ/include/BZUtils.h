@@ -19,8 +19,6 @@
 #define WIN32_SYSTEM
 #endif
 
-#define DBG_OPENCV_ON 0
-
 #define BITS_PER_WORD				8
 #define FILE_PATH_MAX_SIZE			255
 

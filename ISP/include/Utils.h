@@ -33,8 +33,7 @@
 #define VERSION 0
 #define SUB_VERSION 1
 
-#define DBG_OPENCV_ON 0
-#if !DBG_CONVOLUTION_ON
+#if !DBG_OPENCV_ON
 typedef u_char uchar;
 #endif
 

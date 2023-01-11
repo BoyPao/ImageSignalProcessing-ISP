@@ -822,7 +822,7 @@ void FileManager::SupportInfo()
 	ILOGI("------------------------------------------------------------------");
 			}
 			ILOGI(" %-25s \t| %-10u \t| %c%c%c%c"
-#ifndef LOG_FOR_RELEASE
+#ifdef LOG_FOR_DBG
 			"(0x%-4x)"
 #endif
 				  , gSupportedFmt[i].info,
@@ -831,7 +831,7 @@ void FileManager::SupportInfo()
 					gSupportedFmt[i].fmt >> 8,
 					gSupportedFmt[i].fmt >> 16,
 					gSupportedFmt[i].fmt >> 24
-#ifndef LOG_FOR_RELEASE
+#ifdef LOG_FOR_DBG
 				  , gSupportedFmt[i].fmt
 #endif
 					);
