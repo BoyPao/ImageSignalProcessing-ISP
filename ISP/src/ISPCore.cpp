@@ -131,11 +131,11 @@ void* CoreFunc(void)
 	int32_t numPixel = 0;
 	int32_t alignedW = 0;
 	int32_t bufferSize = 0;
-	void* mipiRawData;
-	void* rawData;
-	void* bgrData;
-	void* yuvData;
-	void* postData;
+	void* mipiRawData = NULL;
+	void* rawData = NULL;
+	void* bgrData = NULL;
+	void* yuvData = NULL;
+	void* postData = NULL;
 	InputInfo inputInfo = { 0 };
 	OutputInfo outputInfo = { 0 };
 	MediaInfo mediaInfo = { 0 };
@@ -148,7 +148,7 @@ void* CoreFunc(void)
 			return NULL;
 		}
 		waitActiveCnt++;
-		usleep(WAIT_ACTIVE_GAP_US);
+		Msleep(WAIT_ACTIVE_GAP_US);
 		ILOGDC("Waiting for ISP ready... (%d)", waitActiveCnt);
 	}
 

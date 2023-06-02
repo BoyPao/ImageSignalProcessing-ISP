@@ -127,7 +127,7 @@ void* WrapAlloc(size_t size, size_t num)
 	if (pBZ->mISPCBs.UtilsFuncs.Alloc) {
 		return pBZ->mISPCBs.UtilsFuncs.Alloc(size * num);
 	} else {
-		return (void*) new u_char[size * num];
+		return (void*) new uchar[size * num];
 	}
 }
 
@@ -144,7 +144,7 @@ void* WrapFree(void* pBuf)
 		if (pBZ->mISPCBs.UtilsFuncs.Free) {
 			return pBZ->mISPCBs.UtilsFuncs.Free(pBuf);
 		} else {
-			delete[] static_cast<u_char*>(pBuf);
+			delete[] static_cast<uchar*>(pBuf);
 			pBuf = NULL;
 		}
 	}
@@ -203,7 +203,7 @@ int32_t BoZhi::ExecuteCMD()
 	bool enable = mMsg.enable;
 
 	BLOGDC("cmd:%d on:%d", mMsg.cmd, enable);
-	ISPCallbacks tempCbs;
+	ISPCallbacks tempCbs = { 0 };
 	switch(mMsg.cmd) {
 		case BZ_CMD_BLC:
 			WrapBlackLevelCorrection(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);

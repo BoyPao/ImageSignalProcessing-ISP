@@ -23,5 +23,8 @@ int main(int argc, char *argv[], char *envp[])
 		rt = ispItf->Process(&ioInfo);
 	}
 
+#ifdef WIN32_SYSTEM
+	Msleep(10000000);
+#endif
 	return rt;
 }

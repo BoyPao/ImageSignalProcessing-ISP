@@ -30,7 +30,7 @@ void* OverwriteCheckingFunc(void* param)
 						overwriteDetected = 0;
 						for(size_t index = 0; index < OVERWRITE_CHECK_SIZE; index++) {
 							overwriteDetected |=
-								~(static_cast<u_char*>(it->second)[index]) &
+								~(static_cast<uchar*>(it->second)[index]) &
 								gOverwiteSymbol[index];
 						}
 						if (overwriteDetected) {

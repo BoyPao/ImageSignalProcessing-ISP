@@ -6,7 +6,15 @@
  */
 
 #include "FileManager.h"
+
+#ifdef LINUX_SYSTEM
 #include <linux/videodev2.h>
+#elif defined WIN32_SYSTEM
+#include "V4L2_local.h"
+#include <io.h>
+#define R_OK 4
+#define F_OK 0
+#endif
 
 #define MIN_IO_PARAM_CNT 4
 
@@ -821,19 +829,14 @@ void FileManager::SupportInfo()
 					)) {
 	ILOGI("------------------------------------------------------------------");
 			}
-			ILOGI(" %-25s \t| %-10u \t| %c%c%c%c"
-#ifdef LOG_FOR_DBG
-			"(0x%-4x)"
-#endif
-				  , gSupportedFmt[i].info,
+			ILOGI(" %-25s \t| %-10u \t| %c%c%c%c(0x%-4x)",
+					gSupportedFmt[i].info,
 					gSupportedFmt[i].bitWidth,
 					gSupportedFmt[i].fmt,
 					gSupportedFmt[i].fmt >> 8,
 					gSupportedFmt[i].fmt >> 16,
-					gSupportedFmt[i].fmt >> 24
-#ifdef LOG_FOR_DBG
-				  , gSupportedFmt[i].fmt
-#endif
+					gSupportedFmt[i].fmt >> 24,
+					gSupportedFmt[i].fmt
 					);
 		}
 	ILOGI("------------------------------------------------------------------");

@@ -12,7 +12,7 @@
 #elif defined WIN32_SYSTEM
 #define PATH_FMT "\\"
 #define DYNAMIC_LIB_FMT ".dll"
-#define WORK_PATH "D:\\test_project\\ISP_NEW\\ISP_NEW\\ISP_NEW\\"
+#define WORK_PATH "F:\\code\\ISP\\ISP_WIN\\ISP_WIN\\"
 #endif
 
 

@@ -6,7 +6,6 @@
  */
 
 #pragma once
-#include <fstream>
 
 #include "Utils.h"
 #include "ISPVideo.h"
@@ -16,6 +15,8 @@
 #elif defined WIN32_SYSTEM
 #include <windows.h>
 #endif
+
+#include <fstream>
 
 #define OUTPUT_FILE_TYPE_SIZE 4 /* size of 'bmp\0'/'avi\0' is 4 */
 

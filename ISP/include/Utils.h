@@ -10,6 +10,8 @@
 #define LINUX_SYSTEM
 #elif defined _WIN32
 #define WIN32_SYSTEM
+#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_NONSTDC_NO_DEPRECATE
 #endif
 
 /* Regular lib */
@@ -34,7 +36,7 @@
 #define SUB_VERSION 1
 
 #if !DBG_OPENCV_ON
-typedef u_char uchar;
+typedef unsigned char uchar;
 #endif
 
 #define SERIAL_NUM_TAIL(n)  (n) == 1 ? "st" :\
@@ -70,3 +72,4 @@ void getDateInt(int32_t* years, int32_t* months, int32_t* days);
 void getTimeWithDateInt(int32_t* years, int32_t* months, int32_t* days, int32_t* hours, int32_t* minutes, int32_t* seconds, int32_t* milliseconds);
 void getTimeWithDateChar(char* years, char* months, char* days, char* hours, char* minutes, char* seconds, char* milliseconds);
 int32_t CharNum2IntNum(char* pC);
+int32_t Msleep(int32_t msec);

@@ -6,6 +6,10 @@
  */
 
 #include "Utils.h"
+#ifdef LINUX_SYSTEM
+#elif defined WIN32_SYSTEM
+#include<windows.h>
+#endif
 
 using namespace std;
 
@@ -142,4 +146,14 @@ int32_t CharNum2IntNum(char* pC)
 	}
 
 	return rt;
+}
+
+int32_t Msleep(int32_t msec)
+{
+#ifdef LINUX_SYSTEM
+	usleep(msec);
+#elif defined WIN32_SYSTEM
+	Sleep(msec / 1000);
+#endif
+	return 0;
 }

@@ -102,7 +102,7 @@ class MemoryPool : public MemoryPoolItf<T>
 		MemoryPool();
 		virtual ~MemoryPool();
 		int32_t AllocBlock(int32_t level);
-		int32_t ReleaseBlock(int32_t level, u_int32_t index);
+		int32_t ReleaseBlock(int32_t level, uint32_t index);
 		int32_t PrintPool();
 		int32_t MemoryReset(void* pAddr, size_t size, int32_t operation);
 		MemBlockInfo const* mMemBlockCfg[MEM_BLK_LEVEL_NUM];
@@ -167,7 +167,7 @@ int32_t MemoryPool<T>::AllocBlock(int32_t level)
 
 	if (SUCCESS(rt)) {
 		MemBlock blk = { 0 };
-		blk.blockBase = new u_char[mMemBlockCfg[level]->size];
+		blk.blockBase = new uchar[mMemBlockCfg[level]->size];
 		if (!blk.blockBase) {
 			rt = ISP_MEMORY_ERROR;
 			ILOGE("Level:%d alloc %u failed!", level, mMemBlockCfg[level]->size);
@@ -192,7 +192,7 @@ int32_t MemoryPool<T>::AllocBlock(int32_t level)
 }
 
 template <typename T>
-int32_t MemoryPool<T>::ReleaseBlock(int32_t level, u_int32_t index)
+int32_t MemoryPool<T>::ReleaseBlock(int32_t level, uint32_t index)
 {
 	int32_t rt = ISP_SUCCESS;
 
@@ -202,7 +202,7 @@ int32_t MemoryPool<T>::ReleaseBlock(int32_t level, u_int32_t index)
 	}
 
 	if (SUCCESS(rt)) {
-		u_char* p = static_cast<u_char*>(mUsageInfo[level][index].blockBase);
+		uchar* p = static_cast<uchar*>(mUsageInfo[level][index].blockBase);
 		if (p)
 		{
 			unique_lock <mutex> lock(mUsageInfoLock);
@@ -401,11 +401,11 @@ T* MemoryPool<T>::RevertBuffer(T* pBuffer)
 			break;
 		}
 		for (auto blk = mUsageInfo[level].begin(); blk != mUsageInfo[level].end(); blk++) {
-			if (static_cast<u_char*>(pVBuf) < blk->blockBase || static_cast<u_char*>(pVBuf) >= static_cast<u_char*>(blk->blockBase) + blk->blockSize) {
+			if (static_cast<uchar*>(pVBuf) < blk->blockBase || static_cast<uchar*>(pVBuf) >= static_cast<uchar*>(blk->blockBase) + blk->blockSize) {
 				continue;
 			}
 			for (auto seg = blk->busyList.begin(); seg != blk->busyList.end(); seg++) {
-				if (static_cast<u_char*>(pVBuf) == seg->pAddr)
+				if (static_cast<uchar*>(pVBuf) == seg->pAddr)
 				{
 					unique_lock <mutex> lock(mUsageInfoLock);
 					bool isNewSeg = true;
@@ -418,7 +418,7 @@ T* MemoryPool<T>::RevertBuffer(T* pBuffer)
 					tmpSeg.size = seg->size;
 
 					/* 1. Forward merge */
-					u_char* nextAddr = static_cast<u_char*>(tmpSeg.pAddr) + tmpSeg.size;
+					uchar* nextAddr = static_cast<uchar*>(tmpSeg.pAddr) + tmpSeg.size;
 					for (auto idleSeg = blk->idleList.begin(); idleSeg != blk->idleList.end(); idleSeg++) {
 						if (nextAddr == idleSeg->pAddr) {
 							tmpSeg.size += idleSeg->size;
@@ -429,7 +429,7 @@ T* MemoryPool<T>::RevertBuffer(T* pBuffer)
 
 					/* 2. Backward merge */
 					for (auto idleSeg = blk->idleList.begin(); idleSeg != blk->idleList.end(); idleSeg++) {
-						u_char* lastAddr = static_cast<u_char*>(idleSeg->pAddr) + idleSeg->size;
+						uchar* lastAddr = static_cast<uchar*>(idleSeg->pAddr) + idleSeg->size;
 						if (lastAddr == tmpSeg.pAddr) {
 							idleSeg->size += tmpSeg.size;
 							isNewSeg = false;
@@ -473,8 +473,8 @@ int32_t MemoryPool<T>::MemoryReset(void* pAddr, size_t size, int32_t operation)
 	int32_t rt = ISP_SUCCESS;
 #if DBG_MEM_OVERWRITE_CHECK_ON
 	if (operation == MSO_PUSH) {
-		memcpy(static_cast<u_char*>(pAddr) + size - OVERWRITE_CHECK_SIZE, gOverwiteSymbol, OVERWRITE_CHECK_SIZE);
-		mSymbolMap.insert(pair<void*, void*>(pAddr, static_cast<u_char*>(pAddr) + size - OVERWRITE_CHECK_SIZE));
+		memcpy(static_cast<uchar*>(pAddr) + size - OVERWRITE_CHECK_SIZE, gOverwiteSymbol, OVERWRITE_CHECK_SIZE);
+		mSymbolMap.insert(pair<void*, void*>(pAddr, static_cast<uchar*>(pAddr) + size - OVERWRITE_CHECK_SIZE));
 	} else if (operation == MSO_POP) {
 		mSymbolMap.erase(pAddr);
 	} else {

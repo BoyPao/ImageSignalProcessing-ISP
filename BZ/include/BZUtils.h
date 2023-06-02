@@ -7,22 +7,30 @@
 
 #pragma once
 /* Regular lib */
-#include <chrono>
-#include <stdint.h>
-#include <math.h>
-#include <cstdarg>
-#include <string.h>
-
 #if defined __linux__
 #define LINUX_SYSTEM
 #elif defined _WIN32
 #define WIN32_SYSTEM
 #endif
 
+#ifdef WIN32_SYSTEM
+#define _USE_MATH_DEFINES
+#endif
+
+#include <chrono>
+#include <stdint.h>
+#include <math.h>
+#include <cstdarg>
+#include <string.h>
+
 #define BITS_PER_WORD				8
 #define FILE_PATH_MAX_SIZE			255
 
 #define SUCCESS(rt)		((rt) >= 0) ? true : false
+
+#if !DBG_OPENCV_ON
+typedef unsigned char uchar;
+#endif
 
 using namespace std;
 

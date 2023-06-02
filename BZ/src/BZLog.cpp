@@ -8,12 +8,13 @@
 #include "BZLog.h"
 #include <stdio.h>
 
-void LogBase(const char* str, ...)
+int32_t LogBase(const char* str, ...)
 {
 	va_list va;
 	va_start(va, str);
 	LogPrint(str, va);
 	va_end(va);
+	return 0;
 }
 
 void LogPrint(const char* str, va_list va)

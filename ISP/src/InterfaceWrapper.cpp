@@ -17,13 +17,12 @@
 
 #define ALG_DYNAMIC_LIB_PATH (WORK_PATH LIB_PATH PATH_FMT ALG_LIB_NAME DYNAMIC_LIB_FMT)
 
+#ifdef LINUX_SYSTEM
 #define CALL_OPS(ops, op, params...)		\
 				(((ops).op) ?				\
-				({							\
-					(ops).op(params);		\
-					ISP_SUCCESS;			\
-				})							\
+					(ops).op(params)		\
 				: ISP_FAILED)
+#endif
 
 //static ISPCallbacks gISPCallbacks;
 
@@ -371,7 +370,12 @@ int32_t InterfaceWrapper::AlgProcess(int32_t cmd, ...)
 		tmpMsg.enable = static_cast<bool>(va_arg(va, uint32_t));
 		va_end(va);
 
+#ifdef LINUX_SYSTEM
 		rt = CALL_OPS(mLibsOPS.algOPS, BZEvent, (void*)&tmpMsg);
+#elif defined WIN32_SYSTEM
+		if (mLibsOPS.algOPS.BZEvent)
+			mLibsOPS.algOPS.BZEvent(&tmpMsg);
+#endif
 	}
 
 	return rt;
