@@ -92,6 +92,65 @@ void* ISPFree(void* pBuf, ...)
 	return (void*)MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(pBuf));
 }
 
+int32_t ImgShow(void *data, size_t w, size_t h)
+{
+	int32_t rt = ISP_SUCCESS;
+
+	if (!data) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Input is null");
+		return rt;
+	}
+
+	int32_t winSizey;
+	bool supportWin = false;
+#ifdef LINUX_SYSTEM
+	winsize winSize;
+	ioctl(STDIN_FILENO, TIOCGWINSZ, &winSize);
+	if (!winSize.ws_row) {
+		ILOGW("Cannot get terminal size(%d,%d)! Skip img show",
+				winSize.ws_col, winSize.ws_row);
+	} else {
+		winSizey = winSize.ws_row;
+		supportWin = true;
+	}
+#elif defined WIN32_SYSTEM
+	winSizey = GetSystemMetrics(SM_CYSCREEN);
+	supportWin = true;
+#endif
+
+	if (supportWin) {
+		int32_t pixelNum = w * h;
+		int32_t showSizex = 0, showSizey = 0;
+		showSizey = winSizey * 2 / 3;
+		showSizex = showSizey * w / h;
+		ILOGDC("Display size(%dx%d)", showSizex, showSizey);
+#if DBG_OPENCV_ON
+		Mat img = Mat(h, w, CV_8UC3, Scalar(0, 0, 0));
+		for (size_t row = 0; row < h; row++) {
+			for (size_t col = 0; col < w; col++) {
+				img.data[row * w * 3 + col * 3] =
+					static_cast<uchar*>(data)[row * w + col];
+				img.data[row * w * 3 + col * 3 + 1] =
+					static_cast<uchar*>(data)[pixelNum + row * w + col];
+				img.data[row * w * 3 + col * 3 + 2] =
+					static_cast<uchar*>(data)[2 * pixelNum + row * w + col];
+			}
+		}
+		namedWindow("Image", 0);
+		resizeWindow("Image", showSizex, showSizey);
+		imshow("Image", img);
+		waitKey(0); /* for the possibility of interacting with window, keep the value as 0 */
+
+		if (!img.empty()) {
+			img.release();
+		}
+#endif
+	}
+
+	return rt;
+}
+
 void* CoreFunc(void)
 {
 	int32_t waitActiveCnt = 0;
@@ -234,53 +293,7 @@ void* CoreFunc(void)
 		return NULL;
 	}
 
-	/* Show the result */
-	int32_t winSizey;
-	bool supportWin = false;
-#ifdef LINUX_SYSTEM
-	winsize winSize;
-	ioctl(STDIN_FILENO, TIOCGWINSZ, &winSize);
-	if (!winSize.ws_row) {
-		ILOGW("Cannot get terminal size(%d,%d)! Skip img show",
-				winSize.ws_col, winSize.ws_row);
-	}
-	else {
-		winSizey = winSize.ws_row;
-		supportWin = true;
-	}
-#elif defined WIN32_SYSTEM
-	winSizey = GetSystemMetrics(SM_CYSCREEN);
-	supportWin = true;
-#endif
-
-	if (supportWin) {
-		int32_t showSizex = 0, showSizey = 0;
-		showSizey = winSizey * 2 / 3;
-		showSizex = showSizey * mediaInfo.img.width / mediaInfo.img.height;
-		ILOGDC("Display size(%dx%d)", showSizex, showSizey);
-#if DBG_OPENCV_ON
-		Mat dst = Mat(mediaInfo.img.height, mediaInfo.img.width,
-				CV_8UC3, Scalar(0, 0, 0));
-		for (int32_t row = 0; row < mediaInfo.img.height; row++) {
-			for (int32_t col = 0; col < mediaInfo.img.width; col++) {
-				dst.data[row * mediaInfo.img.width * 3 + col * 3] =
-					static_cast<uchar*>(postData)[row * mediaInfo.img.width + col];
-				dst.data[row * mediaInfo.img.width * 3 + col * 3 + 1] =
-					static_cast<uchar*>(postData)[numPixel + row * mediaInfo.img.width + col];
-				dst.data[row * mediaInfo.img.width * 3 + col * 3 + 2] =
-					static_cast<uchar*>(postData)[2 * numPixel + row * mediaInfo.img.width + col];
-			}
-		}
-		namedWindow(RESNAME, 0);
-		resizeWindow(RESNAME, showSizex, showSizey);
-		imshow(RESNAME, dst);
-		waitKey(0); /* for the possibility of interacting with window, keep the value as 0 */
-
-		if (!dst.empty()) {
-			dst.release();
-		}
-#endif
-	}
+	ImgShow(postData, mediaInfo.img.width, mediaInfo.img.height);
 
 	mipiRawData = MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(mipiRawData));
 	rawData		= MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(rawData));
