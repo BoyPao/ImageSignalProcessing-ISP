@@ -6,14 +6,17 @@
  */
 
 #include "InterfaceWrapper.h"
-#include "FileManager.h"
-#include "ISPCore.h"
 #include "ISPConfig.h"
+#include "ISPListManager.h"
+#include "FileManager.h"
+#include "MemPool.h"
 #ifdef LINUX_SYSTEM
 #include <dlfcn.h>
 #elif defined WIN32_SYSTEM
 #include <WINDOWS.H>
 #endif
+
+using namespace asteroidaxis::isp::resource;
 
 #define ALG_DYNAMIC_LIB_PATH (WORK_PATH LIB_PATH PATH_FMT ALG_LIB_NAME DYNAMIC_LIB_FMT)
 

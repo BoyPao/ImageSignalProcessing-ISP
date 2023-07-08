@@ -14,6 +14,10 @@
 #include <thread>
 #endif
 
+using namespace std;
+
+namespace asteroidaxis::isp::resource {
+
 #define MEM_BLK_L0_MAX_NUM 16
 #define MEM_BLK_L1_MAX_NUM 8
 #define MEM_BLK_L2_MAX_NUM 4
@@ -22,7 +26,10 @@
 #define MEM_BLK_L1_SIZE MEM_BLK_L0_MAX_NUM * MEM_BLK_L0_SIZE
 #define MEM_BLK_L2_SIZE MEM_BLK_L1_MAX_NUM * MEM_BLK_L1_SIZE
 
-using namespace std;
+#define MEM_BASE_TYPE uchar
+
+void* ISPAlloc(size_t size, ...);
+void* ISPFree(void* pBuf, ...);
 
 enum MemBlockLevel {
 	MEM_BLK_L0 = 0,
@@ -44,12 +51,12 @@ const MemBlockInfo gMemBlockCfg[MEM_BLK_LEVEL_NUM] = {
 };
 
 struct MemSegment {
-	void* pAddr;
+	MEM_BASE_TYPE *pAddr;
 	size_t size;
 };
 
 struct MemBlock {
-	void* blockBase;
+	MEM_BASE_TYPE *blockBase;
 	size_t blockSize;
 	size_t busySize;
 	list<MemSegment> idleList;
@@ -64,19 +71,19 @@ enum MemOperations {
 
 #if DBG_MEM_OVERWRITE_CHECK_ON
 #define OVERWRITE_CHECK_TIME_GAP_US (100)
-#define OVERWRITE_CHECK_SIZE	((8 + 1) * sizeof(char)) /* one for '\0' */
+#define OVERWRITE_CHECK_SIZE	((8 + 1) * sizeof(MEM_BASE_TYPE)) /* one for '\0' */
 const char gOverwiteSymbol[OVERWRITE_CHECK_SIZE] =
 		{'@', 'D', 'B', 'G',
 		 'M', 'E', 'M', '@',
 		 '\0'};
 
 struct MemThreadParam {
-	unordered_map<void*, void*>* pSymbolMap;
+	unordered_map<MEM_BASE_TYPE *, MEM_BASE_TYPE *> *pSymbolMap;
 	uint32_t exit;
-	mutex* pLock;
+	mutex *pLock;
 };
 
-void* OverwriteCheckingFunc(void* param);
+void *OverwriteCheckingFunc(void *param);
 #endif
 
 template <typename T>
@@ -84,17 +91,17 @@ class MemoryPoolItf
 {
 	public:
 		virtual ~MemoryPoolItf() {};
-		virtual T* RequireBuffer(size_t TSize) = 0;
-		virtual T* RevertBuffer(T* pBuffer) = 0;
+		virtual T *RequireBuffer(size_t TSize) = 0;
+		virtual T *RevertBuffer(T *pBuffer) = 0;
 };
 
 template <typename T>
 class MemoryPool : public MemoryPoolItf<T>
 {
 	public:
-		static MemoryPool<T>* GetInstance();
-		virtual T* RequireBuffer(size_t TSize);
-		virtual T* RevertBuffer(T* pBuffer);
+		static MemoryPool<T> *GetInstance();
+		virtual T *RequireBuffer(size_t TSize);
+		virtual T *RevertBuffer(T *pBuffer);
 		int32_t PrintPool();
 
 	private:
@@ -102,22 +109,22 @@ class MemoryPool : public MemoryPoolItf<T>
 		virtual ~MemoryPool();
 		int32_t AllocBlock(int32_t level);
 		int32_t ReleaseBlock(int32_t level, uint32_t index);
-		int32_t MemoryReset(void* pAddr, size_t size, int32_t operation);
+		int32_t MemoryReset(MEM_BASE_TYPE *pAddr, size_t size, int32_t operation);
 		T *RequireFromExistBlock(size_t size);
 		T *RequireFromNewBlock(size_t size);
-		void *RevertByLevel(void *pVBuf, int32_t level, size_t *size);
-		MemBlockInfo const* mMemBlockCfg[MEM_BLK_LEVEL_NUM];
+		T *RevertByLevel(T *pBuf, int32_t level, size_t *size);
+		MemBlockInfo const *mMemBlockCfg[MEM_BLK_LEVEL_NUM];
 		vector<MemBlock> mUsageInfo[MEM_BLK_LEVEL_NUM];
 		mutex mUsageInfoLock;
 #if DBG_MEM_OVERWRITE_CHECK_ON
-		unordered_map<void*, void*> mSymbolMap;
+		unordered_map<MEM_BASE_TYPE *, MEM_BASE_TYPE *> mSymbolMap;
 		thread dbgThread;
 		MemThreadParam mThreadParam;
 #endif
 };
 
 template <typename T>
-MemoryPool<T>* MemoryPool<T>::GetInstance()
+MemoryPool<T> *MemoryPool<T>::GetInstance()
 {
 	static MemoryPool<T> gInstance;
 	return &gInstance;
@@ -134,7 +141,7 @@ MemoryPool<T>::MemoryPool()
 	mThreadParam.pSymbolMap = &mSymbolMap;
 	mThreadParam.exit = 0;
 	mThreadParam.pLock = &mUsageInfoLock;
-	dbgThread = thread(OverwriteCheckingFunc, (void*)&mThreadParam);
+	dbgThread = thread(OverwriteCheckingFunc, (void *)&mThreadParam);
 #endif
 }
 
@@ -169,7 +176,7 @@ int32_t MemoryPool<T>::AllocBlock(int32_t level)
 	}
 
 	MemBlock blk = { 0 };
-	blk.blockBase = new uchar[mMemBlockCfg[level]->size];
+	blk.blockBase = new MEM_BASE_TYPE[mMemBlockCfg[level]->size];
 	if (!blk.blockBase) {
 		rt = ISP_MEMORY_ERROR;
 		ILOGE("Level:%d alloc %u failed!", level, mMemBlockCfg[level]->size);
@@ -205,7 +212,7 @@ int32_t MemoryPool<T>::ReleaseBlock(int32_t level, uint32_t index)
 
 	{
 		unique_lock <mutex> lock(mUsageInfoLock);
-		uchar* p = static_cast<uchar*>(mUsageInfo[level][index].blockBase);
+		MEM_BASE_TYPE *p = mUsageInfo[level][index].blockBase;
 		if (!p) {
 			rt = ISP_FAILED;
 			ILOGE("Fatal ERROR: cannot find block base");
@@ -290,9 +297,9 @@ int32_t MemoryPool<T>::PrintPool()
 }
 
 template <typename T>
-T* MemoryPool<T>::RequireBuffer(size_t TSize)
+T *MemoryPool<T>::RequireBuffer(size_t TSize)
 {
-	T* pBuffer = NULL;
+	T *pBuffer = NULL;
 	size_t size = TSize * sizeof(T);
 #if DBG_MEM_OVERWRITE_CHECK_ON
 	size += OVERWRITE_CHECK_SIZE;
@@ -319,10 +326,9 @@ T* MemoryPool<T>::RequireBuffer(size_t TSize)
 }
 
 template <typename T>
-T* MemoryPool<T>::RevertBuffer(T* pBuffer)
+T *MemoryPool<T>::RevertBuffer(T *pBuffer)
 {
 	size_t size = 0;
-	void *pVBuf = (void*)pBuffer;
 
 	if (!pBuffer) {
 		ILOGE("Invalid buffer:%p", pBuffer);
@@ -330,8 +336,8 @@ T* MemoryPool<T>::RevertBuffer(T* pBuffer)
 	}
 
 	for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
-		pVBuf = RevertByLevel(pVBuf, level, &size);
-		if (!pVBuf) {
+		pBuffer = RevertByLevel(pBuffer, level, &size);
+		if (!pBuffer) {
 			ILOGDM("C%u (N%u x T%u) is reverted", size, sizeof(T), size / sizeof(T));
 			break;
 		} else if (level == MEM_BLK_LEVEL_NUM - 1) {
@@ -344,9 +350,9 @@ T* MemoryPool<T>::RevertBuffer(T* pBuffer)
 }
 
 template <typename T>
-T* MemoryPool<T>::RequireFromExistBlock(size_t size)
+T *MemoryPool<T>::RequireFromExistBlock(size_t size)
 {
-	T* pBuffer = NULL;
+	T *pBuffer = NULL;
 
 	{
 		unique_lock <mutex> lock(mUsageInfoLock);
@@ -369,7 +375,7 @@ T* MemoryPool<T>::RequireFromExistBlock(size_t size)
 
 						pBuffer = static_cast<T*>(busySeg.pAddr);
 
-						idleSeg.pAddr = (void*)(static_cast<T*>(seg->pAddr) + size);
+						idleSeg.pAddr = seg->pAddr + size;
 						idleSeg.size = seg->size - size;
 						blk->idleList.erase(seg);
 						blk->idleList.push_front(idleSeg);
@@ -386,9 +392,9 @@ T* MemoryPool<T>::RequireFromExistBlock(size_t size)
 }
 
 template <typename T>
-T* MemoryPool<T>::RequireFromNewBlock(size_t size)
+T *MemoryPool<T>::RequireFromNewBlock(size_t size)
 {
-	T* pBuffer = NULL;
+	T *pBuffer = NULL;
 
 	for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
 		if (size > mMemBlockCfg[level]->size) {
@@ -412,7 +418,7 @@ T* MemoryPool<T>::RequireFromNewBlock(size_t size)
 
 				pBuffer = static_cast<T*>(busySeg.pAddr);
 
-				idleSeg.pAddr = (void*)(static_cast<T*>(seg->pAddr) + size);
+				idleSeg.pAddr = seg->pAddr + size;
 				idleSeg.size = seg->size - size;
 				blk->idleList.erase(seg);
 				blk->idleList.push_front(idleSeg);
@@ -427,38 +433,38 @@ T* MemoryPool<T>::RequireFromNewBlock(size_t size)
 }
 
 template <typename T>
-void *MemoryPool<T>::RevertByLevel(void *pVBuf, int32_t level, size_t *size)
+T *MemoryPool<T>::RevertByLevel(T *pBuf, int32_t level, size_t *size)
 {
 	if (level >= MEM_BLK_LEVEL_NUM) {
 		ILOGE("Invalid level:%d", level);
-		return pVBuf;
+		return pBuf;
 	}
 
 	if (!size) {
 		ILOGE("size is null");
-		return pVBuf;
+		return pBuf;
 	}
 
 	{
 		unique_lock <mutex> lock(mUsageInfoLock);
 		for (auto blk = mUsageInfo[level].begin(); blk != mUsageInfo[level].end(); blk++) {
-			if (static_cast<uchar*>(pVBuf) < blk->blockBase ||
-					static_cast<uchar*>(pVBuf) >= static_cast<uchar*>(blk->blockBase) + blk->blockSize) {
+			if (static_cast<MEM_BASE_TYPE *>(pBuf) < blk->blockBase ||
+					static_cast<MEM_BASE_TYPE *>(pBuf) >= blk->blockBase + blk->blockSize) {
 				continue;
 			}
 			size_t cnt = 1;
 			for (auto seg = blk->busyList.begin(); seg != blk->busyList.end(); seg++) {
-				if (static_cast<uchar*>(pVBuf) == seg->pAddr) {
+				if (static_cast<MEM_BASE_TYPE *>(pBuf) == seg->pAddr) {
 					bool isNewSeg = true;
 					*size = seg->size;
 					MemoryReset(seg->pAddr, seg->size, MO_REV);
 
 					MemSegment tmpSeg = { 0 };
-					tmpSeg.pAddr = (void*)seg->pAddr;
+					tmpSeg.pAddr = seg->pAddr;
 					tmpSeg.size = seg->size;
 
 					/* 1. Forward merge */
-					uchar* nextAddr = static_cast<uchar*>(tmpSeg.pAddr) + tmpSeg.size;
+					MEM_BASE_TYPE *nextAddr = tmpSeg.pAddr + tmpSeg.size;
 					for (auto idleSeg = blk->idleList.begin(); idleSeg != blk->idleList.end(); idleSeg++) {
 						if (nextAddr == idleSeg->pAddr) {
 							tmpSeg.size += idleSeg->size;
@@ -469,7 +475,7 @@ void *MemoryPool<T>::RevertByLevel(void *pVBuf, int32_t level, size_t *size)
 
 					/* 2. Backward merge */
 					for (auto idleSeg = blk->idleList.begin(); idleSeg != blk->idleList.end(); idleSeg++) {
-						uchar* lastAddr = static_cast<uchar*>(idleSeg->pAddr) + idleSeg->size;
+						MEM_BASE_TYPE *lastAddr = idleSeg->pAddr + idleSeg->size;
 						if (lastAddr == tmpSeg.pAddr) {
 							idleSeg->size += tmpSeg.size;
 							isNewSeg = false;
@@ -482,30 +488,31 @@ void *MemoryPool<T>::RevertByLevel(void *pVBuf, int32_t level, size_t *size)
 					}
 					blk->busyList.erase(seg);
 					blk->busySize -= *size;
-					pVBuf = NULL;
-					return pVBuf;
+					pBuf = NULL;
+					return pBuf;
 				} else if (cnt == blk->busyList.size()) {
-					ILOGE("Fatal Error: cannot match buffer:%p in segment", pVBuf);
+					ILOGE("Fatal Error: cannot match buffer:%p in segment", pBuf);
 					PrintPool();
-					return pVBuf;
+					return pBuf;
 				}
 				cnt++;
 			}
 		}
 	}
 
-	return pVBuf;
+	return pBuf;
 }
 
 template <typename T>
-int32_t MemoryPool<T>::MemoryReset(void* pAddr, size_t size, int32_t operation)
+int32_t MemoryPool<T>::MemoryReset(MEM_BASE_TYPE *pAddr, size_t size, int32_t operation)
 {
 	int32_t rt = ISP_SUCCESS;
 
 	if (operation == MO_REQ) {
 #if DBG_MEM_OVERWRITE_CHECK_ON
-		memcpy(static_cast<uchar*>(pAddr) + size - OVERWRITE_CHECK_SIZE, gOverwiteSymbol, OVERWRITE_CHECK_SIZE);
-		mSymbolMap.insert(pair<void*, void*>(pAddr, static_cast<uchar*>(pAddr) + size - OVERWRITE_CHECK_SIZE));
+		memcpy(pAddr + size - OVERWRITE_CHECK_SIZE, gOverwiteSymbol, OVERWRITE_CHECK_SIZE);
+		mSymbolMap.insert(pair<MEM_BASE_TYPE *, MEM_BASE_TYPE *>(pAddr,
+					pAddr + size - OVERWRITE_CHECK_SIZE));
 #endif
 		/* No need to reset mem for require buffer */
 	} else if (operation == MO_REV) {
@@ -519,4 +526,6 @@ int32_t MemoryPool<T>::MemoryReset(void* pAddr, size_t size, int32_t operation)
 	}
 
 	return rt;
+}
+
 }

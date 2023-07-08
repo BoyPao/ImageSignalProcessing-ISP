@@ -10,8 +10,10 @@
 #include <list>
 #include "Utils.h"
 #include "Settings.h"
+#include "Buffer.h"
 
 using namespace std;
+using namespace asteroidaxis::isp::resource;
 
 #define CHECK_PACKAGED(format)				\
 	(((format) == UNPACKAGED_RAW10_LSB) ||	\
@@ -108,15 +110,10 @@ struct MediaInfo
 	int32_t type;
 };
 
-struct ISPParamBuf {
-	void *addr;
-	size_t size;
-};
-
 struct ISPParamInfo {
 	int32_t id;
 	int32_t settingIndex;
-	ISPParamBuf buf;
+	Buffer *buf;
 };
 
 struct ISPSetting {

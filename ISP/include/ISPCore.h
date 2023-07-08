@@ -8,11 +8,8 @@
 #pragma once
 
 #include "Utils.h"
-#include "FileManager.h"
-#include "ParamManager.h"
-#include "ISPListManager.h"
-#include "MemPool.h"
 #include "ISPItf.h"
+#include "FileManager.h"
 
 #include <thread>
 #include <mutex>
@@ -43,5 +40,3 @@ class ISPCore : public ISPItf {
 		IOInfo mThreadParam;
 };
 
-void* ISPAlloc(size_t size, ...);
-void* ISPFree(void* pBuf, ...);

@@ -7,6 +7,8 @@
 
 #include "MemPool.h"
 
+namespace asteroidaxis::isp::resource {
+
 #if DBG_MEM_OVERWRITE_CHECK_ON
 void* OverwriteCheckingFunc(void* param)
 {
@@ -28,7 +30,7 @@ void* OverwriteCheckingFunc(void* param)
 					overwriteDetected = 0;
 					for(size_t index = 0; index < OVERWRITE_CHECK_SIZE; index++) {
 						overwriteDetected |=
-							~(static_cast<uchar*>(it->second)[index]) &
+							~(it->second[index]) &
 							gOverwiteSymbol[index];
 					}
 					if (overwriteDetected) {
@@ -50,3 +52,15 @@ void* OverwriteCheckingFunc(void* param)
 	return 0;
 }
 #endif
+
+void* ISPAlloc(size_t size, ...)
+{
+	return MemoryPool<uchar>::GetInstance()->RequireBuffer(size);
+}
+
+void* ISPFree(void* pBuf, ...)
+{
+	return (void*)MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(pBuf));
+}
+
+}

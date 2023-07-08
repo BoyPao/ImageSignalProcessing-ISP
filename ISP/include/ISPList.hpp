@@ -7,8 +7,9 @@
  */
 
 #include "ISPList.h"
-#include "MemPool.h"
 #include "FileManager.h"
+
+using namespace asteroidaxis::isp::resource;
 
 const int32_t gNodeParamTypeMap[NEC_PROCESS_TYPE_NUM] =
 {
@@ -72,7 +73,9 @@ ISPNode<T1, T2>::~ISPNode()
 	pNext = NULL;
 	mInited = false;
 	memset(&mProperty, 0, sizeof(ISPNodeProperty));
-	pCtrl = MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(pCtrl));
+	if (pCtrl) {
+		Buffer::Free(&pCtrl);
+	}
 }
 
 template<typename T1, typename T2>
@@ -86,7 +89,7 @@ int32_t ISPNode<T1, T2>::Init(ISPNodeProperty *cfg, T1* input, T2* output)
 		return rt;
 	}
 
-	pCtrl = MemoryPool<uchar>::GetInstance()->RequireBuffer(TO_SIZE_T(sizeof(BZCtrl)));
+	pCtrl = Buffer::Alloc(SIZEOF_T(BZCtrl));
 	if (!pCtrl) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Faild to alloc ctrl");
@@ -94,11 +97,12 @@ int32_t ISPNode<T1, T2>::Init(ISPNodeProperty *cfg, T1* input, T2* output)
 	}
 
 	memcpy(&mProperty, cfg, sizeof(ISPNodeProperty));
-	static_cast<BZCtrl*>(pCtrl)->en = mProperty.enable;
-	static_cast<BZCtrl*>(pCtrl)->pInfo = ISPParamManager::GetInstance()->GetParam(mHostId, BZ_PARAM_TYPE_IMAGE_INFO);
-	static_cast<BZCtrl*>(pCtrl)->pSrc = input;
-	static_cast<BZCtrl*>(pCtrl)->pDst = output;
-	static_cast<BZCtrl*>(pCtrl)->pParam = ISPParamManager::GetInstance()->GetParam(mHostId, gNodeParamTypeMap[mProperty.type]);
+	BZCtrl *ctl = static_cast<BZCtrl*>(pCtrl->Addr());
+	ctl->en = mProperty.enable;
+	ctl->pInfo = ISPParamManager::GetInstance()->GetParam(mHostId, BZ_PARAM_TYPE_IMAGE_INFO);
+	ctl->pSrc = input;
+	ctl->pDst = output;
+	ctl->pParam = ISPParamManager::GetInstance()->GetParam(mHostId, gNodeParamTypeMap[mProperty.type]);
 
 	mInited = true;
 
@@ -111,7 +115,7 @@ int32_t ISPNode<T1, T2>::Enable()
 	int32_t rt = ISP_SUCCESS;
 
 	mProperty.enable = NODE_ON;
-	static_cast<BZCtrl*>(pCtrl)->en = mProperty.enable;
+	static_cast<BZCtrl*>(pCtrl->Addr())->en = mProperty.enable;
 
 	return rt;
 }
@@ -122,7 +126,7 @@ int32_t ISPNode<T1, T2>::Disable()
 	int32_t rt = ISP_SUCCESS;
 
 	mProperty.enable = NODE_OFF;
-	static_cast<BZCtrl*>(pCtrl)->en = mProperty.enable;
+	static_cast<BZCtrl*>(pCtrl->Addr())->en = mProperty.enable;
 
 	return rt;
 }
@@ -165,14 +169,14 @@ int32_t ISPNode<T1, T2>::Process()
 		return rt;
 	}
 
-	BZCtrl *ctl = static_cast<BZCtrl*>(pCtrl);
+	BZCtrl *ctl = static_cast<BZCtrl*>(pCtrl->Addr());
 	ILOGDL("%s:Buffer(in:%p out:%p)", mProperty.name, ctl->pSrc, ctl->pDst);
 	if (mProperty.type == PROCESS_CODER) {
 		return FileManager::GetInstance()->SaveImgData(static_cast<uint8_t*>(ctl->pDst));
 	}
 	rt = InterfaceWrapper::GetInstance()->AlgProcess(mHostId,
 			gNodeParamTypeMap[mProperty.type],
-			pCtrl);
+			pCtrl->Addr());
 	if (!SUCCESS(rt)) {
 		ILOGE("Failed to set ctrl at %s", mProperty.name);
 		return rt;
@@ -241,19 +245,20 @@ int32_t ISPNecNode<T1, T2>::Init(ISPNodeProperty *cfg, T1* input, T2* output)
 		rt = ISP_INVALID_PARAM;
 	}
 
-	this->pCtrl = MemoryPool<uchar>::GetInstance()->RequireBuffer(TO_SIZE_T(sizeof(BZCtrl)));
+	this->pCtrl = Buffer::Alloc(SIZEOF_T(BZCtrl));
 	if (!this->pCtrl) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Faild to alloc ctrl");
 		return rt;
 	}
 
+	BZCtrl *ctl = static_cast<BZCtrl*>(this->pCtrl->Addr());
 	memcpy(&this->mProperty, cfg, sizeof(ISPNodeProperty));
-	static_cast<BZCtrl*>(this->pCtrl)->en = this->mProperty.enable;
-	static_cast<BZCtrl*>(this->pCtrl)->pInfo = ISPParamManager::GetInstance()->GetParam(this->mHostId, BZ_PARAM_TYPE_IMAGE_INFO);
-	static_cast<BZCtrl*>(this->pCtrl)->pSrc = input;
-	static_cast<BZCtrl*>(this->pCtrl)->pDst = output;
-	static_cast<BZCtrl*>(this->pCtrl)->pParam = ISPParamManager::GetInstance()->GetParam(this->mHostId, gNodeParamTypeMap[this->mProperty.type]);
+	ctl->en = this->mProperty.enable;
+	ctl->pInfo = ISPParamManager::GetInstance()->GetParam(this->mHostId, BZ_PARAM_TYPE_IMAGE_INFO);
+	ctl->pSrc = input;
+	ctl->pDst = output;
+	ctl->pParam = ISPParamManager::GetInstance()->GetParam(this->mHostId, gNodeParamTypeMap[this->mProperty.type]);
 
 	this->mInited = true;
 
@@ -275,11 +280,11 @@ int32_t ISPNecNode<T1, T2>::Process()
 		return rt; /* Now nothing todo with head */
 	}
 
-	BZCtrl *ctl = static_cast<BZCtrl*>(this->pCtrl);
+	BZCtrl *ctl = static_cast<BZCtrl*>(this->pCtrl->Addr());
 	ILOGDL("%s:Buffer(in:%p out:%p)", this->mProperty.name, ctl->pSrc, ctl->pDst);
 	rt = InterfaceWrapper::GetInstance()->AlgProcess(this->mHostId,
 			gNodeParamTypeMap[this->mProperty.type],
-			this->pCtrl);
+			this->pCtrl->Addr());
 	if (!SUCCESS(rt)) {
 		ILOGE("Failed to set ctrl at %s", this->mProperty.name);
 		return rt;

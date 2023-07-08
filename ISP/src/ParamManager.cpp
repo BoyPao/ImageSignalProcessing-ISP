@@ -7,9 +7,9 @@
 
 #include "ParamManager.h"
 #include "InterfaceWrapper.h"
-#include "MemPool.h"
-
 #include "Setting_1920x1080_D65_1000Lux.h"
+
+using namespace asteroidaxis::isp::resource;
 
 const ISPSetting gISPSettings[SETTING_INDEX_NUM] {
 	{
@@ -37,12 +37,12 @@ ISPParamManager::ISPParamManager()
 
 ISPParamManager::~ISPParamManager()
 {
-	MemoryPoolItf<uchar> *memMgr = MemoryPool<uchar>::GetInstance();
-
 	{
 		unique_lock <mutex> lock(mParamListLock);
 		for (auto iter = mActiveParamList.begin(); iter != mActiveParamList.end(); iter++) {
-			iter->buf.addr = memMgr->RevertBuffer(static_cast<uchar*>(iter->buf.addr));
+			if (iter->buf) {
+				Buffer::Free(&iter->buf);
+			}
 		}
 		mActiveParamList.clear();
 	}
@@ -71,12 +71,13 @@ int32_t ISPParamManager::CreateParam(int32_t hostId, int32_t settingId)
 
 	paramInfo.id = hostId;
 	paramInfo.settingIndex = settingId;
-	paramInfo.buf.size = InterfaceWrapper::GetInstance()->GetAlgParamSize();
-	paramInfo.buf.addr = MemoryPool<uchar>::GetInstance()->RequireBuffer(paramInfo.buf.size);
+	paramInfo.buf = Buffer::Alloc(InterfaceWrapper::GetInstance()->GetAlgParamSize());
 
 	rt = FillinParam(&paramInfo);
 	if (!SUCCESS(rt)) {
-		MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(paramInfo.buf.addr));
+		if (paramInfo.buf) {
+			Buffer::Free(&paramInfo.buf);
+		}
 		return rt;
 	}
 
@@ -97,7 +98,9 @@ int32_t ISPParamManager::DeleteParam(int32_t hostId)
 		unique_lock <mutex> lock(mParamListLock);
 		while (iter != mActiveParamList.end()) {
 			if (iter->id == hostId) {
-				iter->buf.addr = MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(iter->buf.addr));
+				if (iter->buf) {
+					Buffer::Free(&iter->buf);
+				}
 				mActiveParamList.erase(iter);
 				rt = ISP_SUCCESS;
 				break;
@@ -129,15 +132,18 @@ int32_t ISPParamManager::FillinParam(ISPParamInfo *pParamInfo)
 		return rt;
 	}
 
-	if (!pParamInfo->buf.addr) {
+	if (!pParamInfo->buf) {
 		rt = ISP_MEMORY_ERROR;
-		ILOGE("Param addr is null. id:%d index:%d", pParamInfo->id, pParamInfo->settingIndex);
+		ILOGE("Param buffer is null. id:%d index:%d", pParamInfo->id, pParamInfo->settingIndex);
 		return rt;
 	}
 
-	if (pParamInfo->buf.size != InterfaceWrapper::GetInstance()->GetAlgParamSize()) {
+	if (pParamInfo->buf->Size() != InterfaceWrapper::GetInstance()->GetAlgParamSize() ||
+			!pParamInfo->buf->Addr()) {
 		rt = ISP_MEMORY_ERROR;
-		ILOGE("Invalid param size:%u %d", pParamInfo->buf.size, pParamInfo->id, pParamInfo->settingIndex);
+		ILOGE("Invalid param (addr:%p size:%u). id:%d index:%d",
+				pParamInfo->buf->Addr(), pParamInfo->buf->Size(),
+				pParamInfo->id, pParamInfo->settingIndex);
 		return rt;
 	}
 
@@ -167,8 +173,8 @@ void ISPParamManager::DumpParamInfo()
 					iter = mActiveParamList.begin(),
 					iter->id,
 					iter->settingIndex,
-					iter->buf.size,
-					iter->buf.addr);
+					iter->buf->Size(),
+					iter->buf->Addr());
 		}
 	}
 }
@@ -183,7 +189,12 @@ void* ISPParamManager::GetParamByType(ISPParamInfo *pInfo, int32_t type)
 		return NULL;
 	}
 
-	BZParam *pParams = static_cast<BZParam*>(pInfo->buf.addr);
+	if (!pInfo->buf) {
+		ILOGE("Buffer is null!");
+		return NULL;
+	}
+
+	BZParam *pParams = static_cast<BZParam*>(pInfo->buf->Addr());
 	if (!pParams) {
 		ILOGE("Param buffer is null!");
 		return NULL;
@@ -394,7 +405,13 @@ int32_t ISPParamManager::FillinParamByType(ISPParamInfo *pInfo, int32_t type)
 		return rt;
 	}
 
-	BZParam *pParams = static_cast<BZParam*>(pInfo->buf.addr);
+	if (!pInfo->buf) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Buffer is null!");
+		return rt;
+	}
+
+	BZParam *pParams = static_cast<BZParam*>(pInfo->buf->Addr());
 	if (!pParams) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Param buffer is null!");

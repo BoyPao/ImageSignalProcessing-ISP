@@ -6,6 +6,8 @@
  */
 
 #include "ISPCore.h"
+#include "ParamManager.h"
+#include "ISPListManager.h"
 
 #if DBG_OPENCV_ON
 #include "opencv2/core/core.hpp"
@@ -28,6 +30,8 @@ using namespace cv;
 #define TMPNAME "Temp"
 
 #define WAIT_ACTIVE_GAP_US 1000
+
+using namespace asteroidaxis::isp::resource;
 
 void* CoreFunc(void);
 
@@ -80,16 +84,6 @@ int32_t ISPCore::Process(void *pInfo, ...)
 void* ISPCore::GetThreadParam()
 {
 	return &mThreadParam;
-}
-
-void* ISPAlloc(size_t size, ...)
-{
-	return MemoryPool<uchar>::GetInstance()->RequireBuffer(size);
-}
-
-void* ISPFree(void* pBuf, ...)
-{
-	return (void*)MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(pBuf));
 }
 
 int32_t ImgShow(void *data, size_t w, size_t h)
@@ -190,12 +184,11 @@ void* CoreFunc(void)
 	ILOGI("Align (%d,%d) bufferSize:%d",
 			alignedW, mediaInfo.img.height, bufferSize);
 
-	void *mipiRawData = NULL, *rawData = NULL, *bgrData = NULL, *yuvData = NULL, *postData = NULL;
-	mipiRawData = static_cast<void*>(MemoryPool<uchar>::GetInstance()->RequireBuffer(bufferSize));
-	rawData		= static_cast<void*>(MemoryPool<uchar>::GetInstance()->RequireBuffer(numPixel * sizeof(uint16_t) / sizeof (uchar)));
-	bgrData		= static_cast<void*>(MemoryPool<uchar>::GetInstance()->RequireBuffer(numPixel * 3 * sizeof(uint16_t) / sizeof(uchar)));
-	yuvData		= static_cast<void*>(MemoryPool<uchar>::GetInstance()->RequireBuffer(numPixel * 3));
-	postData	= static_cast<void*>(MemoryPool<uchar>::GetInstance()->RequireBuffer(numPixel * 3));
+	Buffer *mipiRawData = Buffer::Alloc(bufferSize);
+	Buffer *rawData		= Buffer::Alloc(numPixel * SIZEOF_T(uint16_t));
+	Buffer *bgrData		= Buffer::Alloc(numPixel * 3 * SIZEOF_T(uint16_t));
+	Buffer *yuvData		= Buffer::Alloc(numPixel * 3);
+	Buffer *postData	= Buffer::Alloc(numPixel * 3);
 	if (!mipiRawData || !rawData || !bgrData || !yuvData || !postData) {
 		ILOGE("Failed to alloc buffers!(%p %p %p %p %p)",
 				mipiRawData, rawData, bgrData, yuvData, postData);
@@ -231,16 +224,16 @@ void* CoreFunc(void)
 	}
 
 	int32_t listId = 0;
-	if (!SUCCESS(ISPListManager::GetInstance()->CreateList((uint16_t*)rawData,
-					(uint16_t*)bgrData,
-					(uint8_t*)yuvData,
-					(uint8_t*)postData,
+	if (!SUCCESS(ISPListManager::GetInstance()->CreateList((uint16_t*)rawData->Addr(),
+					(uint16_t*)bgrData->Addr(),
+					(uint8_t*)yuvData->Addr(),
+					(uint8_t*)postData->Addr(),
 					LIST_CFG_DEFAULT, &listId))) {
 		return NULL;
 	}
 
 	if (mediaInfo.type >= VIDEO_MEDIA && mediaInfo.type < MEDIA_TYPE_NUM) {
-		if (!SUCCESS(FileManager::GetInstance()->CreateVideo(postData))) {
+		if (!SUCCESS(FileManager::GetInstance()->CreateVideo(postData->Addr()))) {
 			return NULL;
 		}
 	}
@@ -258,12 +251,12 @@ void* CoreFunc(void)
 	for (int32_t frameCount = 1; frameCount <= frameNum; frameCount++) {
 		ILOGI("L%d =========================== %d(%d) ==========================",
 				listId, frameCount, frameNum);
-		if (!SUCCESS(FileManager::GetInstance()->ReadData((uint8_t*)mipiRawData,
+		if (!SUCCESS(FileManager::GetInstance()->ReadData((uint8_t*)mipiRawData->Addr(),
 						bufferSize))) {
 			return NULL;
 		}
-		if (!SUCCESS(FileManager::GetInstance()->Mipi10decode((void*)mipiRawData,
-						(void*)rawData, &mediaInfo.img))) {
+		if (!SUCCESS(FileManager::GetInstance()->Mipi10decode((void*)mipiRawData->Addr(),
+						(void*)rawData->Addr(), &mediaInfo.img))) {
 			return NULL;
 		}
 
@@ -289,13 +282,13 @@ void* CoreFunc(void)
 		return NULL;
 	}
 
-	ImgShow(postData, mediaInfo.img.width, mediaInfo.img.height);
+	ImgShow(postData->Addr(), mediaInfo.img.width, mediaInfo.img.height);
 
-	mipiRawData = MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(mipiRawData));
-	rawData		= MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(rawData));
-	bgrData		= MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(bgrData));
-	yuvData		= MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(yuvData));
-	postData	= MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(postData));
+	Buffer::Free(&mipiRawData);
+	Buffer::Free(&rawData);
+	Buffer::Free(&bgrData);
+	Buffer::Free(&yuvData);
+	Buffer::Free(&postData);
 
 	InterfaceWrapper::RemoveInstance();
 	return NULL;

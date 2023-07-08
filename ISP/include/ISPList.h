@@ -10,8 +10,10 @@
 
 #include "InterfaceWrapper.h"
 #include "ParamManager.h"
-
+#include "Buffer.h"
 #include <atomic>
+
+using namespace asteroidaxis::isp::resource;
 
 #define NODE_NAME_MAX_SZIE 15
 #define NODE_WAIT_US_MAX 300000
@@ -75,7 +77,7 @@ protected:
 	virtual int32_t WaitResult();
 	int32_t mHostId;
 	bool mInited;
-	void* pCtrl;
+	Buffer *pCtrl;
 	atomic<int32_t> rtTrigger;
 	ISPNodeProperty mProperty;
 };
