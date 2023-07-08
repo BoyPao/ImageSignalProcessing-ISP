@@ -14,8 +14,6 @@
 #include <thread>
 #endif
 
-#define DBG_MEM_PRINT_ON 0
-
 #define MEM_BLK_L0_MAX_NUM 16
 #define MEM_BLK_L1_MAX_NUM 8
 #define MEM_BLK_L2_MAX_NUM 4
@@ -58,10 +56,10 @@ struct MemBlock {
 	list<MemSegment> busyList;
 };
 
-enum MemSybmolOperations {
-	MSO_PUSH = 0,
-	MSO_POP,
-	MSO_NUM
+enum MemOperations {
+	MO_REQ = 0,
+	MO_REV,
+	MO_NUM
 };
 
 #if DBG_MEM_OVERWRITE_CHECK_ON
@@ -105,6 +103,9 @@ class MemoryPool : public MemoryPoolItf<T>
 		int32_t ReleaseBlock(int32_t level, u_int32_t index);
 		int32_t PrintPool();
 		int32_t MemoryReset(void* pAddr, size_t size, int32_t operation);
+		T *RequireFromExistBlock(size_t size);
+		T *RequireFromNewBlock(size_t size);
+		void *RevertByLevel(void *pVBuf, int32_t level, size_t *size);
 		MemBlockInfo const* mMemBlockCfg[MEM_BLK_LEVEL_NUM];
 		vector<MemBlock> mUsageInfo[MEM_BLK_LEVEL_NUM];
 		mutex mUsageInfoLock;
@@ -140,6 +141,12 @@ MemoryPool<T>::MemoryPool()
 template <typename T>
 MemoryPool<T>::~MemoryPool()
 {
+#if DBG_MEM_OVERWRITE_CHECK_ON
+	mThreadParam.exit = 1;
+	dbgThread.join();
+	mThreadParam.pLock = NULL;
+#endif
+
 	for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
 		while(mUsageInfo[level].size()) {
 			ReleaseBlock(level, 0);
@@ -147,12 +154,6 @@ MemoryPool<T>::~MemoryPool()
 		mMemBlockCfg[level] = NULL;
 	}
 	PrintPool();
-
-#if DBG_MEM_OVERWRITE_CHECK_ON
-	mThreadParam.exit = 1;
-	dbgThread.join();
-	mThreadParam.pLock = NULL;
-#endif
 }
 
 template <typename T>
@@ -163,29 +164,29 @@ int32_t MemoryPool<T>::AllocBlock(int32_t level)
 	if (mUsageInfo[level].size() >= mMemBlockCfg[level]->max) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Level:%d overflow", level);
+		PrintPool();
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		MemBlock blk = { 0 };
-		blk.blockBase = new u_char[mMemBlockCfg[level]->size];
-		if (!blk.blockBase) {
-			rt = ISP_MEMORY_ERROR;
-			ILOGE("Level:%d alloc %u failed!", level, mMemBlockCfg[level]->size);
-		}
+	MemBlock blk = { 0 };
+	blk.blockBase = new u_char[mMemBlockCfg[level]->size];
+	if (!blk.blockBase) {
+		rt = ISP_MEMORY_ERROR;
+		ILOGE("Level:%d alloc %u failed!", level, mMemBlockCfg[level]->size);
+		return rt;
+	}
 
-		if (SUCCESS(rt))
-		{
-			unique_lock <mutex> lock(mUsageInfoLock);
-			blk.blockSize = mMemBlockCfg[level]->size;
-			blk.busySize = 0;
-			MemSegment idleSeg = {0};
-			idleSeg.pAddr = blk.blockBase;
-			idleSeg.size = blk.blockSize;
-			blk.idleList.push_back(idleSeg);
-			mUsageInfo[level].push_back(blk);
-			memset(blk.blockBase, 0, blk.blockSize);
-			ILOGDM("L%d B%d: alloc %u", level, mUsageInfo[level].size() - 1, blk.blockSize);
-		}
+	{
+		unique_lock <mutex> lock(mUsageInfoLock);
+		blk.blockSize = mMemBlockCfg[level]->size;
+		memset(blk.blockBase, 0, blk.blockSize);
+		blk.busySize = 0;
+		MemSegment idleSeg = { 0 };
+		idleSeg.pAddr = blk.blockBase;
+		idleSeg.size = blk.blockSize;
+		blk.idleList.push_back(idleSeg);
+		mUsageInfo[level].push_back(blk);
+		ILOGDM("L%d B%d: alloc %u", level, mUsageInfo[level].size() - 1, blk.blockSize);
 	}
 
 	return rt;
@@ -199,39 +200,38 @@ int32_t MemoryPool<T>::ReleaseBlock(int32_t level, u_int32_t index)
 	if (index >= mUsageInfo[level].size()) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Invalid block index:%d", index);
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
+	{
+		unique_lock <mutex> lock(mUsageInfoLock);
 		u_char* p = static_cast<u_char*>(mUsageInfo[level][index].blockBase);
-		if (p)
-		{
-			unique_lock <mutex> lock(mUsageInfoLock);
-			while(mUsageInfo[level][index].idleList.begin() !=
-					mUsageInfo[level][index].idleList.end()) {
-				mUsageInfo[level][index].idleList.pop_back();
-			}
-
-			while(mUsageInfo[level][index].busyList.begin() !=
-					mUsageInfo[level][index].busyList.end()) {
-				auto seg = mUsageInfo[level][index].busyList.end();
-				seg--;
-				rt = MemoryReset(seg->pAddr, seg->size, MSO_POP);
-				ILOGW("Revert busy buf (addf:%p size:%u)", seg->pAddr, seg->size);
-				mUsageInfo[level][index].busyList.pop_back();
-			}
-
-			delete[] p;
-			size_t blkSize = mUsageInfo[level][index].blockSize;
-			mUsageInfo[level][index].blockSize = 0;
-			mUsageInfo[level][index].busySize = 0;
-			mUsageInfo[level].erase(mUsageInfo[level].begin() + index);
-			ILOGDM("L%d B%d: release %u", level, index, blkSize);
-			if (!mUsageInfo[level].size()) {
-				ILOGDM("L%d all released", level);
-			}
-		} else {
+		if (!p) {
 			rt = ISP_FAILED;
-			ILOGE("Fatal ERROR!");
+			ILOGE("Fatal ERROR: cannot find block base");
+			return rt;
+		}
+
+		while(!mUsageInfo[level][index].idleList.empty()) {
+			mUsageInfo[level][index].idleList.pop_back();
+		}
+
+		while(!mUsageInfo[level][index].busyList.empty()) {
+			auto seg = mUsageInfo[level][index].busyList.end();
+			seg--;
+			rt = MemoryReset(seg->pAddr, seg->size, MO_REV);
+			ILOGW("Revert busy buf (addf:%p size:%u)", seg->pAddr, seg->size);
+			mUsageInfo[level][index].busyList.pop_back();
+		}
+
+		delete[] p;
+		size_t blkSize = mUsageInfo[level][index].blockSize;
+		mUsageInfo[level][index].blockSize = 0;
+		mUsageInfo[level][index].busySize = 0;
+		mUsageInfo[level].erase(mUsageInfo[level].begin() + index);
+		ILOGDM("L%d B%d: release %u", level, index, blkSize);
+		if (!mUsageInfo[level].size()) {
+			ILOGDM("L%d all released", level);
 		}
 	}
 
@@ -241,13 +241,24 @@ int32_t MemoryPool<T>::ReleaseBlock(int32_t level, u_int32_t index)
 template <typename T>
 int32_t MemoryPool<T>::PrintPool()
 {
-	int32_t rt = ISP_SUCCESS;
-#if DBG_MEM_PRINT_ON
+	int32_t rt = ISP_SKIP;
 	int32_t segCnt = 0;
-	ILOGDM("<<<<<<<<<<<<<<<<<<<<<< MEM STATE >>>>>>>>>>>>>>>>>>>>>>>");
+
+	for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
+		if (!mUsageInfo[level].empty()) {
+			rt = ISP_SUCCESS;
+			break;
+		}
+	}
+
+	if (rt != ISP_SUCCESS) {
+		return rt;
+	}
+
+	ILOGI("<<<<<<<<<<<<<<<<<<<<<< MEM STATE >>>>>>>>>>>>>>>>>>>>>>>");
 	for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
 		for (auto blk = mUsageInfo[level].begin(); blk != mUsageInfo[level].end(); blk++) {
-			ILOGDM("L%d B%d(%u) addr:%-8p size:%-8u used:%.2f%%",
+			ILOGI("L%d B%d(%u) addr:%-8p size:%-8u used:%.2f%%",
 					level,
 					blk - mUsageInfo[level].begin(),
 					mUsageInfo[level].size(),
@@ -256,7 +267,7 @@ int32_t MemoryPool<T>::PrintPool()
 					(float)blk->busySize * 100 / blk->blockSize);
 			segCnt = 0;
 			for (auto seg = blk->idleList.begin(); seg != blk->idleList.end(); seg++) {
-				ILOGDM("    Idle: S%d(%u) addr:%-8p size:%-8u",
+				ILOGI("    Idle: S%d(%u) addr:%-8p size:%-8u",
 						segCnt,
 						blk->idleList.size(),
 						seg->pAddr,
@@ -265,7 +276,7 @@ int32_t MemoryPool<T>::PrintPool()
 			}
 			segCnt = 0;
 			for (auto seg = blk->busyList.begin(); seg != blk->busyList.end(); seg++) {
-				ILOGDM("    Busy: S%d(%u) addr:%-8p size:%-8u",
+				ILOGI("    Busy: S%d(%u) addr:%-8p size:%-8u",
 						segCnt,
 						blk->busyList.size(),
 						seg->pAddr,
@@ -274,7 +285,6 @@ int32_t MemoryPool<T>::PrintPool()
 			}
 		}
 	}
-#endif
 
 	return rt;
 }
@@ -282,7 +292,6 @@ int32_t MemoryPool<T>::PrintPool()
 template <typename T>
 T* MemoryPool<T>::RequireBuffer(size_t TSize)
 {
-	int32_t rt = ISP_SUCCESS;
 	T* pBuffer = NULL;
 	size_t size = TSize * sizeof(T);
 #if DBG_MEM_OVERWRITE_CHECK_ON
@@ -290,35 +299,72 @@ T* MemoryPool<T>::RequireBuffer(size_t TSize)
 #endif
 
 	if (!size || size > mMemBlockCfg[MEM_BLK_LEVEL_NUM - 1]->size) {
-		rt = ISP_INVALID_PARAM;
 		ILOGE("Require invalid size:C%u (N%u x T%u) ", size, sizeof(T), TSize);
+		return NULL;
 	}
 
-	/* 1. Search valid segment */
-	if (SUCCESS(rt)) {
+	pBuffer = RequireFromExistBlock(size);
+	if (!pBuffer) {
+		pBuffer = RequireFromNewBlock(size);
+	}
+
+	if (!pBuffer) {
+		ILOGE("Faild to require buffer C%u (N%u x T%u)", size, sizeof(T), TSize);
+		PrintPool();
+	} else {
+		ILOGDM("C%u (N%u x T%u) is required", size, sizeof(T), TSize);
+	}
+
+	return pBuffer;
+}
+
+template <typename T>
+T* MemoryPool<T>::RevertBuffer(T* pBuffer)
+{
+	size_t size = 0;
+	void *pVBuf = (void*)pBuffer;
+
+	if (!pBuffer) {
+		ILOGE("Invalid buffer:%p", pBuffer);
+		return pBuffer;
+	}
+
+	for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
+		pVBuf = RevertByLevel(pVBuf, level, &size);
+		if (!pVBuf) {
+			ILOGDM("C%u (N%u x T%u) is reverted", size, sizeof(T), size / sizeof(T));
+			break;
+		} else if (level == MEM_BLK_LEVEL_NUM - 1) {
+			ILOGE("Invalid buffer:%p not in pool", pBuffer);
+			PrintPool();
+		}
+	}
+
+	return pBuffer;
+}
+
+template <typename T>
+T* MemoryPool<T>::RequireFromExistBlock(size_t size)
+{
+	T* pBuffer = NULL;
+
+	{
+		unique_lock <mutex> lock(mUsageInfoLock);
 		for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
-			if (rt == ISP_SKIP) {
-				break;
-			}
 			if (size > mMemBlockCfg[level]->size) {
 				continue;
 			}
 			for (auto blk = mUsageInfo[level].begin(); blk != mUsageInfo[level].end(); blk++) {
-				if (rt == ISP_SKIP) {
-					break;
-				}
 				if (size > blk->blockSize - blk->busySize) {
 					continue;
 				}
 				for (auto seg = blk->idleList.begin(); seg != blk->idleList.end(); seg++) {
-					if (size <= seg->size)
-					{
-						unique_lock <mutex> lock(mUsageInfoLock);
-						MemSegment idleSeg = {0};
-						MemSegment busySeg = {0};
+					if (size <= seg->size) {
+						MemSegment idleSeg = { 0 };
+						MemSegment busySeg = { 0 };
 						busySeg.pAddr = seg->pAddr;
 						busySeg.size = size;
-						rt = MemoryReset(busySeg.pAddr, busySeg.size, MSO_PUSH);
+						MemoryReset(busySeg.pAddr, busySeg.size, MO_REQ);
 						blk->busyList.push_front(busySeg);
 
 						pBuffer = static_cast<T*>(busySeg.pAddr);
@@ -329,91 +375,85 @@ T* MemoryPool<T>::RequireBuffer(size_t TSize)
 						blk->idleList.push_front(idleSeg);
 
 						blk->busySize += size;
-						rt = ISP_SKIP;
-						break;
+						return pBuffer;
 					}
 				}
 			}
 		}
 	}
 
-	/* 2. Alloc new block */
-	if (rt == ISP_SUCCESS) {
-		for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
-			if (size > mMemBlockCfg[level]->size) {
-				if (level == MEM_BLK_LEVEL_NUM - 1) {
-					rt = ISP_MEMORY_ERROR;
-					ILOGE("Reguire buffer(%u) failed!", size);
-				}
-			} else {
-				rt = AllocBlock(level);
-				if (SUCCESS(rt))
-				{
-					unique_lock <mutex> lock(mUsageInfoLock);
-					MemBlock* blk = &mUsageInfo[level].back();
-					list<MemSegment>::iterator seg = blk->idleList.end();
-					seg--;
+	return pBuffer;
+}
 
-					MemSegment idleSeg = {0};
-					MemSegment busySeg = {0};
-					busySeg.pAddr = seg->pAddr;
-					busySeg.size = size;
-					rt = MemoryReset(busySeg.pAddr, busySeg.size, MSO_PUSH);
-					blk->busyList.push_front(busySeg);
+template <typename T>
+T* MemoryPool<T>::RequireFromNewBlock(size_t size)
+{
+	T* pBuffer = NULL;
 
-					pBuffer = static_cast<T*>(busySeg.pAddr);
+	for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
+		if (size > mMemBlockCfg[level]->size) {
+			if (level == MEM_BLK_LEVEL_NUM - 1) {
+				ILOGE("Reguire buffer(%u) failed!", size);
+				return NULL;
+			}
+		} else {
+			if (SUCCESS(AllocBlock(level))) {
+				unique_lock <mutex> lock(mUsageInfoLock);
+				MemBlock* blk = &mUsageInfo[level].back();
+				list<MemSegment>::iterator seg = blk->idleList.end();
+				seg--;
 
-					idleSeg.pAddr = (void*)(static_cast<T*>(seg->pAddr) + size);
-					idleSeg.size = seg->size - size;
-					blk->idleList.erase(seg);
-					blk->idleList.push_front(idleSeg);
+				MemSegment idleSeg = { 0 };
+				MemSegment busySeg = { 0 };
+				busySeg.pAddr = seg->pAddr;
+				busySeg.size = size;
+				MemoryReset(busySeg.pAddr, busySeg.size, MO_REQ);
+				blk->busyList.push_front(busySeg);
 
-					blk->busySize += size;
-					rt = ISP_SKIP;
-					break;
-				}
+				pBuffer = static_cast<T*>(busySeg.pAddr);
+
+				idleSeg.pAddr = (void*)(static_cast<T*>(seg->pAddr) + size);
+				idleSeg.size = seg->size - size;
+				blk->idleList.erase(seg);
+				blk->idleList.push_front(idleSeg);
+
+				blk->busySize += size;
+				return pBuffer;
 			}
 		}
-	}
-
-	if (SUCCESS(rt)) {
-		ILOGDM("C%u (N%u x T%u) is required", size, sizeof(T), TSize);
-		rt = PrintPool();
 	}
 
 	return pBuffer;
 }
 
 template <typename T>
-T* MemoryPool<T>::RevertBuffer(T* pBuffer)
+void *MemoryPool<T>::RevertByLevel(void *pVBuf, int32_t level, size_t *size)
 {
-	int32_t rt = ISP_SUCCESS;
-	size_t size = 0;
-	void *pVBuf = (void*)pBuffer;
-
-	if (!pBuffer) {
-		rt = ISP_INVALID_PARAM;
-		ILOGE("Invalid buffer:%p", pBuffer);
+	if (level >= MEM_BLK_LEVEL_NUM) {
+		ILOGE("Invalid level:%d", level);
+		return pVBuf;
 	}
 
-	for (int32_t level = 0; level < MEM_BLK_LEVEL_NUM; level++) {
-		if (rt != ISP_SUCCESS) {
-			break;
-		}
+	if (!size) {
+		ILOGE("size is null");
+		return pVBuf;
+	}
+
+	{
+		unique_lock <mutex> lock(mUsageInfoLock);
 		for (auto blk = mUsageInfo[level].begin(); blk != mUsageInfo[level].end(); blk++) {
-			if (static_cast<u_char*>(pVBuf) < blk->blockBase || static_cast<u_char*>(pVBuf) >= static_cast<u_char*>(blk->blockBase) + blk->blockSize) {
+			if (static_cast<u_char*>(pVBuf) < blk->blockBase ||
+					static_cast<u_char*>(pVBuf) >= static_cast<u_char*>(blk->blockBase) + blk->blockSize) {
 				continue;
 			}
+			size_t cnt = 1;
 			for (auto seg = blk->busyList.begin(); seg != blk->busyList.end(); seg++) {
-				if (static_cast<u_char*>(pVBuf) == seg->pAddr)
-				{
-					unique_lock <mutex> lock(mUsageInfoLock);
+				if (static_cast<u_char*>(pVBuf) == seg->pAddr) {
 					bool isNewSeg = true;
-					size = seg->size;
-					memset(seg->pAddr, 0, seg->size);
-					rt = MemoryReset(seg->pAddr, seg->size, MSO_POP);
+					*size = seg->size;
+					MemoryReset(seg->pAddr, seg->size, MO_REV);
 
-					MemSegment tmpSeg = {0};
+					MemSegment tmpSeg = { 0 };
 					tmpSeg.pAddr = (void*)seg->pAddr;
 					tmpSeg.size = seg->size;
 
@@ -441,45 +481,42 @@ T* MemoryPool<T>::RevertBuffer(T* pBuffer)
 						blk->idleList.push_front(tmpSeg);
 					}
 					blk->busyList.erase(seg);
-					blk->busySize -= size;
-					pBuffer = NULL;
-					rt = ISP_SKIP;
-					break;
+					blk->busySize -= *size;
+					pVBuf = NULL;
+					return pVBuf;
+				} else if (cnt == blk->busyList.size()) {
+					ILOGE("Fatal Error: cannot match buffer:%p in segment", pVBuf);
+					PrintPool();
+					return pVBuf;
 				}
+				cnt++;
 			}
-			if (rt != ISP_SKIP) {
-				rt = ISP_INVALID_PARAM;
-				ILOGE("Fatal Error: cannot match buffer:%p in segment", pBuffer);
-			}
-			break;
-		}
-		if (rt != ISP_SKIP && level == MEM_BLK_LEVEL_NUM - 1) {
-			rt = ISP_INVALID_PARAM;
-			ILOGE("Invalid buffer:%p not in pool", pBuffer);
 		}
 	}
 
-	if (SUCCESS(rt)) {
-		ILOGDM("C%u (N%u x T%u) is reverted", size, sizeof(T), size / sizeof(T));
-		rt = PrintPool();
-	}
-
-	return pBuffer;
+	return pVBuf;
 }
 
 template <typename T>
 int32_t MemoryPool<T>::MemoryReset(void* pAddr, size_t size, int32_t operation)
 {
 	int32_t rt = ISP_SUCCESS;
+
+	if (operation == MO_REQ) {
 #if DBG_MEM_OVERWRITE_CHECK_ON
-	if (operation == MSO_PUSH) {
 		memcpy(static_cast<u_char*>(pAddr) + size - OVERWRITE_CHECK_SIZE, gOverwiteSymbol, OVERWRITE_CHECK_SIZE);
 		mSymbolMap.insert(pair<void*, void*>(pAddr, static_cast<u_char*>(pAddr) + size - OVERWRITE_CHECK_SIZE));
-	} else if (operation == MSO_POP) {
+#endif
+		/* No need to reset mem for require buffer */
+	} else if (operation == MO_REV) {
+#if DBG_MEM_OVERWRITE_CHECK_ON
 		mSymbolMap.erase(pAddr);
+#endif
+		memset(pAddr, 0, size);
 	} else {
+		rt = ISP_FAILED;
 		ILOGE("Invalid operation:%d", operation);
 	}
-#endif
+
 	return rt;
 }
