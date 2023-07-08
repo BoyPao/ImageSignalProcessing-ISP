@@ -9,10 +9,10 @@
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
-
-#include "BZInterface.h"
-#include "BZUtils.h"
 #include <cuchar>
+#include <map>
+
+#include "Processor.h"
 
 enum BZState {
 	BZ_STATE_NEW = 0,
@@ -20,27 +20,45 @@ enum BZState {
 	BZ_STATE_NUM
 };
 
-class BoZhi {
+class BoZhiItf {
 public:
-	BoZhi();
-	~BoZhi();
+	virtual ~BoZhiItf() {};
 
+	virtual int32_t Init() = 0;
+	virtual int32_t DeInit() = 0;
+	virtual int32_t RegisterCallbacks(void *pCBs) = 0;
+	virtual int32_t Event(BZMsg *msg) = 0;
+	virtual ISPCallbacks const* GetCallbacks() = 0;
+};
+
+class BoZhi : public BoZhiItf {
+public:
+	static BoZhi *GetInstance();
 	int32_t Init();
 	int32_t DeInit();
 	int32_t RegisterCallbacks(void *pCBs);
+	int32_t Event(BZMsg *msg);
 	ISPCallbacks const* GetCallbacks();
-	int32_t ExecuteCMD();
-	BZMsg mMsg;
-	ISPCallbacks mISPCBs;
 
 private:
+	BoZhi();
+	virtual ~BoZhi();
+
+	int32_t CreateProcessor(BZMsg *msg);
+	int32_t DestroyProcessorById(int32_t id);
+	int32_t DestroyAllProcessor();
+	Processor *FindProcessorById(int32_t id);
+	int32_t Process(BZMsg *msg);
+	void PrintMessage(BZMsg *msg);
+	ISPCallbacks mISPCBs;
 	int32_t mState;
+	std::map<int32_t, Processor*> mProcMap;
+	mutex procMapLock;
 };
 
 int32_t WrapLibInit(void* pOPS);
 int32_t WrapLibDeInit();
 int32_t WrapRegistCallbacks(void* pOPS);
-void* WrapGetBoZhi();
 void* WrapAlloc(size_t size);
 void* WrapAlloc(size_t size, size_t num);
 void* WrapFree(void* pBuf);

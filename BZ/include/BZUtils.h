@@ -12,6 +12,7 @@
 #include <math.h>
 #include <cstdarg>
 #include <string.h>
+#include <unistd.h>
 
 #if defined __linux__
 #define LINUX_SYSTEM

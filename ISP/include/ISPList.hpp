@@ -7,22 +7,23 @@
  */
 
 #include "ISPList.h"
+#include "BufferManager.h"
 
-const int32_t gProcessCmd[NEC_PROCESS_TYPE_NUM] =
+const int32_t gNodeTypeMap[NEC_PROCESS_TYPE_NUM] =
 {
-	ALG_CMD_BLC,
-	ALG_CMD_LSC,
-	ALG_CMD_DEMOSAIC,
-	ALG_CMD_WB,
-	ALG_CMD_CC,
-	ALG_CMD_GAMMA,
-	ALG_CMD_WNR,
-	ALG_CMD_EE,
-	ALG_CMD_NUM,
-	ALG_CMD_NUM,
-	ALG_CMD_CTS_RAW2RGB,
-	ALG_CMD_CTS_RGB2YUV,
-	ALG_CMD_CTS_YUV2RGB,
+	BZ_PARAM_TYPE_BLC,
+	BZ_PARAM_TYPE_LSC,
+	BZ_PARAM_TYPE_DMC,
+	BZ_PARAM_TYPE_WB,
+	BZ_PARAM_TYPE_CC,
+	BZ_PARAM_TYPE_Gamma,
+	BZ_PARAM_TYPE_WNR,
+	BZ_PARAM_TYPE_EE,
+	BZ_PARAM_TYPE_NUM,
+	BZ_PARAM_TYPE_NUM,
+	BZ_PARAM_TYPE_RAW2RGB,
+	BZ_PARAM_TYPE_RGB2YUV,
+	BZ_PARAM_TYPE_YUV2RGB,
 };
 
 static ISPListHeadProperty gListHeadsConfigure = {
@@ -54,12 +55,12 @@ const int32_t PostListConfigure[] = {
 };
 
 template<typename T1, typename T2>
-ISPNode<T1, T2>::ISPNode() :
+ISPNode<T1, T2>::ISPNode(int32_t id) :
 	pNext(nullptr),
 	mInited(false),
-	pInputBuffer(nullptr),
-	pOutputBuffer(nullptr)
+	pCtrl(nullptr)
 {
+	mHostId = id;
 	memset(&mProperty, 0, sizeof(ISPNodeProperty));
 }
 
@@ -68,9 +69,8 @@ ISPNode<T1, T2>::~ISPNode()
 {
 	pNext = nullptr;
 	mInited = false;
-	pInputBuffer = nullptr;
-	pOutputBuffer = nullptr;
 	memset(&mProperty, 0, sizeof(ISPNodeProperty));
+	pCtrl = MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(pCtrl));
 }
 
 template<typename T1, typename T2>
@@ -80,20 +80,25 @@ int32_t ISPNode<T1, T2>::Init(ISPNodeProperty *cfg, T1* input, T2* output)
 
 	if (!input || !output || !cfg) {
 		rt = ISP_INVALID_PARAM;
+		ILOGE("Invalid input");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		memcpy(&mProperty, cfg, sizeof(ISPNodeProperty));
+	pCtrl = MemoryPool<uchar>::GetInstance()->RequireBuffer(TO_SIZE_T(sizeof(BZCtrl)));
+	if (!pCtrl) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Faild to alloc ctrl");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		pInputBuffer = input;
-		pOutputBuffer = output;
-	}
+	memcpy(&mProperty, cfg, sizeof(ISPNodeProperty));
+	static_cast<BZCtrl*>(pCtrl)->en = mProperty.enable;
+	static_cast<BZCtrl*>(pCtrl)->pInfo = ISPParamManager::GetInstance()->GetParam(mHostId, BZ_PARAM_TYPE_IMAGE_INFO);
+	static_cast<BZCtrl*>(pCtrl)->pSrc = input;
+	static_cast<BZCtrl*>(pCtrl)->pDst = output;
+	static_cast<BZCtrl*>(pCtrl)->pParam = ISPParamManager::GetInstance()->GetParam(mHostId, gNodeTypeMap[mProperty.type]);
 
-	if (SUCCESS(rt)) {
-		mInited = true;
-	}
+	mInited = true;
 
 	return rt;
 }
@@ -104,6 +109,7 @@ int32_t ISPNode<T1, T2>::Enable()
 	int32_t rt = ISP_SUCCESS;
 
 	mProperty.enable = NODE_ON;
+	static_cast<BZCtrl*>(pCtrl)->en = mProperty.enable;
 
 	return rt;
 }
@@ -114,6 +120,7 @@ int32_t ISPNode<T1, T2>::Disable()
 	int32_t rt = ISP_SUCCESS;
 
 	mProperty.enable = NODE_OFF;
+	static_cast<BZCtrl*>(pCtrl)->en = mProperty.enable;
 
 	return rt;
 }
@@ -149,53 +156,79 @@ template<typename T1, typename T2>
 int32_t ISPNode<T1, T2>::Process()
 {
 	int32_t rt = ISP_SUCCESS;
-	InterfaceWrapperBase* pItf = nullptr;
-	char name[NODE_NAME_MAX_SZIE];
-	GetNodeName(name);
 
 	if (!mInited) {
 		rt = ISP_STATE_ERROR;
 		ILOGE("Node is not inited!");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		pItf = InterfaceWrapper::GetInstance();
-		if (!pItf) {
-			rt = ISP_INVALID_PARAM;
-			ILOGE("Cannot get interface");
+	BZCtrl *ctl = static_cast<BZCtrl*>(pCtrl);
+	ILOGDL("%s:Buffer(in:%p out:%p)", mProperty.name, ctl->pSrc, ctl->pDst);
+	rt = InterfaceWrapper::GetInstance()->AlgProcess(mHostId,
+			gNodeTypeMap[mProperty.type],
+			pCtrl);
+	if (!SUCCESS(rt)) {
+		ILOGE("Failed to set ctrl at %s", mProperty.name);
+		return rt;
+	}
+
+	rt = WaitResult();
+
+	return rt;
+}
+
+template<typename T1, typename T2>
+int32_t ISPNode<T1, T2>::WaitResult()
+{
+	int32_t rt = ISP_SUCCESS;
+	int32_t cnt = 0;
+
+	rtTrigger = ISP_SKIP + 1;
+	while(rtTrigger == ISP_SKIP + 1) {
+		if (cnt * NODE_CHECK_GAP_US > NODE_WAIT_US_MAX) {
+			rtTrigger = 0;
+			rt = ISP_TIMEOUT;
+			ILOGE("%s: process timeout(%dus) cnt:%d", mProperty.name, NODE_WAIT_US_MAX, cnt);
+			return rt;
 		}
+		cnt++;
+		usleep(NODE_CHECK_GAP_US);
 	}
 
-	if (SUCCESS(rt)) {
-		ILOGDL("%s:Buffer(in:%p out:%p)", name, pInputBuffer, pOutputBuffer);
-		rt = pItf->AlgProcess(gProcessCmd[mProperty.type] ,pInputBuffer, mProperty.enable);
-	}
-
-	if (SUCCESS(rt)) {
-		if (mProperty.enable) {
-			ILOGI("%s:Process finished.", name);
-		} else {
-			ILOGI("%s:Skiped.", name);
-		}
+	rt = rtTrigger;
+	if (!SUCCESS(rt)) {
+		ILOGE("%s: Failed to process. %d", mProperty.name, rt);
+	} else {
+		ILOGI("%s:%s (%d)", mProperty.name, isOn() ? "processed" : "skiped", cnt);
 	}
 
 	return rt;
 }
 
 template<typename T1, typename T2>
-ISPNecNode<T1, T2>::ISPNecNode()
+int32_t ISPNode<T1, T2>::Notify(NotifyData data)
 {
-	memset(&mProperty, 0, sizeof(ISPNodeProperty));
+	int32_t rt = ISP_SUCCESS;
+
+	rtTrigger = data.rt;
+
+	return rt;
+}
+
+template<typename T1, typename T2>
+ISPNecNode<T1, T2>::ISPNecNode(int32_t id):ISPNode<T1, T2>(id)
+{
 }
 
 template<typename T1, typename T2>
 ISPNecNode<T1, T2>::~ISPNecNode()
 {
-	memset(&mProperty, 0, sizeof(ISPNodeProperty));
+	this->pNext = nullptr;
 }
 
 template<typename T1, typename T2>
-int32_t ISPNecNode<T1, T2>::Init(ISPNecNodeProperty *cfg, T1* input, T2* output)
+int32_t ISPNecNode<T1, T2>::Init(ISPNodeProperty *cfg, T1* input, T2* output)
 {
 	int32_t rt = ISP_SUCCESS;
 
@@ -203,32 +236,22 @@ int32_t ISPNecNode<T1, T2>::Init(ISPNecNodeProperty *cfg, T1* input, T2* output)
 		rt = ISP_INVALID_PARAM;
 	}
 
-	if (SUCCESS(rt)) {
-		memcpy(&mProperty, cfg, sizeof(ISPNodeProperty));
+	this->pCtrl = MemoryPool<uchar>::GetInstance()->RequireBuffer(TO_SIZE_T(sizeof(BZCtrl)));
+	if (!this->pCtrl) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Faild to alloc ctrl");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		this->pInputBuffer = input;
-		this->pOutputBuffer = output;
-	}
+	memcpy(&this->mProperty, cfg, sizeof(ISPNodeProperty));
+	static_cast<BZCtrl*>(this->pCtrl)->en = this->mProperty.enable;
+	static_cast<BZCtrl*>(this->pCtrl)->pInfo = ISPParamManager::GetInstance()->GetParam(this->mHostId, BZ_PARAM_TYPE_IMAGE_INFO);
+	static_cast<BZCtrl*>(this->pCtrl)->pSrc = input;
+	static_cast<BZCtrl*>(this->pCtrl)->pDst = output;
+	static_cast<BZCtrl*>(this->pCtrl)->pParam = ISPParamManager::GetInstance()->GetParam(this->mHostId, gNodeTypeMap[this->mProperty.type]);
 
-	if (SUCCESS(rt)) {
-		this->mInited = true;
-	}
+	this->mInited = true;
 
-	return rt;
-}
-
-template<typename T1, typename T2>
-int32_t ISPNecNode<T1, T2>::GetNodeName(char* name)
-{
-	int32_t rt = ISP_SUCCESS;
-	if (this->mInited) {
-		memcpy(name, mProperty.name, sizeof(char) * NODE_NAME_MAX_SZIE);
-	}
-	else {
-		rt = ISP_STATE_ERROR;
-	}
 	return rt;
 }
 
@@ -236,50 +259,28 @@ template<typename T1, typename T2>
 int32_t ISPNecNode<T1, T2>::Process()
 {
 	int32_t rt = ISP_SUCCESS;
-	InterfaceWrapperBase *pItf = nullptr;
-	char name[NODE_NAME_MAX_SZIE];
-	GetNodeName(name);
 
 	if (!this->mInited) {
 		rt = ISP_STATE_ERROR;
 		ILOGE("Node is not inited!");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		pItf = InterfaceWrapper::GetInstance();
-		if (!pItf) {
-			rt = ISP_INVALID_PARAM;
-			ILOGE("Cannot get interface");
-		}
+	if (this->mProperty.type == NEC_PROCESS_HEAD) {
+		return rt; /* Now nothing todo with head */
 	}
 
-	if (SUCCESS(rt)) {
-		if (mProperty.type != NEC_PROCESS_HEAD) { /* Now nothing todo with head */
-			ILOGDL("%s:Buffer(in:%p out:%p)", name, this->pInputBuffer, this->pOutputBuffer);
-			rt = pItf->AlgProcess(gProcessCmd[mProperty.type], this->pInputBuffer, this->pOutputBuffer, mProperty.enable);
-		}
+	BZCtrl *ctl = static_cast<BZCtrl*>(this->pCtrl);
+	ILOGDL("%s:Buffer(in:%p out:%p)", this->mProperty.name, ctl->pSrc, ctl->pDst);
+	rt = InterfaceWrapper::GetInstance()->AlgProcess(this->mHostId,
+			gNodeTypeMap[this->mProperty.type],
+			this->pCtrl);
+	if (!SUCCESS(rt)) {
+		ILOGE("Failed to set ctrl at %s", this->mProperty.name);
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		if (mProperty.enable) {
-			ILOGI("%s:Process finished.", name);
-		} else {
-			ILOGI("%s:Skiped.", name);
-		}
-	}
-
-	return rt;
-}
-
-template<typename T1, typename T2>
-int32_t ISPNecNode<T1, T2>::Disable()
-{
-	int32_t rt = ISP_SUCCESS;
-
-	char name[NODE_NAME_MAX_SZIE];
-	this->GetNodeName(name);
-	ILOGW("Try to disable necessary node:%s", name);
-	mProperty.enable = NODE_OFF;
+	rt = this->WaitResult();
 
 	return rt;
 }
@@ -540,6 +541,11 @@ int32_t ISPList<T1, T2, T3, T4>::CreatISPList()
 		rt = CreatePostList();
 	}
 
+	if (SUCCESS(rt)) {
+		rt = InterfaceWrapper::GetInstance()->AlgISPListCreate(mId);
+		//TODO[H]: block and wait success;
+	}
+
 	ILOGDL("List(%d) current node num:%d", mId, mNodeNum);
 
 	if (SUCCESS(rt)) {
@@ -569,7 +575,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreateNecList()
 	//Head node create
 	if (SUCCESS(rt)) {
 		FindNecNodePropertyIndex(NEC_PROCESS_HEAD, &nodePropertyIndex);
-		mRawHead = new ISPNecNode<T1, T1>;
+		mRawHead = new ISPNecNode<T1, T1>(mId);
 		if (mRawHead) {
 			mRawHead->Init(&gListHeadsConfigure.NecNodeProperty[nodePropertyIndex], pRawBuffer, pRawBuffer);
 			mNodeNum++;
@@ -583,7 +589,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreateNecList()
 	//Raw -> Rgb node create
 	if (SUCCESS(rt)) {
 		FindNecNodePropertyIndex(NEC_PROCESS_CST_RAW2RGB, &nodePropertyIndex);
-		mRgbHead = new ISPNecNode<T1, T2>;
+		mRgbHead = new ISPNecNode<T1, T2>(mId);
 		if (mRgbHead) {
 			mRgbHead->Init(&gListHeadsConfigure.NecNodeProperty[nodePropertyIndex], pRawBuffer, pRgbBuffer);
 			mNodeNum++;
@@ -597,7 +603,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreateNecList()
 	//Rgb -> YUV node create
 	if (SUCCESS(rt)) {
 		FindNecNodePropertyIndex(NEC_PROCESS_CST_RGB2YUV, &nodePropertyIndex);
-		mYuvHead = new ISPNecNode<T2, T3>;
+		mYuvHead = new ISPNecNode<T2, T3>(mId);
 		if (mYuvHead) {
 			mYuvHead->Init(&gListHeadsConfigure.NecNodeProperty[nodePropertyIndex], pRgbBuffer, pYuvBuffer);
 			mNodeNum++;
@@ -611,7 +617,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreateNecList()
 	//YUV -> Post node create
 	if (SUCCESS(rt)) {
 		FindNecNodePropertyIndex(NEC_PROCESS_CST_YUV2RGB, &nodePropertyIndex);
-		mPostHead = new ISPNecNode<T3, T4>;
+		mPostHead = new ISPNecNode<T3, T4>(mId);
 		if (mPostHead) {
 			mPostHead->Init(&gListHeadsConfigure.NecNodeProperty[nodePropertyIndex], pYuvBuffer, pPostBuffer);
 			mNodeNum++;
@@ -622,7 +628,8 @@ int32_t ISPList<T1, T2, T3, T4>::CreateNecList()
 		}
 	}
 
-	ILOGDL("List(%d) current node num:%d", mId, mNodeNum);
+	ILOGDL("List(%d) nec num:%d Raw(%p) Rgb(%p) Yuv(%p) Post(%p)", mId, mNodeNum,
+			mRawHead, mRgbHead, mYuvHead, mPostHead);
 
 	return rt;
 }
@@ -646,7 +653,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreateRawList()
 			newNodeType = RawListConfigure[i];
 			FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
 			if (nodePropertyIndex >= 0) {
-				pNewNode = new ISPNode<T1, T1>;
+				pNewNode = new ISPNode<T1, T1>(mId);
 				if (pNewNode) {
 					rt = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pRawBuffer, pRawBuffer);
 					if (SUCCESS(rt)) {
@@ -731,7 +738,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreateRgbList()
 			newNodeType = RgbListConfigure[i];
 			FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
 			if (nodePropertyIndex >= 0) {
-				pNewNode = new ISPNode<T2, T2>;
+				pNewNode = new ISPNode<T2, T2>(mId);
 				if (pNewNode) {
 					rt = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pRgbBuffer, pRgbBuffer);
 					if (SUCCESS(rt)) {
@@ -822,7 +829,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreateYuvList()
 			newNodeType = YuvListConfigure[i];
 			FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
 			if (nodePropertyIndex >= 0) {
-				pNewNode = new ISPNode<T3, T3>;
+				pNewNode = new ISPNode<T3, T3>(mId);
 				if (pNewNode) {
 
 					rt = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pYuvBuffer, pYuvBuffer);
@@ -914,7 +921,7 @@ int32_t ISPList<T1, T2, T3, T4>::CreatePostList()
 			newNodeType = PostListConfigure[i];
 			FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
 			if (nodePropertyIndex >= 0) {
-				pNewNode = new ISPNode<T4, T4>;
+				pNewNode = new ISPNode<T4, T4>(mId);
 				if (pNewNode) {
 					rt = pNewNode->Init(&mProperty.NodeProperty[nodePropertyIndex], pPostBuffer, pPostBuffer);
 					if (SUCCESS(rt)) {
@@ -1383,6 +1390,77 @@ int32_t ISPList<T1, T2, T3, T4>::DisableNecNodebyType(int32_t type)
 		}
 		else if (type == NEC_PROCESS_CST_YUV2RGB) {
 			rt = mPostHead->Disable();
+		}
+	}
+
+	return rt;
+}
+
+template<typename T1, typename T2, typename T3, typename T4>
+int32_t ISPList<T1, T2, T3, T4>::NotifyNodeByType(int32_t type, NotifyData data)
+{
+	int32_t rt = ISP_SUCCESS;
+	bool needFind = true;
+
+	if (type < BZ_PARAM_TYPE_RAW2RGB) {
+		ISPNode<T1, T1>* pRawNode = mRawHead->pNext;
+		while (pRawNode) {
+			if (type == gNodeTypeMap[pRawNode->GetProperty().type])
+			{
+				pRawNode->Notify(data);
+				needFind = false;
+				break;
+			}
+			pRawNode = pRawNode->pNext;
+		}
+		if (needFind) {
+			ISPNode<T2, T2>* pRgbNode = mRgbHead->pNext;
+			while (pRgbNode) {
+				if (type == gNodeTypeMap[pRgbNode->GetProperty().type])
+				{
+					pRgbNode->Notify(data);
+					needFind = false;
+					break;
+				}
+				pRgbNode = pRgbNode->pNext;
+			}
+		}
+		if (needFind) {
+			ISPNode<T3, T3>* pYuvNode = mYuvHead->pNext;
+			while (pYuvNode) {
+				if (type == gNodeTypeMap[pYuvNode->GetProperty().type])
+				{
+					pYuvNode->Notify(data);
+					needFind = false;
+					break;
+				}
+				pYuvNode = pYuvNode->pNext;
+			}
+		}
+		if (needFind) {
+			ISPNode<T4, T4>* pPostNode = mPostHead->pNext;
+			while (pPostNode) {
+				if (type == gNodeTypeMap[pPostNode->GetProperty().type])
+				{
+					pPostNode->Notify(data);
+					needFind = false;
+					break;
+				}
+				pPostNode = pPostNode->pNext;
+			}
+		}
+	} else {
+		if (type == gNodeTypeMap[NEC_PROCESS_HEAD]) {
+			rt = mRawHead->Notify(data);
+		}
+		else if (type == gNodeTypeMap[NEC_PROCESS_CST_RAW2RGB]) {
+			rt = mRgbHead->Notify(data);
+		}
+		else if (type == gNodeTypeMap[NEC_PROCESS_CST_RGB2YUV]) {
+			rt = mYuvHead->Notify(data);
+		}
+		else if (type == gNodeTypeMap[NEC_PROCESS_CST_YUV2RGB]) {
+			rt = mPostHead->Notify(data);
 		}
 	}
 

@@ -216,7 +216,7 @@ int32_t MemoryPool<T>::ReleaseBlock(int32_t level, u_int32_t index)
 				auto seg = mUsageInfo[level][index].busyList.end();
 				seg--;
 				rt = MemoryReset(seg->pAddr, seg->size, MSO_POP);
-				ILOGDM("%u is reverted", seg->size);
+				ILOGW("Revert busy buf (addf:%p size:%u)", seg->pAddr, seg->size);
 				mUsageInfo[level][index].busyList.pop_back();
 			}
 

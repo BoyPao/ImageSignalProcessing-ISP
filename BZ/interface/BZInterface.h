@@ -38,6 +38,22 @@ enum BZBayerOrder {
 	BZ_BO_NUM
 };
 
+enum BZParamType {
+	BZ_PARAM_TYPE_IMAGE_INFO = 0,
+	BZ_PARAM_TYPE_BLC,
+	BZ_PARAM_TYPE_LSC,
+	BZ_PARAM_TYPE_DMC,
+	BZ_PARAM_TYPE_WB,
+	BZ_PARAM_TYPE_CC,
+	BZ_PARAM_TYPE_Gamma,
+	BZ_PARAM_TYPE_WNR,
+	BZ_PARAM_TYPE_EE,
+	BZ_PARAM_TYPE_RAW2RGB,
+	BZ_PARAM_TYPE_RGB2YUV,
+	BZ_PARAM_TYPE_YUV2RGB,
+	BZ_PARAM_TYPE_NUM
+};
+
 struct BZImgInfo
 {
 	int32_t width;
@@ -109,31 +125,35 @@ struct ISPCallbacks {
 };
 
 enum BZCmd {
-	BZ_CMD_BLC = 0,
-	BZ_CMD_LSC,
-	BZ_CMD_DEMOSAIC,
-	BZ_CMD_WB,
-	BZ_CMD_CC,
-	BZ_CMD_GAMMA,
-	BZ_CMD_WNR,
-	BZ_CMD_EE,
-	BZ_CMD_RAW2RGB,
-	BZ_CMD_RGB2YUV,
-	BZ_CMD_YUV2RGB,
+	BZ_CMD_CREATE_PROC = 0,
+	BZ_CMD_PROCESS,
 	BZ_CMD_NUM,
 };
 
 struct BZMsg {
-	int32_t cmd;
-	void* pSrc;
-	void* pDst;
-	BZParam* pParam;
-	bool enable;
+	int32_t d0;
+	int32_t d1;
+	int32_t d2;
+	int32_t d3;
+	int32_t d4;
+	int32_t d5;
+	int32_t d6;
+	int32_t d7;
+	int32_t d8;
+	int32_t d9;
+};
+
+struct BZCtrl {
+	bool en;
+	void *pInfo;
+	void *pSrc;
+	void *pDst;
+	void *pParam;
 };
 
 struct BZOps
 {
-	int32_t (*BZEvent)	(void* msg);
+	int32_t (*BZEvent)	(BZMsg msg);
 };
 
 

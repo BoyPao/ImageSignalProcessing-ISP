@@ -33,9 +33,10 @@ enum ISPDbgMask {
 	DBG_BASE_MASK = 0x1,
 	DBG_CORE_MASK = DBG_BASE_MASK << 1,
 	DBG_FILE_MASK = DBG_BASE_MASK << 2,
-	DBG_LIST_MASK = DBG_BASE_MASK << 3,
-	DBG_INTF_MASK = DBG_BASE_MASK << 4,
-	DBG_MEMY_MASK = DBG_BASE_MASK << 5,
+	DBG_PARM_MASK = DBG_BASE_MASK << 3,
+	DBG_LIST_MASK = DBG_BASE_MASK << 4,
+	DBG_INTF_MASK = DBG_BASE_MASK << 5,
+	DBG_MEMY_MASK = DBG_BASE_MASK << 6,
 };
 
 #ifdef LOG_FOR_DBG
@@ -74,3 +75,4 @@ enum ISPDbgMask {
 #define ILOGDL(str, ...)	((DBG_LEVEL & DBG_LIST_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
 #define ILOGDI(str, ...)	((DBG_LEVEL & DBG_INTF_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
 #define ILOGDM(str, ...)	((DBG_LEVEL & DBG_MEMY_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
+#define ILOGDP(str, ...)	((DBG_LEVEL & DBG_PARM_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))

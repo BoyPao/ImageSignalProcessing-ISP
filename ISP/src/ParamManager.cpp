@@ -7,18 +7,19 @@
 
 #include "ParamManager.h"
 #include "InterfaceWrapper.h"
+#include "BufferManager.h"
 
-#include "Param_1920x1080_D65_1000Lux.h"
+#include "Setting_1920x1080_D65_1000Lux.h"
 
-static ISPCfgParams gISPConfigueParams[PARAM_INDEX_NUM] {
+const ISPSetting gISPSettings[SETTING_INDEX_NUM] {
 	{
-		/* 	BLC_PARAM  */	(void *)&BLCPARAM_1920x1080_D65_1000Lux,
-		/* 	LSC_PARAM  */	(void *)&LSCPARM_1920x1080_D65_1000Lux,
-		/* 	WB_PARM  */		(void *)&WBPARAM_1920x1080_D65_1000Lux,
-		/* 	CC_PARAM  */	(void *)&CCPARAM_1920x1080_D65_1000Lux,
-		/* 	GAMMA_PARAM  */	(void *)&GAMMAPARAM_1920x1080_D65_1000Lux,
-		/* 	WNR_PARAM  */	(void *)&WNRPARAM_1920x1080_D65_1000Lux,
-		/* 	EE_PARAM  */	(void *)&EEPARAM_1920x1080_D65_1000Lux,
+		/* 	BLC_SETTING   */	(void *)&BLC_SETTING_1920x1080_D65_1000Lux,
+		/* 	LSC_SETTING   */	(void *)&LSC_SETTING_1920x1080_D65_1000Lux,
+		/* 	WB_PARM	      */	(void *)&WB_SETTING_1920x1080_D65_1000Lux,
+		/* 	CC_SETTING    */	(void *)&CC_SETTING_1920x1080_D65_1000Lux,
+		/* 	GAMMA_SETTING */	(void *)&GAMMA_SETTING_1920x1080_D65_1000Lux,
+		/* 	WNR_SETTING   */	(void *)&WNR_SETTING_1920x1080_D65_1000Lux,
+		/* 	EE_SETTING    */	(void *)&EE_SETTING_1920x1080_D65_1000Lux,
 	},
 };
 
@@ -31,14 +32,205 @@ ISPParamManager* ISPParamManager::GetInstance()
 ISPParamManager::ISPParamManager()
 {
 	mMediaInfo.img = { 0 };
-	mISPConfigParams = { nullptr };
-	mState = PM_EMPTY;
-
-	SelectParams(PARAM_1920x1080_D65_1000Lux);
+	mState = PM_STATE_UNINIT;
 }
 
 ISPParamManager::~ISPParamManager()
 {
+	MemoryPoolItf<uchar> *memMgr = MemoryPool<uchar>::GetInstance();
+
+	{
+		unique_lock <mutex> lock(mParamListLock);
+		for (auto iter = mActiveParamList.begin(); iter != mActiveParamList.end(); iter++) {
+			iter->buf.addr = memMgr->RevertBuffer(static_cast<uchar*>(iter->buf.addr));
+		}
+		mActiveParamList.clear();
+	}
+}
+
+ISPParamInfo *ISPParamManager::GetParamInfoById(int id)
+{
+	ISPParamInfo *pInfo = NULL;
+
+	{
+		unique_lock <mutex> lock(mParamListLock);
+		for (auto iter = mActiveParamList.begin(); iter != mActiveParamList.end(); iter++) {
+			if (iter->id == id) {
+				pInfo = &(*iter);
+			}
+		}
+	}
+
+	return pInfo;
+}
+
+int32_t ISPParamManager::CreateParam(int32_t hostId, int32_t settingId)
+{
+	int32_t rt = ISP_SUCCESS;
+	ISPParamInfo paramInfo = { 0 };
+
+	paramInfo.id = hostId;
+	paramInfo.settingIndex = settingId;
+	paramInfo.buf.size = InterfaceWrapper::GetInstance()->GetAlgParamSize();
+	paramInfo.buf.addr = MemoryPool<uchar>::GetInstance()->RequireBuffer(paramInfo.buf.size);
+
+	rt = FillinParam(&paramInfo);
+	if (!SUCCESS(rt)) {
+		MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(paramInfo.buf.addr));
+		return rt;
+	}
+
+	{
+		unique_lock <mutex> lock(mParamListLock);
+		mActiveParamList.push_back(paramInfo);
+	}
+
+
+	return rt;
+}
+
+int32_t ISPParamManager::DeleteParam(int32_t hostId)
+{
+	int32_t rt = ISP_FAILED;
+	list<ISPParamInfo>::iterator iter = mActiveParamList.begin();
+
+	{
+		unique_lock <mutex> lock(mParamListLock);
+		while (iter != mActiveParamList.end()) {
+			if (iter->id == hostId) {
+				iter->buf.addr = MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(iter->buf.addr));
+				mActiveParamList.erase(iter);
+				rt = ISP_SUCCESS;
+				break;
+			}
+			iter++;
+		}
+	}
+
+	if (!SUCCESS(rt)) {
+		ILOGE("Invalid id:%d", hostId);
+	}
+
+	return rt;
+}
+
+int32_t ISPParamManager::FillinParam(ISPParamInfo *pParamInfo)
+{
+	int32_t rt = ISP_SUCCESS;
+
+	if (!pParamInfo) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Input is null");
+		return rt;
+	}
+
+	if (pParamInfo->settingIndex >= SETTING_INDEX_NUM) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Invaled setting index:%d. id:%d", pParamInfo->settingIndex, pParamInfo->id);
+		return rt;
+	}
+
+	if (!pParamInfo->buf.addr) {
+		rt = ISP_MEMORY_ERROR;
+		ILOGE("Param addr is null. id:%d index:%d", pParamInfo->id, pParamInfo->settingIndex);
+		return rt;
+	}
+
+	if (pParamInfo->buf.size != InterfaceWrapper::GetInstance()->GetAlgParamSize()) {
+		rt = ISP_MEMORY_ERROR;
+		ILOGE("Invalid param size:%u %d", pParamInfo->buf.size, pParamInfo->id, pParamInfo->settingIndex);
+		return rt;
+	}
+
+	/* TODO[H]: according to list node on/off state to get param */
+	for (int32_t paramType = 0; paramType < BZ_PARAM_TYPE_NUM; paramType++) {
+		rt |= FillinParamByType(pParamInfo, paramType);
+		if (!SUCCESS(rt)) {
+			return rt;
+		}
+	}
+
+	return rt;
+}
+
+void* ISPParamManager::GetParam(int32_t id, int32_t type)
+{
+	return GetParamByType(GetParamInfoById(id), type);
+}
+
+void ISPParamManager::DumpParamInfo()
+{
+	{
+		unique_lock <mutex> lock(mParamListLock);
+		ILOGI("Total %d active param.", mActiveParamList.size());
+		for (auto iter = mActiveParamList.begin(); iter != mActiveParamList.end(); iter++) {
+			ILOGI("param[%d] id:%d index:%d size:%u addr:0x%x)",
+					iter = mActiveParamList.begin(),
+					iter->id,
+					iter->settingIndex,
+					iter->buf.size,
+					iter->buf.addr);
+		}
+	}
+}
+
+void* ISPParamManager::GetParamByType(ISPParamInfo *pInfo, int32_t type)
+{
+	void *pTargetParam = NULL;
+
+	if (!pInfo) {
+		ILOGE("Input is null!");
+		DumpParamInfo();
+		return NULL;
+	}
+
+	BZParam *pParams = static_cast<BZParam*>(pInfo->buf.addr);
+	if (!pParams) {
+		ILOGE("Param buffer is null!");
+		return NULL;
+	}
+
+	switch(type) {
+		//TODO[M]: use offset table instead.
+		case BZ_PARAM_TYPE_IMAGE_INFO:
+			pTargetParam = (void*)&pParams->info;
+			break;
+		case BZ_PARAM_TYPE_BLC:
+			pTargetParam = (void*)&pParams->blc;
+			break;
+		case BZ_PARAM_TYPE_LSC:
+			pTargetParam = (void*)&pParams->lsc;
+			break;
+		case BZ_PARAM_TYPE_WB:
+			pTargetParam = (void*)&pParams->wb;
+			break;
+		case BZ_PARAM_TYPE_CC:
+			pTargetParam = (void*)&pParams->cc;
+			break;
+		case BZ_PARAM_TYPE_Gamma:
+			pTargetParam = (void*)&pParams->gamma;
+			break;
+		case BZ_PARAM_TYPE_WNR:
+			pTargetParam = (void*)&pParams->wnr;
+			break;
+		case BZ_PARAM_TYPE_EE:
+			pTargetParam = (void*)&pParams->ee;
+			break;
+		case BZ_PARAM_TYPE_DMC:
+		case BZ_PARAM_TYPE_RAW2RGB:
+		case BZ_PARAM_TYPE_RGB2YUV:
+		case BZ_PARAM_TYPE_YUV2RGB:
+		case BZ_PARAM_TYPE_NUM:
+			/* No param */
+			pTargetParam = NULL;
+			break;
+		default:
+			pTargetParam = NULL;
+			ILOGE("Invalid param type:%d", type);
+			break;
+	}
+
+	return pTargetParam;
 }
 
 int32_t ISPParamManager::SetMediaInfo(MediaInfo* info)
@@ -48,15 +240,24 @@ int32_t ISPParamManager::SetMediaInfo(MediaInfo* info)
 	if (!info) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Input is null! %d", rt);
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		rt = SetImgInfo(&info->img);
+	rt = SetImgInfo(&info->img);
+	if (!SUCCESS(rt)) {
+		rt = ISP_FAILED;
+		ILOGE("Failed to set img info %d", rt);
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		rt = SetVideoInfo(&info->video);
+	rt = SetVideoInfo(&info->video);
+	if (!SUCCESS(rt)) {
+		rt = ISP_FAILED;
+		ILOGE("Failed to set video info %d", rt);
+		return rt;
 	}
+
+	mState = PM_STATE_MEDIA_INFO_SET;
 
 	return rt;
 }
@@ -95,20 +296,19 @@ int32_t ISPParamManager::GetImgDimension(int32_t* width, int32_t* height)
 {
 	int32_t rt = ISP_SUCCESS;
 
-	if (mState != PM_SELECTED) {
+	if (mState < PM_STATE_MEDIA_INFO_SET) {
 		rt = ISP_STATE_ERROR;
 		ILOGE("Invalid param manager state:%d", mState);
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		if (width && height) {
-			*width = mMediaInfo.img.width;
-			*height = mMediaInfo.img.height;
-		}
-		else {
-			rt = ISP_INVALID_PARAM;
-			ILOGE("Input is null! %d", rt);
-		}
+	if (width && height) {
+		*width = mMediaInfo.img.width;
+		*height = mMediaInfo.img.height;
+	}
+	else {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Input is null! %d", rt);
 	}
 
 	return rt;
@@ -118,19 +318,18 @@ int32_t ISPParamManager::GetVideoFPS(int32_t* fps)
 {
 	int32_t rt = ISP_SUCCESS;
 
-	if (mState != PM_SELECTED) {
+	if (mState < PM_STATE_MEDIA_INFO_SET) {
 		rt = ISP_STATE_ERROR;
 		ILOGE("Invalid param manager state:%d", mState);
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		if (fps) {
-			*fps = mMediaInfo.video.fps;
-		}
-		else {
-			rt = ISP_INVALID_PARAM;
-			ILOGE("Input is null! %d", rt);
-		}
+	if (fps) {
+		*fps = mMediaInfo.video.fps;
+	}
+	else {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Input is null! %d", rt);
 	}
 
 	return rt;
@@ -140,264 +339,242 @@ int32_t ISPParamManager::GetVideoFrameNum(int32_t* num)
 {
 	int32_t rt = ISP_SUCCESS;
 
-	if (mState != PM_SELECTED) {
+	if (mState < PM_STATE_MEDIA_INFO_SET) {
 		rt = ISP_STATE_ERROR;
 		ILOGE("Invalid param manager state:%d", mState);
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		if (num) {
-			*num = mMediaInfo.video.frameNum;
-		}
-		else {
-			rt = ISP_INVALID_PARAM;
-			ILOGE("Input is null! %d", rt);
-		}
+	if (num) {
+		*num = mMediaInfo.video.frameNum;
 	}
-
-	return rt;
-}
-
-int32_t ISPParamManager::SelectParams(int32_t paramIndex)
-{
-	int32_t rt = ISP_SUCCESS;
-
-	if (paramIndex >= PARAM_INDEX_NUM) {
+	else {
 		rt = ISP_INVALID_PARAM;
-		ILOGE("Invaled param index:%d. %d", paramIndex, rt);
-	}
-
-	if (SUCCESS(rt)) {
-		memcpy(&mISPConfigParams,
-			&gISPConfigueParams[PARAM_1920x1080_D65_1000Lux + paramIndex],
-			sizeof(ISPCfgParams));
-	}
-
-	if (SUCCESS(rt)) {
-		mState = PM_SELECTED;
+		ILOGE("Input is null! %d", rt);
 	}
 
 	return rt;
 }
 
-int32_t ISPParamManager::GetImgInfo(void* pParams)
+int32_t ISPParamManager::FillinImgInfo(void *pInfo)
 {
 	int32_t rt = ISP_SUCCESS;
-	BZParam* param = nullptr;
 
-	param = static_cast<BZParam*>(pParams);
-	if (!param) {
+	BZImgInfo *pImgInfo = static_cast<BZImgInfo*>(pInfo);
+	if (!pImgInfo) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Input is null!");
+		return rt;
+	}
+
+	if (mState != PM_STATE_MEDIA_INFO_SET) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Invalid pm state:%d", mState);
+		return rt;
 	}
 
 	if (SUCCESS(rt)) {
-		param->info.width = mMediaInfo.img.width;
-		param->info.height = mMediaInfo.img.height;
-		param->info.rawFormat = mMediaInfo.img.rawFormat;
-		param->info.bitspp = mMediaInfo.img.bitspp;
-		param->info.stride = mMediaInfo.img.stride;
-		param->info.bayerOrder = mMediaInfo.img.bayerOrder;
+		pImgInfo->width = mMediaInfo.img.width;
+		pImgInfo->height = mMediaInfo.img.height;
+		pImgInfo->rawFormat = mMediaInfo.img.rawFormat;
+		pImgInfo->bitspp = mMediaInfo.img.bitspp;
+		pImgInfo->stride = mMediaInfo.img.stride;
+		pImgInfo->bayerOrder = mMediaInfo.img.bayerOrder;
 	}
 
 	return rt;
 }
 
-int32_t ISPParamManager::GetParamByCMD(void* pParams, int32_t cmd)
+int32_t ISPParamManager::FillinParamByType(ISPParamInfo *pInfo, int32_t type)
 {
 	int32_t rt = ISP_SUCCESS;
 
+	if (!pInfo) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Input is null!");
+		return rt;
+	}
+
+	BZParam *pParams = static_cast<BZParam*>(pInfo->buf.addr);
 	if (!pParams) {
 		rt = ISP_INVALID_PARAM;
-		ILOGE("Input is null!");
+		ILOGE("Param buffer is null!");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		switch(cmd) {
-			case ALG_CMD_BLC:
-				rt = GetBLCParam(pParams);
-				break;
-			case ALG_CMD_LSC:
-				rt = GetLSCParam(pParams);
-				break;
-			case ALG_CMD_DEMOSAIC:
-				break;
-			case ALG_CMD_WB:
-				rt = GetWBParam(pParams);
-				break;
-			case ALG_CMD_CC:
-				rt = GetCCParam(pParams);
-				break;
-			case ALG_CMD_GAMMA:
-				rt = GetGAMMAParam(pParams);
-				break;
-			case ALG_CMD_WNR:
-				rt = GetWNRParam(pParams);
-				break;
-			case ALG_CMD_EE:
-				rt = GetEEParam(pParams);
-				break;
-			case ALG_CMD_CTS_RAW2RGB:
-				break;
-			case ALG_CMD_CTS_RGB2YUV:
-				break;
-			case ALG_CMD_CTS_YUV2RGB:
-				break;
-			case ALG_CMD_NUM:
-			default:
-				rt = ISP_INVALID_PARAM;
-				ILOGE("Invalid cmd:%d", cmd);
-				break;
-		}
-	}
-
-	return rt;
-}
-
-int32_t ISPParamManager::GetBLCParam(void* pParams)
-{
-	int32_t rt = ISP_SUCCESS;
-	BZParam* param = nullptr;
-
-	param = static_cast<BZParam*>(pParams);
-	if (!param) {
-		rt = ISP_INVALID_PARAM;
-		ILOGE("Input is null!");
-	}
-
-	if (SUCCESS(rt)) {
-		int difBitNum = static_cast<BlcParam*>(mISPConfigParams.pBlcParam)->bitNum - 8;
-		if (0 < difBitNum && difBitNum < 4) {
-			param->blc.offset = (static_cast<BlcParam*>(mISPConfigParams.pBlcParam)->BlcDefaultValue << difBitNum);
-		}
-		else {
-			param->blc.offset = static_cast<BlcParam*>(mISPConfigParams.pBlcParam)->BlcDefaultValue;
-		}
+	void *pTargetParam = GetParamByType(pInfo, type);
+	switch(type) {
+		/* TODO[M]: use a func array. */
+		case BZ_PARAM_TYPE_IMAGE_INFO:
+			rt = FillinImgInfo(pTargetParam);
+			break;
+		case BZ_PARAM_TYPE_BLC:
+			rt = FillinBLCParam(pTargetParam, (ISPSetting*)&gISPSettings[pInfo->settingIndex]);
+			break;
+		case BZ_PARAM_TYPE_LSC:
+			rt = FillinLSCParam(pTargetParam, (ISPSetting*)&gISPSettings[pInfo->settingIndex]);
+			break;
+		case BZ_PARAM_TYPE_WB:
+			rt = FillinWBParam(pTargetParam, (ISPSetting*)&gISPSettings[pInfo->settingIndex]);
+			break;
+		case BZ_PARAM_TYPE_CC:
+			rt = FillinCCParam(pTargetParam, (ISPSetting*)&gISPSettings[pInfo->settingIndex]);
+			break;
+		case BZ_PARAM_TYPE_Gamma:
+			rt = FillinGAMMAParam(pTargetParam, (ISPSetting*)&gISPSettings[pInfo->settingIndex]);
+			break;
+		case BZ_PARAM_TYPE_WNR:
+			rt = FillinWNRParam(pTargetParam, (ISPSetting*)&gISPSettings[pInfo->settingIndex]);
+			break;
+		case BZ_PARAM_TYPE_EE:
+			rt = FillinEEParam(pTargetParam, (ISPSetting*)&gISPSettings[pInfo->settingIndex]);
+			break;
+		case BZ_PARAM_TYPE_DMC:
+		case BZ_PARAM_TYPE_RAW2RGB:
+		case BZ_PARAM_TYPE_RGB2YUV:
+		case BZ_PARAM_TYPE_YUV2RGB:
+			/* No param needs to fill in */
+			break;
+		case BZ_PARAM_TYPE_NUM:
+		default:
+			rt = ISP_INVALID_PARAM;
+			ILOGE("Invalid param type:%d", type);
+			break;
 	}
 
 	return rt;
 }
 
-int32_t ISPParamManager::GetLSCParam(void* pParams)
+int32_t ISPParamManager::FillinBLCParam(void *pParam, ISPSetting *pSetting)
 {
 	int32_t rt = ISP_SUCCESS;
-	BZParam* param = nullptr;
 
-	param = static_cast<BZParam*>(pParams);
-	if (!param) {
+	BZBlcParam* pBlcParam = static_cast<BZBlcParam*>(pParam);
+	if (!pBlcParam || !pSetting) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Input is null!");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		for (int32_t i = 0; i < LSC_LUT_HEIGHT; i++) {
-			memcpy(param->lsc.gainCh1 + i * LSC_LUT_WIDTH, static_cast<LscParam*>(mISPConfigParams.pLscParam)->gainCh1[i], LSC_LUT_WIDTH * sizeof(float));
-			memcpy(param->lsc.gainCh2 + i * LSC_LUT_WIDTH, static_cast<LscParam*>(mISPConfigParams.pLscParam)->gainCh2[i], LSC_LUT_WIDTH * sizeof(float));
-			memcpy(param->lsc.gainCh3 + i * LSC_LUT_WIDTH, static_cast<LscParam*>(mISPConfigParams.pLscParam)->gainCh3[i], LSC_LUT_WIDTH * sizeof(float));
-			memcpy(param->lsc.gainCh4 + i * LSC_LUT_WIDTH, static_cast<LscParam*>(mISPConfigParams.pLscParam)->gainCh4[i], LSC_LUT_WIDTH * sizeof(float));
-		}
+	int difBitNum = static_cast<BlcSetting*>(pSetting->pBlc)->bitNum - 8;
+	if (0 < difBitNum && difBitNum < 4) {
+		pBlcParam->offset = (static_cast<BlcSetting*>(pSetting->pBlc)->BlcDefaultValue << difBitNum);
 	}
-	return rt;
-}
-
-int32_t ISPParamManager::GetWBParam(void* pParams)
-{
-	int32_t rt = ISP_SUCCESS;
-	BZParam* param = nullptr;
-
-	param = static_cast<BZParam*>(pParams);
-	if (!param) {
-		rt = ISP_INVALID_PARAM;
-		ILOGE("Input is null!");
-	}
-
-	if (SUCCESS(rt)) {
-		int32_t mode = static_cast<WbParam*>(mISPConfigParams.pWbParam)->Wb1stGamma2rd;
-		param->wb.rGain = mode ? static_cast<WbParam*>(mISPConfigParams.pWbParam)->gainType1.rGain : static_cast<WbParam*>(mISPConfigParams.pWbParam)->gainType2.rGain;
-		param->wb.gGain = mode ? static_cast<WbParam*>(mISPConfigParams.pWbParam)->gainType1.gGain : static_cast<WbParam*>(mISPConfigParams.pWbParam)->gainType2.gGain;
-		param->wb.bGain = mode ? static_cast<WbParam*>(mISPConfigParams.pWbParam)->gainType1.bGain : static_cast<WbParam*>(mISPConfigParams.pWbParam)->gainType2.bGain;
+	else {
+		pBlcParam->offset = static_cast<BlcSetting*>(pSetting->pBlc)->BlcDefaultValue;
 	}
 
 	return rt;
 }
 
-int32_t ISPParamManager::GetCCParam(void* pParams)
+int32_t ISPParamManager::FillinLSCParam(void *pParam, ISPSetting *pSetting)
 {
 	int32_t rt = ISP_SUCCESS;
-	BZParam* param = nullptr;
 
-	param = static_cast<BZParam*>(pParams);
-	if (!param) {
+	BZLscParam *pLscParam = static_cast<BZLscParam*>(pParam);
+	if (!pLscParam || !pSetting) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Input is null!");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-
-		for (int32_t row = 0; row < CCM_HEIGHT; row++) {
-			memcpy(param->cc.ccm + row * CCM_WIDTH, static_cast<CcParam*>(mISPConfigParams.pCcParam)->ccm[row], CCM_WIDTH * sizeof(float));
-		}
+	for (int32_t i = 0; i < LSC_LUT_HEIGHT; i++) {
+		memcpy(pLscParam->gainCh1 + i * LSC_LUT_WIDTH, static_cast<LscSetting*>(pSetting->pLsc)->gainCh1[i], LSC_LUT_WIDTH * sizeof(float));
+		memcpy(pLscParam->gainCh2 + i * LSC_LUT_WIDTH, static_cast<LscSetting*>(pSetting->pLsc)->gainCh2[i], LSC_LUT_WIDTH * sizeof(float));
+		memcpy(pLscParam->gainCh3 + i * LSC_LUT_WIDTH, static_cast<LscSetting*>(pSetting->pLsc)->gainCh3[i], LSC_LUT_WIDTH * sizeof(float));
+		memcpy(pLscParam->gainCh4 + i * LSC_LUT_WIDTH, static_cast<LscSetting*>(pSetting->pLsc)->gainCh4[i], LSC_LUT_WIDTH * sizeof(float));
 	}
 
 	return rt;
 }
 
-int32_t ISPParamManager::GetGAMMAParam(void* pParams)
+int32_t ISPParamManager::FillinWBParam(void *pParam, ISPSetting *pSetting)
 {
 	int32_t rt = ISP_SUCCESS;
-	BZParam* param = nullptr;
 
-	param = static_cast<BZParam*>(pParams);
-	if (!param) {
+	BZWbParam *pWbParam = static_cast<BZWbParam*>(pParam);
+	if (!pWbParam || !pSetting) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Input is null!");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		memcpy(param->gamma.lut, &static_cast<GammaParam*>(mISPConfigParams.pGammaParam)->lut, 1024 * sizeof(uint16_t));
+	int32_t mode = static_cast<WbSetting*>(pSetting->pWb)->Wb1stGamma2rd;
+	pWbParam->rGain = mode ? static_cast<WbSetting*>(pSetting->pWb)->gainType1.rGain : static_cast<WbSetting*>(pSetting->pWb)->gainType2.rGain;
+	pWbParam->gGain = mode ? static_cast<WbSetting*>(pSetting->pWb)->gainType1.gGain : static_cast<WbSetting*>(pSetting->pWb)->gainType2.gGain;
+	pWbParam->bGain = mode ? static_cast<WbSetting*>(pSetting->pWb)->gainType1.bGain : static_cast<WbSetting*>(pSetting->pWb)->gainType2.bGain;
+
+	return rt;
+}
+
+int32_t ISPParamManager::FillinCCParam(void *pParam, ISPSetting *pSetting)
+{
+	int32_t rt = ISP_SUCCESS;
+
+	BZCcParam *pCcParam = static_cast<BZCcParam*>(pParam);
+	if (!pCcParam || !pSetting) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Input is null!");
+		return rt;
+	}
+
+	for (int32_t row = 0; row < CCM_HEIGHT; row++) {
+		memcpy(pCcParam->ccm + row * CCM_WIDTH, static_cast<CcSetting*>(pSetting->pCc)->ccm[row], CCM_WIDTH * sizeof(float));
 	}
 
 	return rt;
 }
 
-int32_t ISPParamManager::GetWNRParam(void* pParams)
+int32_t ISPParamManager::FillinGAMMAParam(void *pParam, ISPSetting *pSetting)
 {
 	int32_t rt = ISP_SUCCESS;
-	BZParam* param = nullptr;
 
-	param = static_cast<BZParam*>(pParams);
-	if (!param) {
+	BZGammaParam *pGammaParam = static_cast<BZGammaParam*>(pParam);
+	if (!pGammaParam || !pSetting) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Input is null!");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		for (int32_t l = 0; l < 3; l++) {
-			param->wnr.ch1Threshold[l] = static_cast<WnrParam*>(mISPConfigParams.pWnrParam)->ch1Threshold[l];
-			param->wnr.ch2Threshold[l] = static_cast<WnrParam*>(mISPConfigParams.pWnrParam)->ch2Threshold[l];
-			param->wnr.ch3Threshold[l] = static_cast<WnrParam*>(mISPConfigParams.pWnrParam)->ch3Threshold[l];
-		}
+	memcpy(pGammaParam->lut, &static_cast<GammaSetting*>(pSetting->pGamma)->lut, 1024 * sizeof(uint16_t));
+
+	return rt;
+}
+
+int32_t ISPParamManager::FillinWNRParam(void *pParam, ISPSetting *pSetting)
+{
+	int32_t rt = ISP_SUCCESS;
+
+	BZWnrParam *pWnrParam = static_cast<BZWnrParam*>(pParam);
+	if (!pWnrParam || !pSetting) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Input is null!");
+		return rt;
+	}
+
+	for (int32_t l = 0; l < 3; l++) {
+		pWnrParam->ch1Threshold[l] = static_cast<WnrSetting*>(pSetting->pWnr)->ch1Threshold[l];
+		pWnrParam->ch2Threshold[l] = static_cast<WnrSetting*>(pSetting->pWnr)->ch2Threshold[l];
+		pWnrParam->ch3Threshold[l] = static_cast<WnrSetting*>(pSetting->pWnr)->ch3Threshold[l];
 	}
 
 	return rt;
 }
 
-int32_t ISPParamManager::GetEEParam(void* pParams)
+int32_t ISPParamManager::FillinEEParam(void *pParam, ISPSetting *pSetting)
 {
 	int32_t rt = ISP_SUCCESS;
-	BZParam* param = nullptr;
 
-	param = static_cast<BZParam*>(pParams);
-	if (!param) {
+	BZEeParam *pEeParam = static_cast<BZEeParam*>(pParam);
+	if (!pEeParam || !pSetting) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Input is null!");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		param->ee.alpha = static_cast<EeParam*>(mISPConfigParams.pEeParam)->alpha;
-		param->ee.coreSize = static_cast<EeParam*>(mISPConfigParams.pEeParam)->coreSize;
-		param->ee.sigma = static_cast<EeParam*>(mISPConfigParams.pEeParam)->sigma;
-	}
+	pEeParam->alpha = static_cast<EeSetting*>(pSetting->pEe)->alpha;
+	pEeParam->coreSize = static_cast<EeSetting*>(pSetting->pEe)->coreSize;
+	pEeParam->sigma = static_cast<EeSetting*>(pSetting->pEe)->sigma;
 
 	return rt;
 }

@@ -9,23 +9,6 @@
 #include "Utils.h"
 #include "BZInterface.h"
 
-enum AlgProcessCmd {
-	ALG_CMD_BLC = 0,
-	ALG_CMD_LSC,
-	ALG_CMD_DEMOSAIC,
-	ALG_CMD_WB,
-	ALG_CMD_CC,
-	ALG_CMD_GAMMA,
-	ALG_CMD_WNR,
-	ALG_CMD_EE,
-	/* TODO: Support more cmd */
-
-	ALG_CMD_CTS_RAW2RGB,
-	ALG_CMD_CTS_RGB2YUV,
-	ALG_CMD_CTS_YUV2RGB,
-	ALG_CMD_NUM
-};
-
 enum ISPLibsId {
 	ISP_ALG_LIB = 0,
 	/* TODO: Add lib if need */
@@ -51,19 +34,21 @@ class InterfaceWrapperBase {
 	public:
 		~InterfaceWrapperBase() {};
 
-		virtual int32_t ISPLibConfig() = 0;
-		virtual int32_t AlgProcess(int32_t cmd, ...) = 0;
+		virtual int32_t AlgISPListCreate(int32_t id) = 0;
+		virtual int32_t AlgProcess(int32_t id, int32_t type, void *pCtrl) = 0;
 		virtual int32_t NotifyMain() = 0;
 		virtual int32_t IsReady() = 0;
+		virtual size_t GetAlgParamSize() = 0;
 };
 
 class InterfaceWrapper : public InterfaceWrapperBase {
 	public:
 		static InterfaceWrapper* GetInstance();
-		virtual int32_t ISPLibConfig();
-		virtual int32_t AlgProcess(int32_t cmd, ...);
+		virtual int32_t AlgISPListCreate(int32_t id);
+		virtual int32_t AlgProcess(int32_t id, int32_t type, void *pCtrl);
 		virtual int32_t NotifyMain() { return 0; };
 		virtual int32_t IsReady();
+		virtual size_t GetAlgParamSize();
 
 	private:
 		InterfaceWrapper();

@@ -6,8 +6,12 @@
  */
 
 #pragma once
+#include <mutex>
+#include <list>
 #include "Utils.h"
-#include "Params.h"
+#include "Settings.h"
+
+using namespace std;
 
 #define CHECK_PACKAGED(format)                          (((format) == UNPACKAGED_RAW10_LSB) ||                          \
 														((format) == UNPACKAGED_RAW10_MSB)) ? 0 : 1
@@ -38,14 +42,15 @@ enum MediaType {
 	MEDIA_TYPE_NUM
 };
 
-enum ParamIndex {
-	PARAM_1920x1080_D65_1000Lux = 0,
-	PARAM_INDEX_NUM
+enum SettingIndex {
+	SETTING_1920x1080_D65_1000Lux = 0,
+	SETTING_INDEX_NUM
 };
 
 enum ParamMgrSate {
-	PM_EMPTY = 0,
-	PM_SELECTED
+	PM_STATE_UNINIT = 0,
+	PM_STATE_MEDIA_INFO_SET,
+	PM_STATE_NUM
 };
 
 enum RawFormat {
@@ -100,65 +105,73 @@ struct MediaInfo
 	int32_t type;
 };
 
-struct ISPCfgParams {
-	void *pBlcParam;
-	void *pLscParam;
-	void *pWbParam;
-	void *pCcParam;
-	void *pGammaParam;
-	void *pWnrParam;
-	void *pEeParam;
+struct ISPParamBuf {
+	void *addr;
+	size_t size;
+};
+
+struct ISPParamInfo {
+	int32_t id;
+	int32_t settingIndex;
+	ISPParamBuf buf;
+};
+
+struct ISPSetting {
+	void *pBlc;
+	void *pLsc;
+	void *pWb;
+	void *pCc;
+	void *pGamma;
+	void *pWnr;
+	void *pEe;
 };
 
 class ISPParamManagerItf {
 public:
 	virtual ~ISPParamManagerItf() {};
 
-	virtual int32_t SelectParams(int32_t paramIndex) = 0;
 	virtual int32_t SetMediaInfo(MediaInfo* info) = 0;
-	virtual int32_t SetImgInfo(ImgInfo* info) = 0;
-	virtual int32_t SetVideoInfo(VideoInfo* info) = 0;
 	virtual int32_t GetImgDimension(int32_t* width, int32_t* height) = 0;
 	virtual int32_t GetVideoFPS(int32_t* fps) = 0;
 	virtual int32_t GetVideoFrameNum(int32_t* num) = 0;
-
-	virtual int32_t GetImgInfo(void* pParams) = 0;
-	virtual int32_t GetParamByCMD(void* pParams, int32_t cmd) = 0;
-	virtual int32_t GetBLCParam(void* pParams) = 0;
-	virtual int32_t GetLSCParam(void* pParams) = 0;
-	virtual int32_t GetWBParam(void* pParams) = 0;
-	virtual int32_t GetCCParam(void* pParams) = 0;
-	virtual int32_t GetGAMMAParam(void* pParams) = 0;
-	virtual int32_t GetWNRParam(void* pParams) = 0;
-	virtual int32_t GetEEParam(void* pParams) = 0;
+	virtual int32_t CreateParam(int32_t hostId, int32_t settingId) = 0;
+	virtual int32_t DeleteParam(int32_t hostId) = 0;
+	virtual void* GetParam(int32_t id, int32_t type) = 0;
 };
 
 class ISPParamManager : public ISPParamManagerItf {
 public:
 	static ISPParamManager* GetInstance();
-	virtual int32_t SelectParams(int32_t paramIndex);
 	virtual int32_t SetMediaInfo(MediaInfo* info);
-	virtual int32_t SetImgInfo(ImgInfo* info);
-	virtual int32_t SetVideoInfo(VideoInfo* info);
 	virtual int32_t GetImgDimension(int32_t* width, int32_t* height);
 	virtual int32_t GetVideoFPS(int32_t* fps);
 	virtual int32_t GetVideoFrameNum(int32_t* num);
-
-	virtual int32_t GetImgInfo(void* pParams);
-	virtual int32_t GetParamByCMD(void* pParams, int32_t cmd);
-	virtual int32_t GetBLCParam(void* pParams);
-	virtual int32_t GetLSCParam(void* pParams);
-	virtual int32_t GetWBParam(void* pParams);
-	virtual int32_t GetCCParam(void* pParams);
-	virtual int32_t GetGAMMAParam(void* pParams);
-	virtual int32_t GetWNRParam(void* pParams);
-	virtual int32_t GetEEParam(void* pParams);
+	virtual int32_t CreateParam(int32_t hostId, int32_t settingId);
+	virtual int32_t DeleteParam(int32_t hostId);
+	virtual void* GetParam(int32_t id, int32_t type);
 
 private:
 	ISPParamManager();
 	virtual ~ISPParamManager();
 
-	ISPCfgParams mISPConfigParams;
+	ISPParamInfo *GetParamInfoById(int id);
+	void* GetParamByType(ISPParamInfo *pInfo, int32_t type);
+	int32_t FillinParam(ISPParamInfo *pParamInfo);
+	int32_t FillinParamByType(ISPParamInfo *pInfo, int32_t type);
+	int32_t SetImgInfo(ImgInfo* info);
+	int32_t SetVideoInfo(VideoInfo* info);
+	int32_t FillinImgInfo(void *pInfo);
+	int32_t FillinBLCParam(void *pParam, ISPSetting *pSetting);
+	int32_t FillinLSCParam(void *pParam, ISPSetting *pSetting);
+	int32_t FillinWBParam(void *pParam, ISPSetting *pSetting);
+	int32_t FillinCCParam(void *pParam, ISPSetting *pSetting);
+	int32_t FillinGAMMAParam(void *pParam, ISPSetting *pSetting);
+	int32_t FillinWNRParam(void *pParam, ISPSetting *pSetting);
+	int32_t FillinEEParam(void *pParam, ISPSetting *pSetting);
+	void DumpParamInfo();
+
+	mutex mParamListLock;
+	list<ISPParamInfo> mActiveParamList;
 	MediaInfo mMediaInfo;
 	int32_t mState;
 };

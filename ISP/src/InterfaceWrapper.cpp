@@ -26,6 +26,21 @@
 				: ISP_FAILED)
 
 //static ISPCallbacks gISPCallbacks;
+void ISPWrapNotify(int32_t argNum, ...)
+{
+	NotifyData data = { 0 };
+	int32_t id = 0;
+	int32_t type = 0;
+	va_list va;
+
+	va_start(va, argNum);
+	id = va_arg(va, int32_t);
+	type = va_arg(va, int32_t);
+	data.rt = va_arg(va, int32_t);
+	va_end(va);
+
+	ISPListManager::GetInstance()->NotifyList(id, type, data);
+}
 
 const char LIB_SYMBLE[LIB_FUNCS_NUM][SYMBLE_SIZE_MAX] = {
 	"LibInit",
@@ -263,7 +278,7 @@ int32_t InterfaceWrapper::AlgInterfaceInit()
 		if (funcs[2]) {
 			//TODO: add callbacks if need
 			ISPCallbacks CBs = { 0 };
-			CBs.ISPNotify = nullptr;
+			CBs.ISPNotify = ISPWrapNotify;
 			CBs.UtilsFuncs.Log = LogBase;
 			CBs.UtilsFuncs.DumpDataInt = DumpDataInt;
 			CBs.UtilsFuncs.Alloc = ISPAlloc;
@@ -315,60 +330,39 @@ int32_t InterfaceWrapper::AlgInterfaceDeInit()
 	return rt;
 }
 
-int32_t InterfaceWrapper::ISPLibConfig()
+int32_t InterfaceWrapper::AlgISPListCreate(int32_t id)
 {
 	int32_t rt = ISP_SUCCESS;
+	BZMsg msg = { 0 };
 
-	ISPParamManagerItf* paramMgr = ISPParamManager::GetInstance();
-	if (!paramMgr) {
-		rt = ISP_INVALID_PARAM;
-		ILOGE("ParamManager is null! rt:%d", rt);
-	}
+	msg.d0 = BZ_CMD_CREATE_PROC;
+	msg.d1 = id;
 
-	if (SUCCESS(rt)) {
-		rt = paramMgr->GetImgInfo(&mISPLibParams);
-		if (!SUCCESS(rt)) {
-			ILOGE("Get image info failed. rt:%d", rt);
-		}
-	}
+	rt = CALL_OPS(mLibsOPS.algOPS, BZEvent, msg);
+	return rt;
+}
+
+int32_t InterfaceWrapper::AlgProcess(int32_t id, int32_t type, void *pCtrl)
+{
+	int32_t rt = ISP_SUCCESS;
+	BZMsg msg = { 0 };
+
+	msg.d0 = BZ_CMD_PROCESS;
+	msg.d1 = id;
+	msg.d2 = type;
+#if  __WORDSIZE ==  64
+	msg.d3 = (int64_t)pCtrl & 0xffffffff;
+	msg.d4 = ((int64_t)pCtrl >> 32) & 0xffffffff;
+#elif __WORDSIZE == 32
+	msg.d3 = (uint32_t)pCtrl;
+#endif
+
+	rt = CALL_OPS(mLibsOPS.algOPS, BZEvent, msg);
 
 	return rt;
 }
 
-int32_t InterfaceWrapper::AlgProcess(int32_t cmd, ...)
+size_t InterfaceWrapper::GetAlgParamSize()
 {
-	int32_t rt = ISP_SUCCESS;
-	va_list va;
-
-	ISPParamManagerItf* paramMgr = ISPParamManager::GetInstance();
-
-	if (!paramMgr) {
-		rt = ISP_FAILED;
-		ILOGE("Itf not congfig!");
-	}
-
-	if (SUCCESS(rt)) {
-		rt = paramMgr->GetParamByCMD(&mISPLibParams, cmd);
-	}
-
-	if (SUCCESS(rt)) {
-		va_start(va, cmd);
-		BZMsg tmpMsg;
-		tmpMsg.cmd = cmd;
-		tmpMsg.pSrc = static_cast<void*>(va_arg(va, void*));
-		if (cmd == ALG_CMD_CTS_RAW2RGB ||
-				cmd == ALG_CMD_CTS_RGB2YUV ||
-				cmd == ALG_CMD_CTS_YUV2RGB) {
-			tmpMsg.pDst = static_cast<void*>(va_arg(va, void*));
-		} else {
-			tmpMsg.pDst = nullptr;
-		}
-		tmpMsg.pParam = &mISPLibParams;
-		tmpMsg.enable = static_cast<bool>(va_arg(va, uint32_t));
-		va_end(va);
-
-		rt = CALL_OPS(mLibsOPS.algOPS, BZEvent, (void*)&tmpMsg);
-	}
-
-	return rt;
+	return sizeof(BZParam);
 }

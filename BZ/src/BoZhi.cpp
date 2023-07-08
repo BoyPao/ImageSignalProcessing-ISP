@@ -8,28 +8,13 @@
 #include "Algorithm.h"
 #include "BZLog.h"
 
-static BoZhi* gBZ = nullptr;
-
-int32_t WrapEvent(void* msg)
+int32_t WrapEvent(BZMsg msg)
 {
 	int32_t rt = BZ_SUCCESS;
 
-	if (!gBZ) {
-		rt = BZ_FAILED;
-		BLOGE("Cannot find BZ!");
-	}
+	rt = BoZhi::GetInstance()->Event(&msg);
 
-	if (SUCCESS(rt)) {
-		if (msg) {
-			memcpy(&gBZ->mMsg, msg, sizeof(BZMsg));
-			rt = gBZ->ExecuteCMD();
-		} else {
-			rt = BZ_FAILED;
-			BLOGE("message is null!");
-		}
-	}
-
-	return (int32_t)rt;
+	return rt;
 }
 
 int32_t WrapGetOPS(void* pOPS)
@@ -45,21 +30,14 @@ int32_t WrapGetOPS(void* pOPS)
 		BLOGE("Input is nullptr!");
 	}
 
-	return (int32_t)rt;
+	return rt;
 }
 
 int32_t WrapRegistCallbacks(void* pCBs)
 {
 	int32_t rt = BZ_SUCCESS;
 
-	if (!gBZ) {
-		rt = BZ_FAILED;
-		BLOGE("Cannot find BZ!");
-	}
-
-	if (SUCCESS(rt)) {
-		rt = gBZ->RegisterCallbacks(pCBs);
-	}
+	rt = BoZhi::GetInstance()->RegisterCallbacks(pCBs);
 
 	return (int32_t)rt;
 }
@@ -68,45 +46,24 @@ int32_t WrapLibInit(void* pOPS)
 {
 	int32_t rt = BZ_SUCCESS;
 
-	if (gBZ) {
-		rt = BZ_FAILED;
-		BLOGE("BZ has been inited!");
-	} else {
-		gBZ = new BoZhi;
-		if (!gBZ) {
-			rt = BZ_MEMORY_ERROR;
-			BLOGE("Create BZ failed!");
-		} else {
-			rt = gBZ->Init();
-		}
+	rt = BoZhi::GetInstance()->Init();
+	if (!SUCCESS(rt)) {
+		BLOGE("Failed to init BZ");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		rt = WrapGetOPS(pOPS);
-	}
+	rt = WrapGetOPS(pOPS);
 
-	return (int32_t)rt;
+	return rt;
 }
 
 int32_t WrapLibDeInit()
 {
 	int32_t rt = BZ_SUCCESS;
 
-	if (!gBZ) {
-		rt = BZ_FAILED;
-		BLOGE("BZ not inited!");
-	} else {
-		rt = gBZ->DeInit();
-		delete gBZ;
-		gBZ = nullptr;
-	}
+	rt = BoZhi::GetInstance()->DeInit();
 
-	return (int32_t)rt;
-}
-
-void* WrapGetBoZhi()
-{
-	return (void*)gBZ;
+	return rt;
 }
 
 void* WrapAlloc(size_t size)
@@ -117,15 +74,8 @@ void* WrapAlloc(size_t size)
 
 void* WrapAlloc(size_t size, size_t num)
 {
-	BoZhi* pBZ = static_cast<BoZhi*>(WrapGetBoZhi());
-
-	if (!pBZ) {
-		BLOGE("Failed to get BZ!");
-		return NULL;
-	}
-
-	if (pBZ->mISPCBs.UtilsFuncs.Alloc) {
-		return pBZ->mISPCBs.UtilsFuncs.Alloc(size * num);
+	if (BoZhi::GetInstance()->GetCallbacks()->UtilsFuncs.Alloc) {
+		return BoZhi::GetInstance()->GetCallbacks()->UtilsFuncs.Alloc(size * num);
 	} else {
 		return (void*) new u_char[size * num];
 	}
@@ -133,23 +83,25 @@ void* WrapAlloc(size_t size, size_t num)
 
 void* WrapFree(void* pBuf)
 {
-	BoZhi* pBZ = static_cast<BoZhi*>(WrapGetBoZhi());
-
-	if (!pBZ) {
-		BLOGE("Failed to get BZ!");
+	if (!pBuf) {
+		BLOGE("Cannot free buf:%p", pBuf);
 		return pBuf;
 	}
 
-	if (pBuf) {
-		if (pBZ->mISPCBs.UtilsFuncs.Free) {
-			return pBZ->mISPCBs.UtilsFuncs.Free(pBuf);
-		} else {
-			delete[] static_cast<u_char*>(pBuf);
-			pBuf = NULL;
-		}
+	if (BoZhi::GetInstance()->GetCallbacks()->UtilsFuncs.Free) {
+		return BoZhi::GetInstance()->GetCallbacks()->UtilsFuncs.Free(pBuf);
+	} else {
+		delete[] static_cast<u_char*>(pBuf);
+		pBuf = NULL;
 	}
 
 	return pBuf;
+}
+
+BoZhi* BoZhi::GetInstance()
+{
+	static BoZhi gInstance;
+	return &gInstance;
 }
 
 BoZhi::BoZhi()
@@ -166,20 +118,16 @@ BoZhi::~BoZhi()
 int32_t BoZhi::Init()
 {
 	int32_t rt = BZ_SUCCESS;
+	int32_t curState = mState;
 
 	if (mState != BZ_STATE_NEW) {
 		rt = BZ_STATE_ERROR;
 		BLOGE("Invalid state:%d", mState);
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		memset(&mMsg, 0 , sizeof(BZMsg));
-	}
-
-	if (SUCCESS(rt)) {
-		BLOGDC("state %d -> %d", mState, BZ_STATE_INITED);
-		mState = BZ_STATE_INITED;
-	}
+	mState = BZ_STATE_INITED;
+	BLOGDC("state %d -> %d", curState, mState);
 
 	return rt;
 }
@@ -187,62 +135,11 @@ int32_t BoZhi::Init()
 int32_t BoZhi::DeInit()
 {
 	int32_t rt = BZ_SUCCESS;
+	int32_t curState = mState;
 
-	if (SUCCESS(rt)) {
-		memset(&mMsg, 0 , sizeof(BZMsg));
-		BLOGDC("state %d -> %d", mState, BZ_STATE_NEW);
-		mState = BZ_STATE_NEW;
-	}
-
-	return rt;
-}
-
-int32_t BoZhi::ExecuteCMD()
-{
-	int32_t rt = BZ_SUCCESS;
-	bool enable = mMsg.enable;
-
-	BLOGDC("cmd:%d on:%d", mMsg.cmd, enable);
-	ISPCallbacks tempCbs;
-	switch(mMsg.cmd) {
-		case BZ_CMD_BLC:
-			WrapBlackLevelCorrection(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
-			break;
-		case BZ_CMD_LSC:
-			WrapLensShadingCorrection(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
-			break;
-		case BZ_CMD_DEMOSAIC:
-			WrapDemosaic(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
-			break;
-		case BZ_CMD_WB:
-			WrapWhiteBalance(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
-			break;
-		case BZ_CMD_CC:
-			WrapColorCorrection(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
-			break;
-		case BZ_CMD_GAMMA:
-			WrapGammaCorrection(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
-			break;
-		case BZ_CMD_WNR:
-			WrapWaveletNR(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
-			break;
-		case BZ_CMD_EE:
-			WrapEdgeEnhancement(mMsg.pSrc, mMsg.pParam, tempCbs, mMsg.enable);
-			break;
-		case BZ_CMD_RAW2RGB:
-			WrapCST_RAW2RGB(mMsg.pSrc, mMsg.pDst, mMsg.pParam, tempCbs, mMsg.enable);
-			break;
-		case BZ_CMD_RGB2YUV:
-			WrapCST_RGB2YUV(mMsg.pSrc, mMsg.pDst, mMsg.pParam, tempCbs, mMsg.enable);
-			break;
-		case BZ_CMD_YUV2RGB:
-			WrapCST_YUV2RGB(mMsg.pSrc, mMsg.pDst, mMsg.pParam, tempCbs, mMsg.enable);
-			break;
-		case BZ_CMD_NUM:
-		default:
-			BLOGW("Nothinint32_ttodo for cmd:%d", mMsg.cmd);
-			break;
-	}
+	mState = BZ_STATE_NEW;
+	rt = DestroyAllProcessor();
+	BLOGDC("state %d -> %d", curState, mState);
 
 	return rt;
 }
@@ -267,3 +164,183 @@ ISPCallbacks const* BoZhi::GetCallbacks()
 	return &mISPCBs;
 }
 
+int32_t BoZhi::Event(BZMsg *msg)
+{
+	int32_t rt = BZ_SUCCESS;
+
+	if (!msg) {
+		rt = BZ_INVALID_PARAM;
+		BLOGE("Msg is null");
+		return rt;
+	}
+
+	int32_t cmd = msg->d0;
+	switch (cmd) {
+		case BZ_CMD_CREATE_PROC:
+			rt = CreateProcessor(msg);
+			break;
+		case BZ_CMD_PROCESS:
+			rt = Process(msg);
+			break;
+		case BZ_CMD_NUM:
+		default:
+			rt = BZ_FAILED;
+			BLOGE("Invalid cmd:%d", cmd);
+			PrintMessage(msg);
+			break;
+	}
+
+	return rt;
+}
+
+void BoZhi::PrintMessage(BZMsg *msg)
+{
+	int32_t *pData = (int32_t*)msg;
+	for (size_t i = 0; i < sizeof(BZMsg) / sizeof(int32_t); i++) {
+		BLOGDC("msg[%d]:0x%x", i, *(pData + i));
+	}
+}
+
+int32_t BoZhi::CreateProcessor(BZMsg *msg)
+{
+	int32_t rt = BZ_SUCCESS;
+
+	if (!msg) {
+		rt = BZ_INVALID_PARAM;
+		BLOGE("Msg is null");
+		return rt;
+	}
+
+	int32_t id = msg->d1;
+	{
+		unique_lock <mutex> lock(procMapLock);
+		if (mProcMap.find(id) != mProcMap.end()) {
+			rt = BZ_FAILED;
+			BLOGE("Processor(%d) already exist", id);
+		} else {
+			Processor *pProc = new Processor(id);
+			if (pProc) {
+				mProcMap.insert(make_pair(id, pProc));
+			} else {
+				rt = BZ_MEMORY_ERROR;
+				BLOGE("Failed to new processor(%d)", id);
+			}
+		}
+	}
+
+	return rt;
+}
+
+int32_t BoZhi::DestroyProcessorById(int32_t id)
+{
+	int32_t rt = BZ_SUCCESS;
+
+	Processor *pProc = FindProcessorById(id);
+	if (!pProc) {
+		rt = BZ_FAILED;
+		BLOGE("Cannot find Processor(%d)", id);
+		return rt;
+	}
+
+	delete pProc;
+
+	{
+		unique_lock <mutex> lock(procMapLock);
+		mProcMap.erase(id);
+	}
+	BLOGDC("Processor(%d) is destroied", id);
+
+	return rt;
+}
+
+int32_t BoZhi::DestroyAllProcessor()
+{
+	int32_t rt = BZ_SUCCESS;
+	int32_t id = 0;
+
+	while(!mProcMap.empty()) {
+		{
+			unique_lock <mutex> lock(procMapLock);
+			id = mProcMap.begin()->first;
+		}
+		rt |= DestroyProcessorById(id);
+	}
+
+	return rt;
+}
+
+Processor *BoZhi::FindProcessorById(int32_t id)
+{
+	Processor* pProc = NULL;
+
+	{
+		unique_lock <mutex> lock(procMapLock);
+		map<int32_t, Processor*>::iterator iter = mProcMap.find(id);
+		if (iter == mProcMap.end()) {
+			BLOGE("Cannot find Processor(%d)", id);
+		} else {
+			pProc = iter->second;
+		}
+	}
+
+	return pProc;
+}
+
+int32_t BoZhi::Process(BZMsg *msg)
+{
+	int32_t rt = BZ_SUCCESS;
+
+	if (!msg) {
+		rt = BZ_INVALID_PARAM;
+		BLOGE("Msg is null");
+		return rt;
+	}
+
+	int32_t id = msg->d1;
+	Processor *pProc = FindProcessorById(id);
+	if (!pProc) {
+		rt = BZ_FAILED;
+		BLOGE("Cannot find Processor(%d)", id);
+		return rt;
+	}
+
+	void* pVCtrl = NULL;
+#if  __WORDSIZE ==  64
+	pVCtrl = (void*)(((int64_t)msg->d3 & 0xffffffff) | ((((int64_t)msg->d4) << 32) & 0xffffffff00000000));
+#elif __WORDSIZE == 32
+	pVCtrl = (void*)msg->d3;
+#endif
+	BZCtrl* pCtrl = NULL;
+	pCtrl = static_cast<BZCtrl*>(pVCtrl);
+	if (!pCtrl) {
+		rt = BZ_FAILED;
+		BLOGE("Faild to get ctrl(%p) from msg", pCtrl);
+		return rt;
+	}
+
+	BZParam* pParam = static_cast<BZParam*>(pCtrl->pInfo);
+
+	Job job = {0};
+	job.info.type = msg->d2;
+	job.info.en = pCtrl->en;
+	job.info.srcInfo.w = pParam->info.width;
+	job.info.srcInfo.h = pParam->info.height;
+	job.info.srcInfo.fmt = pParam->info.rawFormat;
+	job.info.srcInfo.order = pParam->info.bayerOrder;
+	job.info.srcInfo.bpp = pParam->info.bitspp;
+	job.info.srcInfo.buf.size = 0;
+	job.info.srcInfo.buf.pAddr = pCtrl->pSrc;
+	job.info.dstInfo.w = pParam->info.width;
+	job.info.dstInfo.h = pParam->info.height;
+	job.info.dstInfo.fmt = pParam->info.rawFormat;
+	job.info.dstInfo.order = pParam->info.bayerOrder;
+	job.info.dstInfo.bpp =pParam->info.bitspp;
+	job.info.dstInfo.buf.size = 0;
+	job.info.dstInfo.buf.pAddr = pCtrl->pDst;
+	job.info.param.size = 0;
+	job.info.param.pAddr = pCtrl->pParam;
+
+	rt = pProc->ScheduleJob(&job);
+
+	return rt;
+}

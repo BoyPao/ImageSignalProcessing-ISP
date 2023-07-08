@@ -13,12 +13,12 @@
 #define LSC_LUT_HEIGHT 13
 #define GAMMA_LUT_SIZE 1024
 
-struct BlcParam {
+struct BlcSetting {
 	uint32_t bitNum;
 	uint16_t BlcDefaultValue;
 };
 
-struct LscParam {
+struct LscSetting {
 	float gainCh1[LSC_LUT_HEIGHT][LSC_LUT_WIDTH];
 	float gainCh2[LSC_LUT_HEIGHT][LSC_LUT_WIDTH];
 	float gainCh3[LSC_LUT_HEIGHT][LSC_LUT_WIDTH];
@@ -31,27 +31,27 @@ struct WbGain {
 	float bGain;
 };
 
-struct WbParam {
+struct WbSetting {
 	bool Wb1stGamma2rd;
 	WbGain gainType1;
 	WbGain gainType2;
 };
 
-struct CcParam {
+struct CcSetting {
 	float ccm[CCM_HEIGHT][CCM_WIDTH];
 };
 
-struct GammaParam {
+struct GammaSetting {
 	uint16_t lut[GAMMA_LUT_SIZE];
 };
 
-struct WnrParam {
+struct WnrSetting {
 	int32_t ch1Threshold[3];
 	int32_t ch2Threshold[3];
 	int32_t ch3Threshold[3];
 };
 
-struct EeParam {
+struct EeSetting {
 	float alpha;
 	int32_t coreSize;
 	int32_t sigma;

@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "BZLog.h"
 #include "BZInterface.h"
 
 #define CHECK_PACKAGED(format)                          (((format) == BZ_UNPACKAGED_RAW10_LSB) ||                          \
@@ -32,24 +31,27 @@
 #define ALIGN(x, align)									(align) ? (((x) + (align) - 1) & (~((align) - 1))) : (x)
 #define ALIGNx(pixelNum, bitspp, packaged, align)		ALIGN(PIXELS2WORDS(pixelNum, bitspp, packaged), align)
 
-/* Bayer Process */
-void WrapBlackLevelCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
-void WrapLensShadingCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
+struct Buffer {
+	size_t size;
+	void *pAddr;
+};
 
-/* RGB Process */
-void WrapDemosaic(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
-void WrapWhiteBalance(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
-void WrapColorCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
-void WrapGammaCorrection(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
+struct DataInfo {
+	size_t w;
+	size_t h;
+	int32_t fmt;
+	int32_t order;
+	int32_t bpp;
+	Buffer buf;
+};
 
-/* YUVProcess */
-void WrapWaveletNR(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
-void WrapEdgeEnhancement(void* data, BZParam* pParams, ISPCallbacks CBs, ...);
-
-/* CST */
-void WrapCST_RAW2RGB(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs, ...);
-void WrapCST_RGB2YUV(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs, ...);
-void WrapCST_YUV2RGB(void* src, void* dst, BZParam* pParams, ISPCallbacks CBs, ...);
+struct AlgInfo {
+	int32_t type;
+	bool en;
+	DataInfo srcInfo;
+	DataInfo dstInfo;
+	Buffer param;
+};
 
 enum RGBOrder {
 	RO_RGB = 0,
@@ -71,3 +73,23 @@ enum YUVStruct {
 	YS_GREY,
 	YS_NUM
 };
+
+/* Bayer Process */
+int32_t WrapBlackLevelCorrection(AlgInfo *info);
+int32_t WrapLensShadingCorrection(AlgInfo *info);
+
+/* RGB Process */
+int32_t WrapDemosaic(AlgInfo *info);
+int32_t WrapWhiteBalance(AlgInfo *info);
+int32_t WrapColorCorrection(AlgInfo *info);
+int32_t WrapGammaCorrection(AlgInfo *info);
+
+/* YUVProcess */
+int32_t WrapWaveletNR(AlgInfo *info);
+int32_t WrapEdgeEnhancement(AlgInfo *info);
+
+/* CST */
+int32_t WrapCST_RAW2RGB(AlgInfo *info);
+int32_t WrapCST_RGB2YUV(AlgInfo *info);
+int32_t WrapCST_YUV2RGB(AlgInfo *info);
+

@@ -36,6 +36,10 @@
 #if !DBG_OPENCV_ON
 typedef u_char uchar;
 #endif
+#define MEM_T uchar
+#define TO_SIZE_T(s) ((s) % sizeof(MEM_T)) ? \
+						((s) / sizeof(MEM_T) + 1) : \
+						((s) / sizeof(MEM_T))
 
 #define SERIAL_NUM_TAIL(n)  (n) == 1 ? "st" :\
 								((n) == 2 ? "nd" :\

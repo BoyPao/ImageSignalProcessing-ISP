@@ -260,6 +260,10 @@ void* CoreFunc(void)
 	}
 
 	if (SUCCESS(rt)) {
+		rt = ISPListManager::GetInstance()->DestroyListbyId(listId);
+	}
+
+	if (SUCCESS(rt)) {
 		/* Show the result */
 		int32_t winSizey;
 		bool supportWin = false;
@@ -302,6 +306,14 @@ void* CoreFunc(void)
 			}
 #endif
 		}
+	}
+
+	if (SUCCESS(rt)) {
+		mipiRawData = MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(mipiRawData));
+		rawData		= MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(rawData));
+		bgrData		= MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(bgrData));
+		yuvData		= MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(yuvData));
+		postData	= MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(postData));
 	}
 
 	return NULL;

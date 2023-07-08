@@ -9,21 +9,21 @@
 #include "ISPListConfig.h"
 #include "ISPList.hpp"
 #include "InterfaceWrapper.h"
+#include "ParamManager.h"
 
 void *gISPListConfigs[LIST_CFG_NUM] = {
 	(void *)&defaultListConfig
 };
 
 ISPListManager::ISPListManager():
-	mListNum(0),
-	pISPListConfigs(nullptr)
+	pISPListConfigs(NULL)
 {
 	Init();
 }
 
 ISPListManager::~ISPListManager()
 {
-	DestoryAllList();
+	DestroyAllList();
 }
 
 ISPListManager* ISPListManager::GetInstance()
@@ -36,9 +36,7 @@ int32_t ISPListManager::Init()
 {
 	int32_t rt = ISP_SUCCESS;
 
-	if (SUCCESS(rt)) {
-		pISPListConfigs = static_cast<ISPListProperty*>(gISPListConfigs[LIST_CFG_DEFAULT]);
-	}
+	pISPListConfigs = static_cast<ISPListProperty*>(gISPListConfigs[LIST_CFG_DEFAULT]);
 
 	return rt;
 }
@@ -47,56 +45,67 @@ int32_t ISPListManager::CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pYUV
 {
 	int32_t rt = ISP_SUCCESS;
 	int32_t listId = 0;
-	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
+	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = NULL;
 
 	if (cfgIndex >= LIST_CFG_NUM)
 	{
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Invaled cfgIndex:%d %d", cfgIndex, rt);
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		if (mListMap.find(mListNum) == mListMap.end()) {
-			listId = mListNum;
-		}
-		else {
-			/* It means some lists have been destoried, ids can be reused */
-			for (int32_t i = 0; i < mListNum; i++)
+	{
+		unique_lock <mutex> lock(mListMapLock);
+
+		if (!mListMap.empty()) {
+			for (auto iter = mListMap.begin(); iter != mListMap.end(); iter++)
 			{
-				if (mListMap.find(i) != mListMap.end()) {
-					listId = i;
+				if (iter->first > listId) { /* Id can be reused */
 					break;
+				} else if (iter->first < listId) {
+					rt = ISP_FAILED;
+					ILOGE("Fatal: impossible condition");
 				}
+				listId++;
 			}
 		}
 	}
 
-	if (SUCCESS(rt)) {
-		pIspList = new ISPList<uint16_t, uint16_t, uint8_t, uint8_t>(listId);
-		if (pIspList) {
-			rt = pIspList->Init(pRaw, pBGR, pYUV, pPOST);
-		}
-		else {
-			rt = ISP_MEMORY_ERROR;
-			ILOGE("Faile to new ISPList, %d", rt);
-		}
+	pIspList = new ISPList<uint16_t, uint16_t, uint8_t, uint8_t>(listId);
+	if (!pIspList) {
+		rt = ISP_MEMORY_ERROR;
+		ILOGE("Faile to new ISPList, %d", rt);
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		rt = pIspList->SetListConfig(&pISPListConfigs[LIST_CFG_DEFAULT + cfgIndex]);
+	rt = pIspList->Init(pRaw, pBGR, pYUV, pPOST);
+	if (!SUCCESS(rt)) {
+		delete pIspList;
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		rt = pIspList->CreatISPList();
+	rt = pIspList->SetListConfig(&pISPListConfigs[LIST_CFG_DEFAULT + cfgIndex]);
+	if (!SUCCESS(rt)) {
+		delete pIspList;
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
+	rt = ISPParamManager::GetInstance()->CreateParam(listId, SETTING_1920x1080_D65_1000Lux);
+	if (!SUCCESS(rt)) {
+		delete pIspList;
+		return rt;
+	}
+
+	rt = pIspList->CreatISPList();
+	if (!SUCCESS(rt)) {
+		ISPParamManager::GetInstance()->DeleteParam(listId);
+		delete pIspList;
+		return rt;
+	}
+
+	{
+		unique_lock <mutex> lock(mListMapLock);
 		mListMap.insert(make_pair(listId, pIspList));
-		mISPListConfigMap.insert(make_pair(listId, cfgIndex));
-		mListNum = mListMap.size();
-		if (id) {
-			*id = listId;
-		}
 	}
 
 	return rt;
@@ -104,56 +113,58 @@ int32_t ISPListManager::CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pYUV
 
 ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* ISPListManager::FindListById(int32_t id)
 {
-	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
+	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = NULL;
+	map<int32_t, ISPList<uint16_t, uint16_t, uint8_t, uint8_t>*>::iterator iter;
 
-	if (mListMap.find(id) != mListMap.end()) {
-		pIspList = mListMap.find(id)->second;
-	}
-	else {
-		ILOGE("Invaled index:%d", id);
+	{
+		unique_lock <mutex> lock(mListMapLock);
+
+		iter = mListMap.find(id);
+		if (iter == mListMap.end()) {
+			ILOGE("Invaled id:%d", id);
+		} else {
+			pIspList = iter->second;
+		}
 	}
 
 	return pIspList;
 }
 
-int32_t ISPListManager::DestoryAllList()
+int32_t ISPListManager::DestroyAllList()
 {
 	int32_t rt = ISP_SUCCESS;
-	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
 
 	while (mListMap.size()) {
-		pIspList = mListMap.begin()->second;
-		mISPListConfigMap.erase(mISPListConfigMap.begin()->first);
-		mListMap.erase(mListMap.begin()->first);
-		if (pIspList) {
-			delete pIspList;
-		}
-		else {
-			rt = ISP_FAILED;
-			ILOGE("key:%d -> list is null!!!", mListMap.begin()->first);
+		rt |= DestroyListbyId(mListMap.begin()->first);
+		if (!SUCCESS(rt)) {
+			ILOGE("Faild to destroy list(%d)", mListMap.begin()->first);
 		}
 	}
-
-	mListNum = 0;
 
 	return rt;
 }
 
-int32_t ISPListManager::DestoryListbyId(int32_t id)
+int32_t ISPListManager::DestroyListbyId(int32_t id)
 {
 	int32_t rt = ISP_SUCCESS;
-	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
+	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = NULL;
 
 	pIspList = FindListById(id);
-	if (pIspList) {
-		mISPListConfigMap.erase(id);
-		mListMap.erase(id);
-		mListNum = mListMap.size();
-		delete pIspList;
-	}
-	else {
+	if (!pIspList) {
 		rt = ISP_INVALID_PARAM;
-		ILOGE("Invaled index:%d. %d", id, rt);
+		ILOGE("Invaled index:%d.", id);
+		return rt;
+	}
+
+	rt = ISPParamManager::GetInstance()->DeleteParam(id);
+	if (!SUCCESS(rt)) {
+		return rt;
+	}
+
+	{
+		unique_lock <mutex> lock(mListMapLock);
+		mListMap.erase(id);
+		delete pIspList;
 	}
 
 	return rt;
@@ -162,61 +173,67 @@ int32_t ISPListManager::DestoryListbyId(int32_t id)
 int32_t ISPListManager::StartById(int32_t id)
 {
 	int32_t rt = ISP_SUCCESS;
-	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
+	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = NULL;
 
-	InterfaceWrapperBase *itf = InterfaceWrapper::GetInstance();
-	if (!itf) {
-		rt = ISP_FAILED;
-		ILOGE("itf not init!");
+	pIspList = FindListById(id);
+	if (!pIspList) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Invaled index:%d.", id);
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		pIspList = FindListById(id);
-		if (pIspList) {
-			rt = itf->ISPLibConfig();
-			if (SUCCESS(rt)) {
-				rt = pIspList->Process();
-			}
-		}
-		else {
-			rt = ISP_INVALID_PARAM;
-			ILOGE("Invaled index:%d. %d", id, rt);
-		}
-	}
+	rt = pIspList->Process();
 
 	return rt;
 }
 
-int32_t ISPListManager::EnableNodebyType(int32_t id, ProcessType type)
+int32_t ISPListManager::EnableNodebyType(int32_t id, int32_t type)
 {
 	int32_t rt = ISP_SUCCESS;
-	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
+	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = NULL;
 
 	pIspList = FindListById(id);
-	if (pIspList) {
-		pIspList->EnableNodebyType(type);
-	}
-	else {
+	if (!pIspList) {
 		rt = ISP_INVALID_PARAM;
-		ILOGE("Invaled index:%d. %d", id, rt);
+		ILOGE("Invaled index:%d.", id);
+		return rt;
 	}
+
+	rt = pIspList->EnableNodebyType(type);
 
 	return rt;
 }
 
-int32_t ISPListManager::DisableNodebyType(int32_t id, ProcessType type)
+int32_t ISPListManager::DisableNodebyType(int32_t id, int32_t type)
 {
 	int32_t rt = ISP_SUCCESS;
-	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
+	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = NULL;
 
 	pIspList = FindListById(id);
-	if (pIspList) {
-		pIspList->DisableNodebyType(type);
-	}
-	else {
+	if (!pIspList) {
 		rt = ISP_INVALID_PARAM;
-		ILOGE("Invaled index:%d. %d", id, rt);
+		ILOGE("Invaled index:%d.", id);
+		return rt;
 	}
+
+	pIspList->DisableNodebyType(type);
+
+	return rt;
+}
+
+int32_t ISPListManager::NotifyList(int32_t id, int32_t type, NotifyData data)
+{
+	int32_t rt = ISP_SUCCESS;
+	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = NULL;
+
+	pIspList = FindListById(id);
+	if (!pIspList) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Invaled index:%d.", id);
+		return rt;
+	}
+
+	rt = pIspList->NotifyNodeByType(type, data);
 
 	return rt;
 }

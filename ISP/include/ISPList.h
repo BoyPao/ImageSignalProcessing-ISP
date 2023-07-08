@@ -11,7 +11,11 @@
 #include "InterfaceWrapper.h"
 #include "ParamManager.h"
 
+#include <atomic>
+
 #define NODE_NAME_MAX_SZIE 15
+#define NODE_WAIT_US_MAX 300000
+#define NODE_CHECK_GAP_US 100
 
 enum ProcessType {
 	PROCESS_BLC = 0,
@@ -38,6 +42,10 @@ enum NodeSwitch {
 	NODE_ON
 };
 
+struct NotifyData {
+	int32_t rt;
+};
+
 /* NODE */
 struct ISPNodeProperty {
 	char name[NODE_NAME_MAX_SZIE];
@@ -48,11 +56,13 @@ struct ISPNodeProperty {
 template<typename T1, typename T2>
 class ISPNode {
 public:
-	ISPNode();
+	ISPNode(int32_t id);
+	ISPNode() = delete;
 	virtual ~ISPNode();
 	virtual int32_t GetNodeName(char* name);
 	virtual int32_t Init(ISPNodeProperty* cfg, T1* input, T2* output);
 	virtual int32_t Process();
+	virtual int32_t Notify(NotifyData data);
 	virtual int32_t Enable();
 	virtual int32_t Disable();
 	virtual bool isOn();
@@ -61,32 +71,22 @@ public:
 	ISPNode<T2,T2>* pNext;
 
 protected:
+	virtual int32_t WaitResult();
+	int32_t mHostId;
 	bool mInited;
-	T1* pInputBuffer;
-	T2* pOutputBuffer;
-
-private:
+	void* pCtrl;
+	atomic<int32_t> rtTrigger;
 	ISPNodeProperty mProperty;
 };
 
 /* NEC NODE */
-struct ISPNecNodeProperty {
-	char name[NODE_NAME_MAX_SZIE];
-	int32_t type;
-	int32_t enable;
-};
-
 template<typename T1, typename T2>
 class ISPNecNode : public ISPNode<T1, T2> {
 public:
-	ISPNecNode();
+	ISPNecNode(int32_t id);
 	~ISPNecNode();
-	int32_t Init(ISPNecNodeProperty* cfg, T1* input, T2* output);
-	int32_t GetNodeName(char* name);
+	int32_t Init(ISPNodeProperty* cfg, T1* input, T2* output);
 	int32_t Process();
-	int32_t Disable();
-private:
-	ISPNecNodeProperty mProperty;
 };
 
 /* Node List */
@@ -109,7 +109,7 @@ struct ISPListProperty {
 };
 
 struct ISPListHeadProperty {
-	ISPNecNodeProperty NecNodeProperty[NEC_PROCESS_TYPE_NUM - NEC_PROCESS_HEAD];
+	ISPNodeProperty NecNodeProperty[NEC_PROCESS_TYPE_NUM - NEC_PROCESS_HEAD];
 };
 
 template<typename T1, typename T2, typename T3, typename T4>
@@ -129,6 +129,7 @@ public:
 	int32_t DisableNodebyType(int32_t type);
 	int32_t EnableNecNodebyType(int32_t type);
 	int32_t DisableNecNodebyType(int32_t type);
+	int32_t NotifyNodeByType(int32_t type, NotifyData data);
 
 private:
 	int32_t CreateNecList();

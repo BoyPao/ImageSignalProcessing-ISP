@@ -32,7 +32,8 @@ enum BZDbgMask {
 	DBG_BASE_MASK = 0x1,
 	DBG_CORE_MASK = DBG_BASE_MASK << 1,
 	DBG_INTF_MASK = DBG_BASE_MASK << 2,
-	DBG_ALGO_MASK = DBG_BASE_MASK << 3,
+	DBG_PROC_MASK = DBG_BASE_MASK << 3,
+	DBG_ALGO_MASK = DBG_BASE_MASK << 4,
 };
 
 #ifdef LOG_FOR_DBG
@@ -45,17 +46,13 @@ enum BZDbgMask {
 
 #define LOG_MODULE " BZ "
 
-#define LogWrap(str, ...) (																					\
-		{																									\
-			if (WrapGetBoZhi()) {																			\
-				if(static_cast<BoZhi*>(WrapGetBoZhi())->GetCallbacks()->UtilsFuncs.Log) {					\
-					static_cast<BoZhi*>(WrapGetBoZhi())->GetCallbacks()->UtilsFuncs.Log(str, ##__VA_ARGS__);\
-				} else {																					\
-					LogBase(str, ##__VA_ARGS__);															\
-				}																							\
-			} else {																						\
-					LogBase(str, ##__VA_ARGS__);															\
-			}																								\
+#define LogWrap(str, ...) (																	\
+		{																					\
+			if(BoZhi::GetInstance()->GetCallbacks()->UtilsFuncs.Log) {						\
+				BoZhi::GetInstance()->GetCallbacks()->UtilsFuncs.Log(str, ##__VA_ARGS__);	\
+			} else {																		\
+				LogBase(str, ##__VA_ARGS__);												\
+			}																				\
 		})
 
 #define BZLogError(on, str, ...)	((on) ? ({LogWrap(LOG_MODULE "E" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__); (0);}) : (0))
@@ -70,4 +67,5 @@ enum BZDbgMask {
 
 #define BLOGDC(str, ...) ((DBG_LEVEL & DBG_CORE_MASK) ? ({BLOGD(str, ##__VA_ARGS__); (0);}) : (0))
 #define BLOGDI(str, ...) ((DBG_LEVEL & DBG_INTF_MASK) ? ({BLOGD(str, ##__VA_ARGS__); (0);}) : (0))
+#define BLOGDP(str, ...) ((DBG_LEVEL & DBG_PROC_MASK) ? ({BLOGD(str, ##__VA_ARGS__); (0);}) : (0))
 #define BLOGDA(str, ...) ((DBG_LEVEL & DBG_ALGO_MASK) ? ({BLOGD(str, ##__VA_ARGS__); (0);}) : (0))
