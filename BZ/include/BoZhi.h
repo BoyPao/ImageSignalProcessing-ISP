@@ -27,7 +27,7 @@ public:
 	virtual int32_t Init() = 0;
 	virtual int32_t DeInit() = 0;
 	virtual int32_t RegisterCallbacks(void *pCBs) = 0;
-	virtual int32_t Event(BZMsg *msg) = 0;
+	virtual int32_t Event(uint32_t *msg) = 0;
 	virtual ISPCallbacks const* GetCallbacks() = 0;
 };
 
@@ -37,19 +37,19 @@ public:
 	int32_t Init();
 	int32_t DeInit();
 	int32_t RegisterCallbacks(void *pCBs);
-	int32_t Event(BZMsg *msg);
+	int32_t Event(uint32_t *msg);
 	ISPCallbacks const* GetCallbacks();
 
 private:
 	BoZhi();
 	virtual ~BoZhi();
 
-	int32_t CreateProcessor(BZMsg *msg);
+	int32_t CreateProcessor(int32_t id);
 	int32_t DestroyProcessorById(int32_t id);
 	int32_t DestroyAllProcessor();
 	Processor *FindProcessorById(int32_t id);
-	int32_t Process(BZMsg *msg);
-	void PrintMessage(BZMsg *msg);
+	int32_t Process(uint32_t *msg);
+	void PrintMessage(uint32_t *msg);
 	ISPCallbacks mISPCBs;
 	int32_t mState;
 	std::map<int32_t, Processor*> mProcMap;

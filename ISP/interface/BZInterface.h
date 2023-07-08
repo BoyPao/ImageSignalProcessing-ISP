@@ -130,17 +130,18 @@ enum BZCmd {
 	BZ_CMD_NUM,
 };
 
-struct BZMsg {
-	int32_t d0;
-	int32_t d1;
-	int32_t d2;
-	int32_t d3;
-	int32_t d4;
-	int32_t d5;
-	int32_t d6;
-	int32_t d7;
-	int32_t d8;
-	int32_t d9;
+enum BZMsg {
+	MSG_D0 = 0,
+	MSG_D1,
+	MSG_D2,
+	MSG_D3,
+	MSG_D4,
+	MSG_D5,
+	MSG_D6,
+	MSG_D7,
+	MSG_D8,
+	MSG_D9,
+	MSG_NUM_MAX
 };
 
 struct BZCtrl {
@@ -153,7 +154,7 @@ struct BZCtrl {
 
 struct BZOps
 {
-	int32_t (*BZEvent)	(BZMsg msg);
+	int32_t (*BZEvent)	(uint32_t *msg);
 };
 
 

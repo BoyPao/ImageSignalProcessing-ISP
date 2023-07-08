@@ -8,11 +8,11 @@
 #include "Algorithm.h"
 #include "BZLog.h"
 
-int32_t WrapEvent(BZMsg msg)
+int32_t WrapEvent(uint32_t *msg)
 {
 	int32_t rt = BZ_SUCCESS;
 
-	rt = BoZhi::GetInstance()->Event(&msg);
+	rt = BoZhi::GetInstance()->Event(msg);
 
 	return rt;
 }
@@ -164,7 +164,7 @@ ISPCallbacks const* BoZhi::GetCallbacks()
 	return &mISPCBs;
 }
 
-int32_t BoZhi::Event(BZMsg *msg)
+int32_t BoZhi::Event(uint32_t *msg)
 {
 	int32_t rt = BZ_SUCCESS;
 
@@ -174,10 +174,10 @@ int32_t BoZhi::Event(BZMsg *msg)
 		return rt;
 	}
 
-	int32_t cmd = msg->d0;
+	int32_t cmd = msg[MSG_D0];
 	switch (cmd) {
 		case BZ_CMD_CREATE_PROC:
-			rt = CreateProcessor(msg);
+			rt = CreateProcessor(msg[MSG_D1]);
 			break;
 		case BZ_CMD_PROCESS:
 			rt = Process(msg);
@@ -193,25 +193,21 @@ int32_t BoZhi::Event(BZMsg *msg)
 	return rt;
 }
 
-void BoZhi::PrintMessage(BZMsg *msg)
+void BoZhi::PrintMessage(uint32_t *msg)
 {
-	int32_t *pData = (int32_t*)msg;
-	for (size_t i = 0; i < sizeof(BZMsg) / sizeof(int32_t); i++) {
-		BLOGDC("msg[%d]:0x%x", i, *(pData + i));
+	if (!msg) {
+		BLOGE("msg is null");
+		return;
+	}
+	for (size_t i = 0; i < MSG_NUM_MAX; i++) {
+		BLOGI("msg[%d]:0x%x", i, msg[i]);
 	}
 }
 
-int32_t BoZhi::CreateProcessor(BZMsg *msg)
+int32_t BoZhi::CreateProcessor(int32_t id)
 {
 	int32_t rt = BZ_SUCCESS;
 
-	if (!msg) {
-		rt = BZ_INVALID_PARAM;
-		BLOGE("Msg is null");
-		return rt;
-	}
-
-	int32_t id = msg->d1;
 	{
 		unique_lock <mutex> lock(procMapLock);
 		if (mProcMap.find(id) != mProcMap.end()) {
@@ -286,7 +282,7 @@ Processor *BoZhi::FindProcessorById(int32_t id)
 	return pProc;
 }
 
-int32_t BoZhi::Process(BZMsg *msg)
+int32_t BoZhi::Process(uint32_t *msg)
 {
 	int32_t rt = BZ_SUCCESS;
 
@@ -296,7 +292,7 @@ int32_t BoZhi::Process(BZMsg *msg)
 		return rt;
 	}
 
-	int32_t id = msg->d1;
+	int32_t id = msg[MSG_D1];
 	Processor *pProc = FindProcessorById(id);
 	if (!pProc) {
 		rt = BZ_FAILED;
@@ -306,9 +302,9 @@ int32_t BoZhi::Process(BZMsg *msg)
 
 	void* pVCtrl = NULL;
 #if  __WORDSIZE ==  64
-	pVCtrl = (void*)(((int64_t)msg->d3 & 0xffffffff) | ((((int64_t)msg->d4) << 32) & 0xffffffff00000000));
+	pVCtrl = (void*)(((uint64_t)msg[MSG_D3] & 0xffffffff) | (((uint64_t)msg[MSG_D4] << 32) & 0xffffffff00000000));
 #elif __WORDSIZE == 32
-	pVCtrl = (void*)msg->d3;
+	pVCtrl = (void*)msg[MSG_D3];
 #endif
 	BZCtrl* pCtrl = NULL;
 	pCtrl = static_cast<BZCtrl*>(pVCtrl);
@@ -321,7 +317,7 @@ int32_t BoZhi::Process(BZMsg *msg)
 	BZParam* pParam = static_cast<BZParam*>(pCtrl->pInfo);
 
 	Job job = {0};
-	job.info.type = msg->d2;
+	job.info.type = msg[MSG_D2];
 	job.info.en = pCtrl->en;
 	job.info.srcInfo.w = pParam->info.width;
 	job.info.srcInfo.h = pParam->info.height;

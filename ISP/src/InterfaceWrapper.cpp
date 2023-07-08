@@ -333,10 +333,10 @@ int32_t InterfaceWrapper::AlgInterfaceDeInit()
 int32_t InterfaceWrapper::AlgISPListCreate(int32_t id)
 {
 	int32_t rt = ISP_SUCCESS;
-	BZMsg msg = { 0 };
+	uint32_t msg[MSG_NUM_MAX] = { 0 };
 
-	msg.d0 = BZ_CMD_CREATE_PROC;
-	msg.d1 = id;
+	msg[MSG_D0] = BZ_CMD_CREATE_PROC;
+	msg[MSG_D1] = (uint32_t)id;
 
 	rt = CALL_OPS(mLibsOPS.algOPS, BZEvent, msg);
 	return rt;
@@ -345,16 +345,16 @@ int32_t InterfaceWrapper::AlgISPListCreate(int32_t id)
 int32_t InterfaceWrapper::AlgProcess(int32_t id, int32_t type, void *pCtrl)
 {
 	int32_t rt = ISP_SUCCESS;
-	BZMsg msg = { 0 };
+	uint32_t msg[MSG_NUM_MAX] = { 0 };
 
-	msg.d0 = BZ_CMD_PROCESS;
-	msg.d1 = id;
-	msg.d2 = type;
+	msg[MSG_D0] = BZ_CMD_PROCESS;
+	msg[MSG_D1] = (uint32_t)id;
+	msg[MSG_D2] = (uint32_t)type;
 #if  __WORDSIZE ==  64
-	msg.d3 = (int64_t)pCtrl & 0xffffffff;
-	msg.d4 = ((int64_t)pCtrl >> 32) & 0xffffffff;
+	msg[MSG_D3] = (uint64_t)pCtrl & 0xffffffff;
+	msg[MSG_D4] = ((uint64_t)pCtrl >> 32) & 0xffffffff;
 #elif __WORDSIZE == 32
-	msg.d3 = (uint32_t)pCtrl;
+	msg[MSG_D3] = (uint32_t)pCtrl;
 #endif
 
 	rt = CALL_OPS(mLibsOPS.algOPS, BZEvent, msg);
