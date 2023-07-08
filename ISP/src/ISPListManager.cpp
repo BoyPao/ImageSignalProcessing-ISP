@@ -180,7 +180,7 @@ int32_t ISPListManager::StartById(int32_t id)
 	if (SUCCESS(rt)) {
 		pIspList = FindListById(id);
 		if (pIspList) {
-			rt = pItfWrapper->ISPLibConfig((void*)pParamManager);
+			rt = pItfWrapper->ISPLibConfig();
 			if (SUCCESS(rt)) {
 				rt = pIspList->Process();
 			}

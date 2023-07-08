@@ -51,7 +51,7 @@ class InterfaceWrapperBase {
 	public:
 		~InterfaceWrapperBase() {};
 
-		virtual int32_t ISPLibConfig(void* pPM, ...) = 0;
+		virtual int32_t ISPLibConfig() = 0;
 		virtual int32_t AlgProcess(int32_t cmd, ...) = 0;
 		virtual int32_t NotifyMain() = 0;
 		virtual int32_t IsReady() = 0;
@@ -60,7 +60,7 @@ class InterfaceWrapperBase {
 class InterfaceWrapper : public InterfaceWrapperBase {
 	public:
 		static InterfaceWrapper* GetInstance();
-		virtual int32_t ISPLibConfig(void* pPM, ...);
+		virtual int32_t ISPLibConfig();
 		virtual int32_t AlgProcess(int32_t cmd, ...);
 		virtual int32_t NotifyMain() { return 0; };
 		virtual int32_t IsReady();
@@ -79,7 +79,6 @@ class InterfaceWrapper : public InterfaceWrapperBase {
 		ISPLibs mLibs;
 		ISPLibsOps mLibsOPS;
 		BZParam mISPLibParams;
-		void* pParamMgr;
 		int32_t mState;
 };
 

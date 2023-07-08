@@ -49,7 +49,6 @@ InterfaceWrapper::InterfaceWrapper()
 	mLibs = { nullptr };
 	mLibsOPS = { 0 };
 	mISPLibParams = { 0 };
-	pParamMgr = nullptr;
 	mState = ITFWRAPPER_STATE_NOT_READY;
 
 	int32_t rt = Init();
@@ -69,7 +68,6 @@ InterfaceWrapper::~InterfaceWrapper()
 		ILOGE("Fail to deinit!");
 	} else {
 		memset((void*)&mISPLibParams, 0, sizeof(BZParam));
-		pParamMgr = nullptr;
 	}
 }
 
@@ -317,19 +315,18 @@ int32_t InterfaceWrapper::AlgInterfaceDeInit()
 	return rt;
 }
 
-int32_t InterfaceWrapper::ISPLibConfig(void* pPM, ...)
+int32_t InterfaceWrapper::ISPLibConfig()
 {
 	int32_t rt = ISP_SUCCESS;
 
-	pParamMgr = pPM;
-	if (!pParamMgr) {
+	ISPParamManagerItf* paramMgr = ISPParamManager::GetInstance();
+	if (!paramMgr) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("ParamManager is null! rt:%d", rt);
 	}
 
 	if (SUCCESS(rt)) {
-		ISPParamManager* tmpPM = static_cast<ISPParamManager*>(pParamMgr);
-		rt = tmpPM->GetImgInfo(&mISPLibParams);
+		rt = paramMgr->GetImgInfo(&mISPLibParams);
 		if (!SUCCESS(rt)) {
 			ILOGE("Get image info failed. rt:%d", rt);
 		}
@@ -341,18 +338,17 @@ int32_t InterfaceWrapper::ISPLibConfig(void* pPM, ...)
 int32_t InterfaceWrapper::AlgProcess(int32_t cmd, ...)
 {
 	int32_t rt = ISP_SUCCESS;
-	ISPParamManager* pPM = nullptr;
 	va_list va;
 
-	pPM = static_cast<ISPParamManager*>(pParamMgr);
+	ISPParamManagerItf* paramMgr = ISPParamManager::GetInstance();
 
-	if (!pPM) {
+	if (!paramMgr) {
 		rt = ISP_FAILED;
 		ILOGE("Itf not congfig!");
 	}
 
 	if (SUCCESS(rt)) {
-		rt = pPM->GetParamByCMD(&mISPLibParams, cmd);
+		rt = paramMgr->GetParamByCMD(&mISPLibParams, cmd);
 	}
 
 	if (SUCCESS(rt)) {
