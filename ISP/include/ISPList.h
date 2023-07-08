@@ -52,7 +52,7 @@ public:
 	virtual ~ISPNode();
 	virtual int32_t GetNodeName(char* name);
 	virtual int32_t Init(ISPNodeProperty* cfg, T1* input, T2* output);
-	virtual int32_t Process(void* pItf);
+	virtual int32_t Process();
 	virtual int32_t Enable();
 	virtual int32_t Disable();
 	virtual bool isOn();
@@ -83,7 +83,7 @@ public:
 	~ISPNecNode();
 	int32_t Init(ISPNecNodeProperty* cfg, T1* input, T2* output);
 	int32_t GetNodeName(char* name);
-	int32_t Process(void* pItf);
+	int32_t Process();
 	int32_t Disable();
 private:
 	ISPNecNodeProperty mProperty;
@@ -117,7 +117,7 @@ class ISPList {
 public:
 	ISPList(int32_t id);
 	~ISPList();
-	int32_t Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T4* pPostBuf, void* pIW);
+	int32_t Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T4* pPostBuf);
 	int32_t SetListConfig(ISPListProperty* pCfg);
 	int32_t FindNodePropertyIndex(int32_t type, int32_t* index);
 	int32_t FindNecNodePropertyIndex(int32_t type, int32_t* index);
@@ -153,7 +153,6 @@ private:
 	ISPNecNode<T1, T2>* mRgbHead;
 	ISPNecNode<T2, T3>* mYuvHead;
 	ISPNecNode<T3, T4>* mPostHead;
-	void* pItfWrapper;
 	int32_t mNodeNum;
 	T1* pRawBuffer;
 	T2* pRgbBuffer;

@@ -8,7 +8,6 @@
 #include "ISPListManager.h"
 #include "ISPListConfig.h"
 #include "ISPList.hpp"
-#include "ParamManager.h"
 #include "InterfaceWrapper.h"
 
 void *gISPListConfigs[LIST_CFG_NUM] = {
@@ -17,8 +16,6 @@ void *gISPListConfigs[LIST_CFG_NUM] = {
 
 ISPListManager::ISPListManager():
 	mListNum(0),
-	pParamManager(nullptr),
-	pItfWrapper(nullptr),
 	pISPListConfigs(nullptr)
 {
 	Init();
@@ -38,11 +35,6 @@ ISPListManager* ISPListManager::GetInstance()
 int32_t ISPListManager::Init()
 {
 	int32_t rt = ISP_SUCCESS;
-
-	if (SUCCESS(rt)) {
-		pParamManager = ISPParamManager::GetInstance();
-		pItfWrapper = InterfaceWrapper::GetInstance();
-	}
 
 	if (SUCCESS(rt)) {
 		pISPListConfigs = static_cast<ISPListProperty*>(gISPListConfigs[LIST_CFG_DEFAULT]);
@@ -82,7 +74,7 @@ int32_t ISPListManager::CreateList(uint16_t* pRaw, uint16_t* pBGR, uint8_t* pYUV
 	if (SUCCESS(rt)) {
 		pIspList = new ISPList<uint16_t, uint16_t, uint8_t, uint8_t>(listId);
 		if (pIspList) {
-			rt = pIspList->Init(pRaw, pBGR, pYUV, pPOST, pItfWrapper);
+			rt = pIspList->Init(pRaw, pBGR, pYUV, pPOST);
 		}
 		else {
 			rt = ISP_MEMORY_ERROR;
@@ -172,7 +164,8 @@ int32_t ISPListManager::StartById(int32_t id)
 	int32_t rt = ISP_SUCCESS;
 	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* pIspList = nullptr;
 
-	if (!pItfWrapper) {
+	InterfaceWrapperBase *itf = InterfaceWrapper::GetInstance();
+	if (!itf) {
 		rt = ISP_FAILED;
 		ILOGE("itf not init!");
 	}
@@ -180,7 +173,7 @@ int32_t ISPListManager::StartById(int32_t id)
 	if (SUCCESS(rt)) {
 		pIspList = FindListById(id);
 		if (pIspList) {
-			rt = pItfWrapper->ISPLibConfig();
+			rt = itf->ISPLibConfig();
 			if (SUCCESS(rt)) {
 				rt = pIspList->Process();
 			}

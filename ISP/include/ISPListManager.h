@@ -48,8 +48,6 @@ private:
 	ISPList<uint16_t, uint16_t, uint8_t, uint8_t>* FindListById(int32_t id);
 
 	int32_t mListNum;
-	ISPParamManager* pParamManager;
-	InterfaceWrapper* pItfWrapper;
 	ISPListProperty* pISPListConfigs;
 	map<int32_t, int32_t> mISPListConfigMap;
 	map<int32_t, ISPList<uint16_t, uint16_t, uint8_t, uint8_t>*> mListMap;

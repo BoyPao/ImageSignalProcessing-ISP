@@ -146,10 +146,10 @@ ISPNodeProperty ISPNode<T1, T2>::GetProperty()
 }
 
 template<typename T1, typename T2>
-int32_t ISPNode<T1, T2>::Process(void* pItf)
+int32_t ISPNode<T1, T2>::Process()
 {
 	int32_t rt = ISP_SUCCESS;
-	InterfaceWrapper* pIW = nullptr;
+	InterfaceWrapperBase* pItf = nullptr;
 	char name[NODE_NAME_MAX_SZIE];
 	GetNodeName(name);
 
@@ -159,16 +159,16 @@ int32_t ISPNode<T1, T2>::Process(void* pItf)
 	}
 
 	if (SUCCESS(rt)) {
-		pIW = static_cast<InterfaceWrapper*>(pItf);
-		if (!pIW) {
+		pItf = InterfaceWrapper::GetInstance();
+		if (!pItf) {
 			rt = ISP_INVALID_PARAM;
-			ILOGE("Invalid input!");
+			ILOGE("Cannot get interface");
 		}
 	}
 
 	if (SUCCESS(rt)) {
 		ILOGDL("%s:Buffer(in:%p out:%p)", name, pInputBuffer, pOutputBuffer);
-		rt = pIW->AlgProcess(gProcessCmd[mProperty.type] ,pInputBuffer, mProperty.enable);
+		rt = pItf->AlgProcess(gProcessCmd[mProperty.type] ,pInputBuffer, mProperty.enable);
 	}
 
 	if (SUCCESS(rt)) {
@@ -233,10 +233,10 @@ int32_t ISPNecNode<T1, T2>::GetNodeName(char* name)
 }
 
 template<typename T1, typename T2>
-int32_t ISPNecNode<T1, T2>::Process(void* pItf)
+int32_t ISPNecNode<T1, T2>::Process()
 {
 	int32_t rt = ISP_SUCCESS;
-	InterfaceWrapper* pIW = nullptr;
+	InterfaceWrapperBase *pItf = nullptr;
 	char name[NODE_NAME_MAX_SZIE];
 	GetNodeName(name);
 
@@ -246,17 +246,17 @@ int32_t ISPNecNode<T1, T2>::Process(void* pItf)
 	}
 
 	if (SUCCESS(rt)) {
-		pIW = static_cast<InterfaceWrapper*>(pItf);
-		if (!pIW) {
+		pItf = InterfaceWrapper::GetInstance();
+		if (!pItf) {
 			rt = ISP_INVALID_PARAM;
-			ILOGE("Invalid input!");
+			ILOGE("Cannot get interface");
 		}
 	}
 
 	if (SUCCESS(rt)) {
 		if (mProperty.type != NEC_PROCESS_HEAD) { /* Now nothing todo with head */
 			ILOGDL("%s:Buffer(in:%p out:%p)", name, this->pInputBuffer, this->pOutputBuffer);
-			rt = pIW->AlgProcess(gProcessCmd[mProperty.type], this->pInputBuffer, this->pOutputBuffer, mProperty.enable);
+			rt = pItf->AlgProcess(gProcessCmd[mProperty.type], this->pInputBuffer, this->pOutputBuffer, mProperty.enable);
 		}
 	}
 
@@ -290,7 +290,6 @@ ISPList<T1, T2, T3, T4>::ISPList(int32_t id) :
 	mRgbHead(nullptr),
 	mYuvHead(nullptr),
 	mPostHead(nullptr),
-	pItfWrapper(nullptr),
 	mNodeNum(0),
 	mState(ISP_LIST_NEW)
 {
@@ -353,8 +352,6 @@ ISPList<T1, T2, T3, T4>::~ISPList()
 		mNodeNum--;
 	}
 
-	pItfWrapper = nullptr;
-
 	ILOGDL("List(%d) Node num:%d", mId, mNodeNum);
 }
 
@@ -412,7 +409,7 @@ int32_t ISPList<T1, T2, T3, T4>::StateTransform(int32_t orientation)
 }
 
 template<typename T1, typename T2, typename T3, typename T4>
-int32_t ISPList<T1, T2, T3, T4>::Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T4* pPostBuf, void* pIW)
+int32_t ISPList<T1, T2, T3, T4>::Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T4* pPostBuf)
 {
 	int32_t rt = ISP_SUCCESS;
 
@@ -421,7 +418,7 @@ int32_t ISPList<T1, T2, T3, T4>::Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T4*
 		ILOGE("func called in invaled state:%d %d", mState, rt);
 	}
 
-	if (!pRawBuf || !pRgbBuf || !pYuvBuf || !pPostBuf || !pIW) {
+	if (!pRawBuf || !pRgbBuf || !pYuvBuf || !pPostBuf) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Failed to init list(%d), pBuffer or PM is null! rt:%d", mId, rt);
 	}
@@ -431,10 +428,6 @@ int32_t ISPList<T1, T2, T3, T4>::Init(T1* pRawBuf, T2* pRgbBuf, T3* pYuvBuf, T4*
 		pRgbBuffer = pRgbBuf;
 		pYuvBuffer = pYuvBuf;
 		pPostBuffer = pPostBuf;
-	}
-
-	if(SUCCESS(rt)){
-		pItfWrapper = pIW;
 	}
 
 	if (SUCCESS(rt)) {
@@ -1010,7 +1003,7 @@ int32_t ISPList<T1, T2, T3, T4>::Process()
 
 	if (SUCCESS(rt)) {
 		while (pNode) {
-			rt = pNode->Process(pItfWrapper);
+			rt = pNode->Process();
 			if (SUCCESS(rt)) {
 				pNode = pNode->pNext;
 			}
@@ -1059,13 +1052,13 @@ int32_t ISPList<T1, T2, T3, T4>::RgbProcess()
 	}
 
 	if (SUCCESS(rt)) {
-		rt = mRgbHead->Process(pItfWrapper);
+		rt = mRgbHead->Process();
 	}
 
 	if (SUCCESS(rt)) {
 		ISPNode<T2, T2>* pNode = mRgbHead->pNext;
 		while (pNode) {
-			rt = pNode->Process(pItfWrapper);
+			rt = pNode->Process();
 			if (SUCCESS(rt)) {
 				pNode = pNode->pNext;
 			}
@@ -1114,13 +1107,13 @@ int32_t ISPList<T1, T2, T3, T4>::YuvProcess()
 	}
 
 	if (SUCCESS(rt)) {
-		rt = mYuvHead->Process(pItfWrapper);
+		rt = mYuvHead->Process();
 	}
 
 	if (SUCCESS(rt)) {
 		ISPNode<T3, T3>* pNode = mYuvHead->pNext;
 		while (pNode) {
-			rt = pNode->Process(pItfWrapper);
+			rt = pNode->Process();
 			if (SUCCESS(rt)) {
 				pNode = pNode->pNext;
 			}
@@ -1169,13 +1162,13 @@ int32_t ISPList<T1, T2, T3, T4>::PostProcess()
 	}
 
 	if (SUCCESS(rt)) {
-		rt = mPostHead->Process(pItfWrapper);
+		rt = mPostHead->Process();
 	}
 
 	if (SUCCESS(rt)) {
 		ISPNode<T4, T4>* pNode = mPostHead->pNext;
 		while (pNode) {
-			rt = pNode->Process(pItfWrapper);
+			rt = pNode->Process();
 			if (SUCCESS(rt)) {
 				pNode = pNode->pNext;
 			}
