@@ -128,7 +128,7 @@ private:
 	InputInfo mInputInfo;
 	OutputInfo mOutputInfo;
 	ISPState mState = Uninited;
-	std::unique_ptr<ISPVideo> mVideo;
+	std::unique_ptr<ISPVideo> mVideo; /* TODO[M]: move into ISPList */
 	VideoThreadParam mVTParam;
 	int32_t IOInfoFlag; /* 0: Dynamic info  1: Static info*/
 };

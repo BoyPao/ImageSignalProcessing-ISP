@@ -79,7 +79,7 @@ int32_t InterfaceWrapper::RemoveInstance()
 			delete pItfW;
 			pItfW = NULL;
 		} else if (rCnt > 0) {
-			ILOGW("Remove ITF %d times", rCnt);
+			ILOGDI("Remove ITF cnt:%d", rCnt);
 		}
 		rCnt++;
 	}
