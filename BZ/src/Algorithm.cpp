@@ -916,10 +916,12 @@ int32_t BZ_ColorCorrection(AlgInfo *info)
 	uint16_t* srcCh1 = NULL, *srcCh2 = NULL, *srcCh3 = NULL;
 	int16_t *dstCh1 = NULL, *dstCh2 = NULL, *dstCh3 = NULL;
 	int32_t bpp = 0;
+	int32_t maxValue = 0;
 
 	w = info->srcInfo.w;
 	h = info->srcInfo.h;
 	bpp = info->srcInfo.bpp;
+	maxValue = pow(2, bpp) -1;
 	if (!w || !h || !bpp) {
 		rt = BZ_INVALID_PARAM;
 		BLOGE("Invalid param:%dx%d %db %d", w, h, bpp, rt);
@@ -966,9 +968,9 @@ int32_t BZ_ColorCorrection(AlgInfo *info)
 		dstCh3[i] = srcCh1[i] * pCCM[2] +
 			srcCh2[i] * pCCM[CCM_WIDTH + 2] +
 			srcCh3[i] * pCCM[2 * CCM_WIDTH + 2];
-		dstCh1[i] = (dstCh1[i] < 0) ? 0 : ((dstCh1[i] > pow(2, bpp) - 1) ? pow(2, bpp) - 1 : dstCh1[i]);
-		dstCh2[i] = (dstCh2[i] < 0) ? 0 : ((dstCh2[i] > pow(2, bpp) - 1) ? pow(2, bpp) - 1 : dstCh2[i]);
-		dstCh3[i] = (dstCh3[i] < 0) ? 0 : ((dstCh3[i] > pow(2, bpp) - 1) ? pow(2, bpp) - 1 : dstCh3[i]);
+		dstCh1[i] = (dstCh1[i] < 0) ? 0 : ((dstCh1[i] > maxValue) ? maxValue : dstCh1[i]);
+		dstCh2[i] = (dstCh2[i] < 0) ? 0 : ((dstCh2[i] > maxValue) ? maxValue : dstCh2[i]);
+		dstCh3[i] = (dstCh3[i] < 0) ? 0 : ((dstCh3[i] > maxValue) ? maxValue : dstCh3[i]);
 	}
 
 	memcpy(data, pTmp, w * h * 3 * sizeof(uint16_t));
