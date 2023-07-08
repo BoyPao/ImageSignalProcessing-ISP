@@ -15,11 +15,12 @@
 #include "ParamManager.h"
 
 enum VideoState {
-	VIDEO_NEW = 0,
-	VIDEO_INITED,
-	VIDEO_READY,
-	VIDEO_LOCK,
-	VIDEO_WAIT_FRAME_DONE
+	VIDEO_STATE_NEW = 0,
+	VIDEO_STATE_INITED,
+	VIDEO_STATE_READY,
+	VIDEO_STATE_LOCK,
+	VIDEO_STATE_WAIT_FRAME_DONE,
+	VIDEO_STATE_NUM
 };
 
 class ISPVideo {
@@ -32,16 +33,12 @@ public:
 	int32_t DestroyThread();
 
 	int32_t Record(void* pRecorder, int32_t w, int32_t h);
-	int32_t Lock();
-	int32_t Unlock();
 	int32_t Wait();
 	int32_t Notify();
 
 	void* pSrc;
 
 private:
-	int32_t StatusTransform();
-
 	int32_t mState;
 
 	thread mThread;

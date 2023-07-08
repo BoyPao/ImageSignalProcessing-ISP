@@ -22,13 +22,13 @@ int32_t WrapGetOPS(void* pOPS)
 	int32_t rt = BZ_SUCCESS;
 
 	BZOps* pLibOPS = static_cast<BZOps*>(pOPS);
-	if (pLibOPS) {
-		/* Add OPS if need */
-		pLibOPS->BZEvent = &WrapEvent;
-	} else {
+	if (!pLibOPS) {
 		rt = BZ_INVALID_PARAM;
 		BLOGE("Input is nullptr!");
+		return rt;
 	}
+	/* Add OPS if need */
+	pLibOPS->BZEvent = &WrapEvent;
 
 	return rt;
 }
@@ -149,12 +149,12 @@ int32_t BoZhi::RegisterCallbacks(void *pCBs)
 	int32_t rt = BZ_SUCCESS;
 	ISPCallbacks* pISPCBs = static_cast<ISPCallbacks*>(pCBs);
 
-	if (pISPCBs) {
-		memcpy(&mISPCBs, pISPCBs, sizeof(ISPCallbacks));
-	} else {
+	if (!pISPCBs) {
 		rt = BZ_INVALID_PARAM;
 		BLOGE("Input is nullptr!");
+		return rt;
 	}
+	memcpy(&mISPCBs, pISPCBs, sizeof(ISPCallbacks));
 
 	return rt;
 }
@@ -213,15 +213,15 @@ int32_t BoZhi::CreateProcessor(int32_t id)
 		if (mProcMap.find(id) != mProcMap.end()) {
 			rt = BZ_FAILED;
 			BLOGE("Processor(%d) already exist", id);
-		} else {
-			Processor *pProc = new Processor(id);
-			if (pProc) {
-				mProcMap.insert(make_pair(id, pProc));
-			} else {
-				rt = BZ_MEMORY_ERROR;
-				BLOGE("Failed to new processor(%d)", id);
-			}
+			return rt;
 		}
+		Processor *pProc = new Processor(id);
+		if (!pProc) {
+			rt = BZ_MEMORY_ERROR;
+			BLOGE("Failed to new processor(%d)", id);
+			return rt;
+		}
+		mProcMap.insert(make_pair(id, pProc));
 	}
 
 	return rt;
@@ -274,9 +274,9 @@ Processor *BoZhi::FindProcessorById(int32_t id)
 		map<int32_t, Processor*>::iterator iter = mProcMap.find(id);
 		if (iter == mProcMap.end()) {
 			BLOGE("Cannot find Processor(%d)", id);
-		} else {
-			pProc = iter->second;
+			return NULL;
 		}
+		pProc = iter->second;
 	}
 
 	return pProc;

@@ -1006,7 +1006,7 @@ int32_t BZ_GammaCorrection(AlgInfo *info)
 	}
 
 	int32_t w = 0, h = 0;
-	uint16_t* plut = nullptr;
+	uint16_t* plut = NULL;
 
 	w = info->srcInfo.w;
 	h = info->srcInfo.h;

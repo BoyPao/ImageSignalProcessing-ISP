@@ -21,9 +21,11 @@
 
 class FileManager;
 
-typedef int32_t ISPState;
-static const ISPState Uninited = 0;
-static const ISPState Inited = 1;
+enum FileMgrState {
+	FMGR_STATE_UNINITED = 0,
+	FMGR_STATE_INITED,
+	FMGR_STATE_NUM
+};
 
 enum InputFileType {
 	INPUT_FILE_TYPE_RAW,
@@ -67,7 +69,6 @@ struct OutputInfo {
 
 struct VideoThreadParam {
 	ISPVideo* pVideo;
-	FileManager* pFileMgr;
 };
 
 class FileManagerItf : public IOHelper {
@@ -127,7 +128,7 @@ private:
 
 	InputInfo mInputInfo;
 	OutputInfo mOutputInfo;
-	ISPState mState = Uninited;
+	int32_t mState;
 	std::unique_ptr<ISPVideo> mVideo; /* TODO[M]: move into ISPList */
 	VideoThreadParam mVTParam;
 	int32_t IOInfoFlag; /* 0: Dynamic info  1: Static info*/

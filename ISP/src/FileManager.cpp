@@ -50,7 +50,7 @@ FileManager::FileManager()
 	memset(&mOutputInfo, 0, sizeof(OutputInfo));
 	IOInfoFlag = 0;
 
-	mState = Uninited;
+	mState = FMGR_STATE_UNINITED;
 	Init();
 }
 
@@ -60,7 +60,7 @@ FileManager::~FileManager()
 	memset(&mInputInfo, 0, sizeof(InputInfo));
 	memset(&mOutputInfo, 0, sizeof(OutputInfo));
 
-	mState = Uninited;
+	mState = FMGR_STATE_UNINITED;
 }
 
 int32_t FileManager::Init()
@@ -71,11 +71,10 @@ int32_t FileManager::Init()
 	if(!pDynamicInfo) {
 		rt = ISP_STATE_ERROR;
 		ILOGE("IO info buffer is null %d", rt);
-	} else {
-		memset(pDynamicInfo, 0, sizeof(MediaInfo));
+		return rt;
 	}
-
-	mState = Inited;
+	memset(pDynamicInfo, 0, sizeof(MediaInfo));
+	mState = FMGR_STATE_INITED;
 
 	return rt;
 }
@@ -85,14 +84,8 @@ int32_t FileManager::DeInit()
 	int32_t rt = ISP_SUCCESS;
 
 	mVTParam = { 0 };
-	if(!pDynamicInfo) {
-		rt = ISP_STATE_ERROR;
-		ILOGE("IO info buffer is null %d", rt);
-	} else {
-		memset(pDynamicInfo, 0, sizeof(MediaInfo));
-	}
-
-	mState = Uninited;
+	memset(pDynamicInfo, 0, sizeof(MediaInfo));
+	mState = FMGR_STATE_UNINITED;
 
 	return rt;
 }
@@ -160,11 +153,10 @@ int32_t FileManager::GetOutputVideoInfo(OutputVideoInfo* pInfo)
 	if (!pInfo) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Invalid input!");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		memcpy(pInfo, &mOutputInfo.videoInfo, sizeof(OutputVideoInfo));
-	}
+	memcpy(pInfo, &mOutputInfo.videoInfo, sizeof(OutputVideoInfo));
 
 	return rt;
 }
@@ -190,37 +182,33 @@ int32_t FileManager::ReadRawData(uint8_t* buffer, int32_t bufferSize)
 {
 	int32_t rt = ISP_SUCCESS;
 
-	if (mState == Uninited) {
+	if (mState != FMGR_STATE_INITED) {
 		rt = ISP_STATE_ERROR;
+		ILOGE("File manager not ready");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		ILOGI("Raw input path:%s", mInputInfo.path);
-		ifstream inputFile(mInputInfo.path, ios::in | ios::binary);
-		if (inputFile.fail()) {
-			rt = ISP_FAILED;
-			ILOGE("Open RAW failed! path:%s rt:%d", mInputInfo.path, rt);
-		}
-
-		if (SUCCESS(rt)) {
-			inputFile.seekg(0, ios::end);
-			streampos fileSize = inputFile.tellg();
-			mInputInfo.size = (int32_t)fileSize;
-			ILOGDF("File size:%d", mInputInfo.size);
-			inputFile.seekg(0, ios::beg);
-
-			if (bufferSize >= mInputInfo.size) {
-				inputFile.read((char*)buffer, mInputInfo.size);
-			}
-			else {
-				ILOGW("File size:%d > buffer size:%d! rt:%d",
-						mInputInfo.size, bufferSize, rt);
-				inputFile.read((char*)buffer, bufferSize);
-			}
-		}
-
-		inputFile.close();
+	ILOGI("Raw input path:%s", mInputInfo.path);
+	ifstream inputFile(mInputInfo.path, ios::in | ios::binary);
+	if (inputFile.fail()) {
+		rt = ISP_FAILED;
+		ILOGE("Open RAW failed! path:%s rt:%d", mInputInfo.path, rt);
+		return rt;
 	}
+
+	inputFile.seekg(0, ios::end);
+	streampos fileSize = inputFile.tellg();
+	mInputInfo.size = (int32_t)fileSize;
+	ILOGDF("File size:%d", mInputInfo.size);
+	inputFile.seekg(0, ios::beg);
+
+	if (bufferSize < mInputInfo.size) {
+		mInputInfo.size = bufferSize;
+		ILOGW("Read part of file (%d/%u)", mInputInfo.size, fileSize);
+	}
+	inputFile.read((char*)buffer, mInputInfo.size);
+	inputFile.close();
+
 	return rt;
 }
 
@@ -244,25 +232,26 @@ int32_t FileManager::SaveImgData(uint8_t* srcData)
 int32_t FileManager::SaveBMPData(uint8_t* srcData, int32_t channels)
 {
 	int32_t rt = ISP_SUCCESS;
-	if (mState == Uninited) {
+	if (mState != FMGR_STATE_INITED) {
 		rt = ISP_FAILED;
-		ILOGE("ImageFile didnot init");
+		ILOGE("File manager not init");
+		return rt;
 	}
 
-	if(SUCCESS(rt)) {
-		mOutputInfo.imgInfo.size = mOutputInfo.imgInfo.width *
-			mOutputInfo.imgInfo.height *
-			mOutputInfo.imgInfo.channels;
-		BYTE* BMPdata = new BYTE[mOutputInfo.imgInfo.size];
-		rt = SetBMP(srcData, mOutputInfo.imgInfo.channels, BMPdata);
-		if (SUCCESS(rt)) {
-			WriteBMP(BMPdata, channels);
-		}
-		else {
-			ILOGE("SetBMP failed. rt:&d", rt);
-		}
+	mOutputInfo.imgInfo.size = mOutputInfo.imgInfo.width *
+		mOutputInfo.imgInfo.height *
+		mOutputInfo.imgInfo.channels;
+	BYTE* BMPdata = new BYTE[mOutputInfo.imgInfo.size];
+	rt = SetBMP(srcData, mOutputInfo.imgInfo.channels, BMPdata);
+	if (!SUCCESS(rt)) {
+		ILOGE("SetBMP failed. rt:&d", rt);
 		delete[] BMPdata;
+		return rt;
 	}
+
+	WriteBMP(BMPdata, channels);
+	delete[] BMPdata;
+
 	return rt;
 }
 
@@ -272,43 +261,46 @@ int32_t FileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
 	int32_t j = 0;
 	BYTE temp;
 
-	if(channels != 3 && channels != 1) {
-		rt = ISP_INVALID_PARAM;
-		ILOGE("Invalid BMP output channels:%d", channels);
-		//TODO: does it need to be support?
-	}
-
-	if (SUCCESS(rt)) {
-		if (channels == 1) {
+	switch (channels) {
+		case 1:
 			memcpy(dstData, srcData, mOutputInfo.imgInfo.width * mOutputInfo.imgInfo.height);
-		} else if (channels == 3) {
+			break;
+		case 3:
 			for (int32_t row = 0; row < mOutputInfo.imgInfo.height; row++) {
 				for (int32_t col = 0; col < mOutputInfo.imgInfo.width; col++) {
-					dstData[row * mOutputInfo.imgInfo.width * 3 + col * 3] = srcData[row * mOutputInfo.imgInfo.width + col];
-					dstData[row * mOutputInfo.imgInfo.width * 3 + col * 3 + 1] = srcData[mOutputInfo.imgInfo.width * mOutputInfo.imgInfo.height + row * mOutputInfo.imgInfo.width + col];
-					dstData[row * mOutputInfo.imgInfo.width * 3 + col * 3 + 2] = srcData[2 * mOutputInfo.imgInfo.width * mOutputInfo.imgInfo.height + row * mOutputInfo.imgInfo.width + col];
+					dstData[row * mOutputInfo.imgInfo.width * 3 + col * 3] =
+						srcData[row * mOutputInfo.imgInfo.width + col];
+					dstData[row * mOutputInfo.imgInfo.width * 3 + col * 3 + 1] =
+						srcData[mOutputInfo.imgInfo.width * mOutputInfo.imgInfo.height + row * mOutputInfo.imgInfo.width + col];
+					dstData[row * mOutputInfo.imgInfo.width * 3 + col * 3 + 2] =
+						srcData[2 * mOutputInfo.imgInfo.width * mOutputInfo.imgInfo.height + row * mOutputInfo.imgInfo.width + col];
 				}
 			}
-		}
+			break;
+		default:
+			rt = ISP_INVALID_PARAM;
+			ILOGE("Invalid BMP output channels:%d", channels);
+			return rt;
+			/* TODO[L]: does it need to be support? */
+	}
 
-		/* Convertion for the head & tail of data array */
-		while (j < mOutputInfo.imgInfo.size - j) {
-			temp = dstData[mOutputInfo.imgInfo.size - j - 1];
-			dstData[mOutputInfo.imgInfo.size - j - 1] = dstData[j];
-			dstData[j] = temp;
-			j++;
-		}
+	/* Convertion for the head & tail of data array */
+	while (j < mOutputInfo.imgInfo.size - j) {
+		temp = dstData[mOutputInfo.imgInfo.size - j - 1];
+		dstData[mOutputInfo.imgInfo.size - j - 1] = dstData[j];
+		dstData[j] = temp;
+		j++;
+	}
 
-		/* Mirror flip */
-		for (int32_t row = 0; row < mOutputInfo.imgInfo.height; row++) {
-			int32_t col = 0;
-			while (col < channels * mOutputInfo.imgInfo.width - col) {
-				temp = dstData[row * channels * mOutputInfo.imgInfo.width + channels * mOutputInfo.imgInfo.width - col - 1];
-				dstData[channels * row * mOutputInfo.imgInfo.width + channels * mOutputInfo.imgInfo.width - col - 1] =
-					dstData[channels * row * mOutputInfo.imgInfo.width + col];
-				dstData[channels * row * mOutputInfo.imgInfo.width + col] = temp;
-				col++;
-			}
+	/* Mirror flip */
+	for (int32_t row = 0; row < mOutputInfo.imgInfo.height; row++) {
+		int32_t col = 0;
+		while (col < channels * mOutputInfo.imgInfo.width - col) {
+			temp = dstData[row * channels * mOutputInfo.imgInfo.width + channels * mOutputInfo.imgInfo.width - col - 1];
+			dstData[channels * row * mOutputInfo.imgInfo.width + channels * mOutputInfo.imgInfo.width - col - 1] =
+				dstData[channels * row * mOutputInfo.imgInfo.width + col];
+			dstData[channels * row * mOutputInfo.imgInfo.width + col] = temp;
+			col++;
 		}
 	}
 
@@ -317,13 +309,12 @@ int32_t FileManager::SetBMP(uint8_t* srcData, int32_t channels, BYTE* dstData)
 
 void FileManager::WriteBMP(BYTE* data, int32_t channels)
 {
-	BITMAPFILEHEADER header;
-	BITMAPINFOHEADER headerinfo;
+	BITMAPFILEHEADER header = { 0 };
+	BITMAPINFOHEADER headerinfo = { 0 };
 	int32_t tempSize;
 
-	ILOGDF("BYTE:%d WORD:%d DWORD:%d LONG:%d", sizeof(BYTE), sizeof(WORD), sizeof(DWORD), sizeof(LONG));
-	memset(&header, 0, sizeof(BITMAPFILEHEADER));
-	memset(&headerinfo, 0, sizeof(BITMAPINFOHEADER));
+	ILOGDF("BYTE:%d WORD:%d DWORD:%d LONG:%d",
+			sizeof(BYTE), sizeof(WORD), sizeof(DWORD), sizeof(LONG));
 	headerinfo.biSize = sizeof(BITMAPINFOHEADER);
 	headerinfo.biHeight = mOutputInfo.imgInfo.height;
 	headerinfo.biWidth = mOutputInfo.imgInfo.width;
@@ -362,27 +353,26 @@ void FileManager::WriteBMP(BYTE* data, int32_t channels)
 	header.bfSize = tempSize;
 #endif
 
-	ILOGI("BMP output path:%s", mOutputInfo.imgInfo.path);
 	ofstream outputFile(mOutputInfo.imgInfo.path, ios::binary);
 	if (outputFile.fail()) {
 		ILOGE("Cannot open ouput file:%s", mOutputInfo.imgInfo.path);
+		return;
 	}
-	else {
-		outputFile.write((char*)& header, sizeof(BITMAPFILEHEADER));
-		outputFile.write((char*)& headerinfo, sizeof(BITMAPINFOHEADER));
-		if (channels == 1) {
-			static RGBQUAD palette[256];
-			for (unsigned int i = 0; i < 256; i++)
-			{
-				palette[i].rgbBlue = i;
-				palette[i].rgbGreen = i;
-				palette[i].rgbRed = i;
-			}
-			outputFile.write((char*)palette, sizeof(RGBQUAD) * 256);
+	outputFile.write((char*)& header, sizeof(BITMAPFILEHEADER));
+	outputFile.write((char*)& headerinfo, sizeof(BITMAPINFOHEADER));
+	if (channels == 1) {
+		static RGBQUAD palette[256];
+		for (int32_t i = 0; i < 256; i++)
+		{
+			palette[i].rgbBlue = i;
+			palette[i].rgbGreen = i;
+			palette[i].rgbRed = i;
 		}
-		outputFile.write((char*)data, mOutputInfo.imgInfo.size);
+		outputFile.write((char*)palette, sizeof(RGBQUAD) * 256);
 	}
+	outputFile.write((char*)data, mOutputInfo.imgInfo.size);
 	outputFile.close();
+	ILOGI("BMP output:%s", mOutputInfo.imgInfo.path);
 }
 
 int32_t FileManager::CreateVideo(void* dst)
@@ -394,11 +384,12 @@ int32_t FileManager::CreateVideo(void* dst)
 	}
 
 	rt = mVideo->Init(dst);
-	if (SUCCESS(rt)) {
-		mVTParam.pVideo = mVideo.get();
-		mVTParam.pFileMgr = this;
-		rt = mVideo->CreateThread((void*)&mVTParam);
+	if (!SUCCESS(rt)) {
+		return rt;
 	}
+
+	mVTParam.pVideo = mVideo.get();
+	rt = mVideo->CreateThread((void*)&mVTParam);
 	ILOGI("Video fps:%d total frame:%d",
 			mOutputInfo.videoInfo.fps, mOutputInfo.videoInfo.frameNum);
 
@@ -428,235 +419,222 @@ int32_t FileManager::DestroyVideo()
 int32_t FileManager::Mipi10decode(void* src, void* dst, ImgInfo* info)
 {
 	int32_t rt = ISP_SUCCESS;
-
 	int32_t leftShift = 0;
-	int32_t alignedW = ALIGNx(info->width, info->bitspp, CHECK_PACKAGED(info->rawFormat), info->stride);
+
 	if (!info) {
 		rt = ISP_INVALID_PARAM;
+		ILOGE("Input is null");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		leftShift = info->bitspp - BITS_PER_WORD;
-		if (leftShift < 0 || leftShift > 8)
-		{
+	leftShift = info->bitspp - BITS_PER_WORD;
+	if (leftShift < 0 || leftShift > 8) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Not support bpp:%d", info->bitspp);
+		return rt;
+	}
+
+	int32_t alignedW = ALIGNx(info->width, info->bitspp, CHECK_PACKAGED(info->rawFormat), info->stride);
+	switch (info->rawFormat) {
+		case ANDROID_RAW10:
+			for (int32_t row = 0; row < info->height; row++) {
+				for (int32_t col = 0; col < alignedW; col += 5) {
+					if (col * BITS_PER_WORD / info->bitspp < info->width && row < info->height) {
+						static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp] =
+							((static_cast<uint8_t*>(src)[row * alignedW + col] & 0xffff) << leftShift) |
+							((static_cast<uint8_t*>(src)[row * alignedW + col + 4] & 0x3) & 0x3ff);
+						static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 1] =
+							((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0xffff) << leftShift) |
+							(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] >> 2) & 0x3) & 0x3ff);
+						static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 2] =
+							((static_cast<uint8_t*>(src)[row * alignedW + col + 2] & 0xffff) << leftShift) |
+							(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] >> 4) & 0x3) & 0x3ff);
+						static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 3] =
+							((static_cast<uint8_t*>(src)[row * alignedW + col + 3] & 0xffff) << leftShift) |
+							(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] >> 6) & 0x3) & 0x3ff);
+					}
+				}
+			}
+			break;
+		case ORDINAL_RAW10:
+			for (int32_t row = 0; row < info->height; row++) {
+				for (int32_t col = 0; col < alignedW; col += 5) {
+					if (col * BITS_PER_WORD / info->bitspp < info->width && row < info->height) {
+						static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp] =
+							(((static_cast<uint8_t*>(src)[row * alignedW + col + 0] >> 0) & (0xff >> 0)) & 0xffff) |
+							(((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0x03) << 8) & 0xffff);
+						static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 1] =
+							(((static_cast<uint8_t*>(src)[row * alignedW + col + 1] >> 2) & (0xff >> 2)) & 0xffff) |
+							(((static_cast<uint8_t*>(src)[row * alignedW + col + 2] & 0x0f) << 6) & 0xffff);
+						static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 2] =
+							(((static_cast<uint8_t*>(src)[row * alignedW + col + 2] >> 4) & (0xff >> 4)) & 0xffff) |
+							(((static_cast<uint8_t*>(src)[row * alignedW + col + 3] & 0x3f) << 4) & 0xffff);
+						static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 3] =
+							(((static_cast<uint8_t*>(src)[row * alignedW + col + 3] >> 6) & (0xff >> 6)) & 0xffff) |
+							(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] & 0xff) << 2) & 0xffff);
+					}
+				}
+			}
+			break;
+		case UNPACKAGED_RAW10_LSB:
+			for (int32_t row = 0; row < info->height; row++) {
+				for (int32_t col = 0; col < alignedW; col += 2) {
+					static_cast<uint16_t*>(dst)[row * info->width + col / 2] =
+						(static_cast<uint8_t*>(src)[row * alignedW + col] & 0xffff) |
+						(((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0x3) & 0xffff) << BITS_PER_WORD);
+				}
+			}
+			break;
+		case UNPACKAGED_RAW10_MSB:
+			for (int32_t row = 0; row < info->height; row++) {
+				for (int32_t col = 0; col < alignedW; col += 2) {
+					static_cast<uint16_t*>(dst)[row * info->width + col / 2] =
+						((static_cast<uint8_t*>(src)[row * alignedW + col] >> (BITS_PER_WORD - leftShift)) & 0xffff) |
+						((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0xffff) << leftShift);
+				}
+			}
+			break;
+		case RAW_FORMAT_NUM:
+		default:
 			rt = ISP_INVALID_PARAM;
-		}
+			ILOGE("Not support raw type:%d", info->rawFormat);
+			return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		switch (info->rawFormat) {
-			case ANDROID_RAW10:
-				for (int32_t row = 0; row < info->height; row++) {
-					for (int32_t col = 0; col < alignedW; col += 5) {
-						if (col * BITS_PER_WORD / info->bitspp < info->width && row < info->height) {
-							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp] =
-								((static_cast<uint8_t*>(src)[row * alignedW + col] & 0xffff) << leftShift) |
-								((static_cast<uint8_t*>(src)[row * alignedW + col + 4] & 0x3) & 0x3ff);
-							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 1] =
-								((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0xffff) << leftShift) |
-								(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] >> 2) & 0x3) & 0x3ff);
-							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 2] =
-								((static_cast<uint8_t*>(src)[row * alignedW + col + 2] & 0xffff) << leftShift) |
-								(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] >> 4) & 0x3) & 0x3ff);
-							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 3] =
-								((static_cast<uint8_t*>(src)[row * alignedW + col + 3] & 0xffff) << leftShift) |
-								(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] >> 6) & 0x3) & 0x3ff);
-						}
-					}
-				}
-				break;
-			case ORDINAL_RAW10:
-				for (int32_t row = 0; row < info->height; row++) {
-					for (int32_t col = 0; col < alignedW; col += 5) {
-						if (col * BITS_PER_WORD / info->bitspp < info->width && row < info->height) {
-							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp] =
-								(((static_cast<uint8_t*>(src)[row * alignedW + col + 0] >> 0) & (0xff >> 0)) & 0xffff) |
-								(((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0x03) << 8) & 0xffff);
-							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 1] =
-								(((static_cast<uint8_t*>(src)[row * alignedW + col + 1] >> 2) & (0xff >> 2)) & 0xffff) |
-								(((static_cast<uint8_t*>(src)[row * alignedW + col + 2] & 0x0f) << 6) & 0xffff);
-							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 2] =
-								(((static_cast<uint8_t*>(src)[row * alignedW + col + 2] >> 4) & (0xff >> 4)) & 0xffff) |
-								(((static_cast<uint8_t*>(src)[row * alignedW + col + 3] & 0x3f) << 4) & 0xffff);
-							static_cast<uint16_t*>(dst)[row * info->width + col * BITS_PER_WORD / info->bitspp + 3] =
-								(((static_cast<uint8_t*>(src)[row * alignedW + col + 3] >> 6) & (0xff >> 6)) & 0xffff) |
-								(((static_cast<uint8_t*>(src)[row * alignedW + col + 4] & 0xff) << 2) & 0xffff);
-						}
-					}
-				}
-				break;
-			case UNPACKAGED_RAW10_LSB:
-				for (int32_t row = 0; row < info->height; row++) {
-					for (int32_t col = 0; col < alignedW; col += 2) {
-						static_cast<uint16_t*>(dst)[row * info->width + col / 2] =
-							(static_cast<uint8_t*>(src)[row * alignedW + col] & 0xffff) |
-							(((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0x3) & 0xffff) << BITS_PER_WORD);
-					}
-				}
-				break;
-			case UNPACKAGED_RAW10_MSB:
-				for (int32_t row = 0; row < info->height; row++) {
-					for (int32_t col = 0; col < alignedW; col += 2) {
-						static_cast<uint16_t*>(dst)[row * info->width + col / 2] =
-							((static_cast<uint8_t*>(src)[row * alignedW + col] >> (BITS_PER_WORD - leftShift)) & 0xffff) |
-							((static_cast<uint8_t*>(src)[row * alignedW + col + 1] & 0xffff) << leftShift);
-					}
-				}
-				break;
-			case RAW_FORMAT_NUM:
-			default:
-				rt = ISP_INVALID_PARAM;
-				ILOGE("Not support raw type:%d", info->rawFormat);
-				break;
-		}
-		if (SUCCESS(rt)) {
-			ILOGI("MIPI decode finished");
-		}
-	}
-
+	ILOGDF("MIPI decode finished");
 	return rt;
 }
 
 void DumpDataInt(void* pData, ...
 		/* int32_t height, int32_t width, int32_t bitWidth, char* dumpPath */)
 {
-	int32_t rt = ISP_SUCCESS;
 	int32_t width = 0;
 	int32_t height = 0;
 	int32_t bitWidth = 0;
-	char* dumpPath = nullptr;
+	char* dumpPath = NULL;
 	va_list va;
 
-	if (pData == nullptr) {
-		rt = ISP_INVALID_PARAM;
-		ILOGE("Dump failed. data is nullptr");
+	if (pData == NULL) {
+		ILOGE("Dump failed. data is NULL");
+		return;
 	}
 
-	if (SUCCESS(rt)) {
-		va_start(va, pData);
-		width = static_cast<int32_t>(va_arg(va, int32_t));
-		height = static_cast<int32_t>(va_arg(va, int32_t));
-		bitWidth = static_cast<int32_t>(va_arg(va, int32_t));
-		dumpPath = static_cast<char*>(va_arg(va, char*));
-		va_end(va);
-		if (!dumpPath) {
-		rt = ISP_INVALID_PARAM;
-			ILOGE("dumpPath is null");
-		}
+	va_start(va, pData);
+	width = static_cast<int32_t>(va_arg(va, int32_t));
+	height = static_cast<int32_t>(va_arg(va, int32_t));
+	bitWidth = static_cast<int32_t>(va_arg(va, int32_t));
+	dumpPath = static_cast<char*>(va_arg(va, char*));
+	va_end(va);
+	if (!dumpPath) {
+		ILOGE("dumpPath is null");
+		return;
 	}
 
-	if (SUCCESS(rt)) {
-		ofstream dumpFile(dumpPath);
-		if (!dumpFile) {
-			rt = ISP_FAILED;
-			ILOGE("Cannot create dump file:%s", dumpPath);
-		}
+	ofstream dumpFile(dumpPath);
+	if (!dumpFile) {
+		ILOGE("Cannot create dump file:%s", dumpPath);
+		return;
+	}
 
-		if(SUCCESS(rt)) {
-			for (int32_t i = 0; i < height; i++) {
-				dumpFile << i << ": ";
-				for (int32_t j = 0; j < width; j++) {
-					switch (bitWidth) {
-						case sizeof(uint16_t) :
-							dumpFile << (int)static_cast<uint16_t*>(pData)[i * width + j] << ' ';
-							break;
-						case sizeof(uint8_t) :
-							dumpFile << (int)static_cast<uint8_t*>(pData)[i * width + j] << ' ';
-							break;
-						default:
-							ILOGE("Dump failed. Unsopported data bitWidth:%d", bitWidth);
-					}
-				}
-				dumpFile << endl;
+	for (int32_t i = 0; i < height; i++) {
+		dumpFile << i << ": ";
+		for (int32_t j = 0; j < width; j++) {
+			switch (bitWidth) {
+				case sizeof(uint16_t) :
+					dumpFile << (int)static_cast<uint16_t*>(pData)[i * width + j] << ' ';
+					break;
+				case sizeof(uint8_t) :
+					dumpFile << (int)static_cast<uint8_t*>(pData)[i * width + j] << ' ';
+					break;
+				default:
+					ILOGE("Dump failed. Unsopported data bitWidth:%d", bitWidth);
 			}
-			ILOGI("Data saved as int at:%s", dumpPath);
 		}
-		dumpFile.close();
+		dumpFile << endl;
 	}
+	ILOGI("Data saved as int at:%s", dumpPath);
+	dumpFile.close();
 }
 
-int32_t CheckFilePath(char* pPath, void* pIn, void* pOut)
+int32_t CheckInputPath(char* pPath, void* pIn, void* pOut)
 {
 	int32_t rt = ISP_SUCCESS;
 
 	if (!pPath || !pIn || !pOut) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Null input %d", rt);
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		if (!access(pPath, F_OK)) {
-			if (!access(pPath, R_OK)) {
-				ILOGI("File: %s", pPath);
-			} else {
-				rt = ISP_FAILED;
-				ILOGE("Lack of read right for %s", pPath);
-			}
-		} else {
-			rt = ISP_FAILED;
-			ILOGE("File not exit. %s", pPath);
-		}
+	if (access(pPath, F_OK)) {
+		rt = ISP_FAILED;
+		ILOGE("File not exit. %s", pPath);
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		int32_t len = 0, dotIndex = 0;
-		while(pPath[len] != '\0') {
-			len++;
-		}
-		if (len >= FILE_PATH_MAX_SIZE) {
-			rt = ISP_INVALID_PARAM;
-			ILOGE("Input file path size:%d > %d", len, FILE_PATH_MAX_SIZE);
-		}
-		if (SUCCESS(rt)) {
-			dotIndex = len;
-			while(pPath[dotIndex] != '.' && dotIndex > 0) {
-				dotIndex--;
-			}
-			if (dotIndex + OUTPUT_FILE_TYPE_SIZE >= FILE_PATH_MAX_SIZE) {
-				rt = ISP_INVALID_PARAM;
-				ILOGE("Output file path size:%d > %d", dotIndex + 4, FILE_PATH_MAX_SIZE);
-			}
-		}
-		if (SUCCESS(rt)) {
-			memcpy(static_cast<InputInfo*>(pIn)->path, pPath, len);
-			memcpy(static_cast<OutputInfo*>(pOut)->imgInfo.path, pPath, dotIndex + 1);
-			memcpy(static_cast<OutputInfo*>(pOut)->imgInfo.path + dotIndex + 1, "bmp\0", OUTPUT_FILE_TYPE_SIZE);
-			memcpy(static_cast<OutputInfo*>(pOut)->videoInfo.path, pPath, dotIndex + 1);
-			memcpy(static_cast<OutputInfo*>(pOut)->videoInfo.path + dotIndex + 1, "avi\0", OUTPUT_FILE_TYPE_SIZE);
-		}
+	if (access(pPath, R_OK)) {
+		rt = ISP_FAILED;
+		ILOGE("Lack of read right for %s", pPath);
+		return rt;
 	}
+
+	int32_t len = 0, dotIndex = 0;
+	while(pPath[len] != '\0') {
+		len++;
+	}
+	if (len >= FILE_PATH_MAX_SIZE) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Input file path:%s over size:%d > %d", pPath, len, FILE_PATH_MAX_SIZE);
+		return rt;
+	}
+
+	dotIndex = len;
+	while(pPath[dotIndex] != '.' && dotIndex > 0) {
+		dotIndex--;
+	}
+	if (dotIndex + OUTPUT_FILE_TYPE_SIZE >= FILE_PATH_MAX_SIZE) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Output file path:%s size:%d > %d", pPath, dotIndex + OUTPUT_FILE_TYPE_SIZE, FILE_PATH_MAX_SIZE);
+		return rt;
+	}
+	memcpy(static_cast<InputInfo*>(pIn)->path, pPath, len);
+	memcpy(static_cast<OutputInfo*>(pOut)->imgInfo.path, pPath, dotIndex + 1);
+	memcpy(static_cast<OutputInfo*>(pOut)->imgInfo.path + dotIndex + 1, "bmp\0", OUTPUT_FILE_TYPE_SIZE);
+	memcpy(static_cast<OutputInfo*>(pOut)->videoInfo.path, pPath, dotIndex + 1);
+	memcpy(static_cast<OutputInfo*>(pOut)->videoInfo.path + dotIndex + 1, "avi\0", OUTPUT_FILE_TYPE_SIZE);
+	ILOGDF("path:%s", pPath);
 
 	return rt;
 }
 
-int32_t CheckImgSize(char* pCharW, char* pCharH, void* pInfo)
+int32_t CheckInputSize(char* pCharW, char* pCharH, void* pInfo)
 {
 	int32_t rt = ISP_SUCCESS;
 
 	if (!pCharW || !pCharH || !pInfo) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Input is null");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		int32_t w, h;
-		w = CharNum2IntNum(pCharW);
-		h = CharNum2IntNum(pCharH);
+	int32_t w, h;
+	w = CharNum2IntNum(pCharW);
+	h = CharNum2IntNum(pCharH);
 
-		if (w < 0 || h < 0) {
-			rt = ISP_INVALID_PARAM;
-			ILOGE("Invalid Size: %sx%s", pCharW, pCharH);
-		} else {
-			static_cast<MediaInfo*>(pInfo)->img.width = w;
-			static_cast<MediaInfo*>(pInfo)->img.height = h;
-			ILOGI("Size: %dx%d", w, h);
-		}
+	if (w < 0 || h < 0) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Invalid Size: %sx%s", pCharW, pCharH);
+		return rt;
 	}
+
+	static_cast<MediaInfo*>(pInfo)->img.width = w;
+	static_cast<MediaInfo*>(pInfo)->img.height = h;
+	ILOGDF("size:%dx%d", w, h);
 
 	return rt;
 }
 
-int32_t CheckImgFmt(char* pCharFmt, void* pInfo)
+int32_t CheckInputFmt(char* pCharFmt, void* pInfo)
 {
 	int32_t rt = ISP_SUCCESS;
 	uint32_t len = 0;
@@ -665,77 +643,118 @@ int32_t CheckImgFmt(char* pCharFmt, void* pInfo)
 	if (!pCharFmt || !pInfo) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Input is null");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		while(pCharFmt[len] != '\0') {
-			len++;
-		}
-		if (len + 1 < 4) {
-			rt = ISP_INVALID_PARAM;
-			ILOGE("Invalid format:%s", pCharFmt);
-		}
+	while(pCharFmt[len] != '\0') {
+		len++;
+	}
+	if (len + 1 < 4) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Invalid format:%s", pCharFmt);
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		fmt = len == 4 ?
-			v4l2_fourcc(pCharFmt[0], pCharFmt[1], pCharFmt[2], pCharFmt[3]) :
-			v4l2_fourcc(pCharFmt[0], pCharFmt[1], pCharFmt[2], ' ');
-		for (int32_t i = sizeof(gSupportedFmt)/sizeof(ImgFmtInfo) - 1; i >= 0; i--) {
-			if (gSupportedFmt[i].fmt == fmt) {
-				ILOGI("Format: %s (%c%c%c%c)", gSupportedFmt[i].info,
-						fmt, fmt >> 8, fmt >> 16, fmt >> 24);
-				static_cast<MediaInfo*>(pInfo)->img.bitspp = gSupportedFmt[i].bitWidth;
-				static_cast<MediaInfo*>(pInfo)->img.bayerOrder = gSupportedFmt[i].order;
-				static_cast<MediaInfo*>(pInfo)->img.stride = 0; /* 0 as default */
-				if (fmt == V4L2_PIX_FMT_SBGGR10P ||
-						fmt == V4L2_PIX_FMT_SGBRG10P ||
-						fmt == V4L2_PIX_FMT_SGRBG10P ||
-						fmt == V4L2_PIX_FMT_SRGGB10P) {
-					static_cast<MediaInfo*>(pInfo)->img.rawFormat = ANDROID_RAW10;
-				/* TODO: find v4l2 fmt for ORDINAL_RAW10 */
-//				} else if (fmt == ??)
-//					static_cast<MediaInfo*>(pInfo)->img.rawFormat = ORDINAL_RAW10;
-				} else if (fmt == V4L2_PIX_FMT_SBGGR10 ||
-						fmt == V4L2_PIX_FMT_SGBRG10 ||
-						fmt == V4L2_PIX_FMT_SGRBG10 ||
-						fmt == V4L2_PIX_FMT_SRGGB10) {
-					static_cast<MediaInfo*>(pInfo)->img.rawFormat = UNPACKAGED_RAW10_LSB;
-				} else {
-					static_cast<MediaInfo*>(pInfo)->img.rawFormat = RAW_FORMAT_NUM;
-				}
-				break;
-			} else if (i == 0) {
-				rt = ISP_INVALID_PARAM;
-				ILOGE("Not support format:%s(0x%x)", pCharFmt, fmt);
+	fmt = len == 4 ?
+		v4l2_fourcc(pCharFmt[0], pCharFmt[1], pCharFmt[2], pCharFmt[3]) :
+		v4l2_fourcc(pCharFmt[0], pCharFmt[1], pCharFmt[2], ' ');
+	for (int32_t i = sizeof(gSupportedFmt) / sizeof(ImgFmtInfo) - 1; i >= 0; i--) {
+		if (gSupportedFmt[i].fmt == fmt) {
+			ILOGDF("Format: %s (%c%c%c%c)", gSupportedFmt[i].info,
+					fmt, fmt >> 8, fmt >> 16, fmt >> 24);
+			static_cast<MediaInfo*>(pInfo)->img.bitspp = gSupportedFmt[i].bitWidth;
+			static_cast<MediaInfo*>(pInfo)->img.bayerOrder = gSupportedFmt[i].order;
+			static_cast<MediaInfo*>(pInfo)->img.stride = 0; /* 0 as default */
+			if (fmt == V4L2_PIX_FMT_SBGGR10P ||
+					fmt == V4L2_PIX_FMT_SGBRG10P ||
+					fmt == V4L2_PIX_FMT_SGRBG10P ||
+					fmt == V4L2_PIX_FMT_SRGGB10P) {
+				static_cast<MediaInfo*>(pInfo)->img.rawFormat = ANDROID_RAW10;
+			/* TODO[L]: find v4l2 fmt for ORDINAL_RAW10 */
+//			} else if (fmt == ??) {
+//				static_cast<MediaInfo*>(pInfo)->img.rawFormat = ORDINAL_RAW10;
+			} else if (fmt == V4L2_PIX_FMT_SBGGR10 ||
+					fmt == V4L2_PIX_FMT_SGBRG10 ||
+					fmt == V4L2_PIX_FMT_SGRBG10 ||
+					fmt == V4L2_PIX_FMT_SRGGB10) {
+				static_cast<MediaInfo*>(pInfo)->img.rawFormat = UNPACKAGED_RAW10_LSB;
+			} else {
+				static_cast<MediaInfo*>(pInfo)->img.rawFormat = RAW_FORMAT_NUM;
 			}
+			break;
+		} else if (i == 0) {
+			rt = ISP_INVALID_PARAM;
+			ILOGE("Not support format:%s(0x%x)", pCharFmt, fmt);
 		}
 	}
 
 	return rt;
 }
 
-int32_t CheckImgStride(char* pCharStride, void* pInfo)
+int32_t CheckInputStride(char* pCharStride, void* pInfo)
 {
 	int32_t rt = ISP_SUCCESS;
 
 	if (!pCharStride || !pInfo) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Input is null");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		int32_t stride;
-		stride = CharNum2IntNum(pCharStride);
+	int32_t stride;
+	stride = CharNum2IntNum(pCharStride);
 
-		if (stride < 0 || stride % 2 != 0) {
-			rt = ISP_INVALID_PARAM;
-			ILOGE("Invalid stride: %s", pCharStride);
-		} else {
-			static_cast<MediaInfo*>(pInfo)->img.stride = stride;
-			ILOGI("stride: %u", stride);
-		}
+	if (stride < 0 || stride % 2 != 0) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Invalid stride: %s", pCharStride);
+		return rt;
 	}
+	static_cast<MediaInfo*>(pInfo)->img.stride = stride;
+	ILOGDF("stride: %u", stride);
+
+	return rt;
+}
+
+int32_t CheckOutputFPS(char* pFPS, void* pInfo)
+{
+	int32_t rt = ISP_SUCCESS;
+
+	if (!pFPS || !pInfo) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Input is null");
+		return rt;
+	}
+
+	int32_t fps = CharNum2IntNum(pFPS);
+	if (fps < 0) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Invalid fps: %s", pFPS);
+		return rt;
+	}
+	static_cast<MediaInfo*>(pInfo)->video.fps = fps;
+	ILOGDF("video fps: %u", fps);
+
+	return rt;
+}
+
+int32_t CheckOutputFrameNum(char* pFNum, void* pInfo)
+{
+	int32_t rt = ISP_SUCCESS;
+
+	if (!pFNum || !pInfo) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Input is null");
+		return rt;
+	}
+
+	int32_t num = CharNum2IntNum(pFNum);
+	if (num < 0) {
+		rt = ISP_INVALID_PARAM;
+		ILOGE("Invalid frame number: %s", pFNum);
+		return rt;
+	}
+	static_cast<MediaInfo*>(pInfo)->video.frameNum = num;
+	ILOGDF("video frame number: %u", num);
 
 	return rt;
 }
@@ -744,58 +763,71 @@ int FileManager::Input(IOInfo ioInfo)
 {
 	int32_t rt = ISP_SUCCESS;
 
-	if (SUCCESS(rt)) {
-		if (ioInfo.argc <= 1) {
-			IOInfoFlag = 1;
-			ILOGI("Use default I/O config");
-			return rt;
-		}
+	if (ioInfo.argc <= 1) {
+		IOInfoFlag = 1;
+		ILOGI("Use default I/O config");
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		for (int32_t i = 0; i < (ioInfo.argc < MAX_IO_PARAM_CNT ? ioInfo.argc : MAX_IO_PARAM_CNT); i++) {
-			if (!ioInfo.argv[i]) {
-				rt = ISP_INVALID_PARAM;
-				ILOGE("Null param[%d]", i);
+	for (int32_t i = 0; i < (ioInfo.argc < MAX_IO_PARAM_CNT ? ioInfo.argc : MAX_IO_PARAM_CNT); i++) {
+		if (!ioInfo.argv[i]) {
+			rt = ISP_INVALID_PARAM;
+			ILOGE("Null param[%d]", i);
+			return rt;
+		}
+
+		if (i == 1) {
+			if (!strcmp(ioInfo.argv[i], "-h") || !strcmp(ioInfo.argv[i], "-help")) {
+				HelpMenu();
+				rt = ISP_SKIP;
+				break;
+			}
+			if (!strcmp(ioInfo.argv[i], "-l") || !strcmp(ioInfo.argv[i], "-list")) {
+				SupportInfo();
+				rt = ISP_SKIP;
 				break;
 			}
 
-			if (SUCCESS(rt)) {
-				if (i == 1) {
-					if (!strcmp(ioInfo.argv[i], "-h") || !strcmp(ioInfo.argv[i], "-help")) {
-						HelpMenu();
-						rt = ISP_SKIP;
-						break;
-					}
-					if (!strcmp(ioInfo.argv[i], "-l") || !strcmp(ioInfo.argv[i], "-list")) {
-						SupportInfo();
-						rt = ISP_SKIP;
-						break;
-					}
-
-					if (ioInfo.argc - 1 < MIN_IO_PARAM_CNT) {
-						rt = ISP_INVALID_PARAM;
-						ILOGE("Insufficient param num:%d < expected param num:%d", ioInfo.argc - 1, MIN_IO_PARAM_CNT);
-						break;
-					}
-					rt = CheckFilePath(ioInfo.argv[i], &mInputInfo, &mOutputInfo);
-				}
+			if (ioInfo.argc - 1 < MIN_IO_PARAM_CNT) {
+				rt = ISP_INVALID_PARAM;
+				ILOGE("Insufficient param num:%d < expected param num:%d", ioInfo.argc - 1, MIN_IO_PARAM_CNT);
+				return rt;
 			}
-
-			if (SUCCESS(rt)) {
-				if (i == 3) {
-					rt = CheckImgSize(ioInfo.argv[i-1], ioInfo.argv[i], pDynamicInfo);
-				}
+			rt = CheckInputPath(ioInfo.argv[i], &mInputInfo, &mOutputInfo);
+			if (!SUCCESS(rt)) {
+				return rt;
 			}
-			if (SUCCESS(rt)) {
-				if (i == 4) {
-					rt = CheckImgFmt(ioInfo.argv[i], pDynamicInfo);
-				}
+		}
+		if (i == 3) {
+			rt = CheckInputSize(ioInfo.argv[i-1], ioInfo.argv[i], pDynamicInfo);
+			if (!SUCCESS(rt)) {
+				return rt;
 			}
-			if (SUCCESS(rt)) {
-				if (i == 5) {
-					rt = CheckImgStride(ioInfo.argv[i], pDynamicInfo);
-				}
+		}
+		if (i == 4) {
+			rt = CheckInputFmt(ioInfo.argv[i], pDynamicInfo);
+			if (!SUCCESS(rt)) {
+				return rt;
+			}
+		}
+		if (i == 5) {
+			rt = CheckInputStride(ioInfo.argv[i], pDynamicInfo);
+			if (!SUCCESS(rt)) {
+				return rt;
+			}
+		}
+		if (i == 6) {
+			rt = CheckOutputFPS(ioInfo.argv[i], pDynamicInfo);
+			if (!SUCCESS(rt)) {
+				return rt;
+			}
+		}
+		if (i == 7) {
+			rt = CheckOutputFrameNum(ioInfo.argv[i], pDynamicInfo);
+			if (!SUCCESS(rt)) {
+				return rt;
+			} else {
+				static_cast<MediaInfo*>(pDynamicInfo)->type = IMAGE_AND_VIDEO_MEDIA;
 			}
 		}
 	}
@@ -853,8 +885,10 @@ void FileManager::HelpMenu()
 	ILOGI(" \tpath\t: Target image path, like: /usr/bin/example.raw");
 	ILOGI(" \twidth\t: Image width, like: 640");
 	ILOGI(" \theight\t: Image height, like: 480");
-	ILOGI(" \tfmt\t: Image format, like: pBAA. Please check <FMT Param> column in format list.");
-	ILOGI(" \tstride\t: Optional param. If need, set stride for image");
+	ILOGI(" \tfmt\t: Image format, like: pBAA. Please check <FMT Param> column in format list");
+	ILOGI(" \tstride\t: Optional if output img only. Set the stride for image");
+	ILOGI(" \tfps\t: If output img & video, set the video fps");
+	ILOGI(" \tframe num\t: If output img & video, set the total frame number");
 	ILOGI(" \t");
 }
 
@@ -865,20 +899,20 @@ int32_t FileManager::GetIOInfo(void* pInfo)
 	if (!pInfo) {
 		rt = ISP_INVALID_PARAM;
 		ILOGE("Null input! %d", rt);
+		return rt;
 	}
 
-	if (SUCCESS(rt)) {
-		switch(IOInfoFlag) {
-			case 0:
-				memcpy(pInfo, pDynamicInfo, sizeof(MediaInfo));
-				break;
-			case 1:
-				memcpy(pInfo, pStaticInfo, sizeof(MediaInfo));
-				break;
-			default:
-				ILOGE("Invalid I/O flag:%d", IOInfoFlag);
-				break;
-		}
+	switch(IOInfoFlag) {
+		case 0:
+			memcpy(pInfo, pDynamicInfo, sizeof(MediaInfo));
+			break;
+		case 1:
+			memcpy(pInfo, pStaticInfo, sizeof(MediaInfo));
+			break;
+		default:
+			ILOGE("Invalid I/O flag:%d", IOInfoFlag);
+			break;
 	}
+
 	return rt;
 }

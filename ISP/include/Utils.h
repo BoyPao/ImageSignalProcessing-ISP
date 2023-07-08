@@ -33,17 +33,15 @@
 #define VERSION 0
 #define SUB_VERSION 1
 
-#if !DBG_OPENCV_ON
 typedef unsigned char uchar;
-#endif
+
 #define MEM_T uchar
 #define TO_SIZE_T(s) ((s) % sizeof(MEM_T)) ? \
-						((s) / sizeof(MEM_T) + 1) : \
-						((s) / sizeof(MEM_T))
+	((s) / sizeof(MEM_T) + 1) : ((s) / sizeof(MEM_T))
 
-#define SERIAL_NUM_TAIL(n)  (n) == 1 ? "st" :\
-								((n) == 2 ? "nd" :\
-								((n) == 3 ? "rd" : "th"))
+#define SERIAL_NUM_TAIL(n)  ((n) == 1 ? "st" : \
+		((n) == 2 ? "nd" : \
+		 ((n) == 3 ? "rd" : "th")))
 
 #define SYSTEM_YEAR_OFFSET			1900
 #define SYSTEM_MONTH_OFFSET			1

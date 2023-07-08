@@ -13,27 +13,30 @@
 
 using namespace std;
 
-#define CHECK_PACKAGED(format)                          (((format) == UNPACKAGED_RAW10_LSB) ||                          \
-														((format) == UNPACKAGED_RAW10_MSB)) ? 0 : 1
+#define CHECK_PACKAGED(format)				\
+	(((format) == UNPACKAGED_RAW10_LSB) ||	\
+	 ((format) == UNPACKAGED_RAW10_MSB)) ? 0 : 1
 
-#define PIXELS2WORDS_MIPI_PACKAGED(pixelNum, bitspp)	(((bitspp) < BITS_PER_WORD) ?										\
-														0 :																	\
-														(((bitspp) == BITS_PER_WORD) ?										\
-															(pixelNum) :													\
-															((pixelNum) * (bitspp) / BITS_PER_WORD)))
-#define	PIXELS2WORDS_UNPACKAGED(pixelNum, bitspp)		(((bitspp) < BITS_PER_WORD) ?										\
-														0 :																	\
-														(((bitspp) == BITS_PER_WORD) ?										\
-															(pixelNum) :													\
-															((pixelNum) * 2)))
-#define PIXELS2WORDS(pixelNum, bitspp, packaged)		(((bitspp) % 2 || (bitspp) > 2 * BITS_PER_WORD || (bitspp) <= 0) ?	\
-														0 :																	\
-														((packaged) ?														\
-															PIXELS2WORDS_MIPI_PACKAGED(pixelNum, bitspp) :					\
-															PIXELS2WORDS_UNPACKAGED(pixelNum, bitspp)))
+#define PIXELS2WORDS_MIPI_PACKAGED(pixelNum, bitspp)	\
+	(((bitspp) < BITS_PER_WORD) ? 0 :					\
+	 (((bitspp) == BITS_PER_WORD) ?	(pixelNum) :		\
+	  ((pixelNum) * (bitspp) / BITS_PER_WORD)))
 
-#define ALIGN(x, align)									(align) ? (((x) + (align) - 1) & (~((align) - 1))) : (x)
-#define ALIGNx(pixelNum, bitspp, packaged, align)		ALIGN(PIXELS2WORDS(pixelNum, bitspp, packaged), align)
+#define	PIXELS2WORDS_UNPACKAGED(pixelNum, bitspp)		\
+	(((bitspp) < BITS_PER_WORD) ? 0 :					\
+	 (((bitspp) == BITS_PER_WORD) ?	(pixelNum) :		\
+	  ((pixelNum) * 2)))
+
+#define PIXELS2WORDS(pixelNum, bitspp, packaged)							\
+	(((bitspp) % 2 || (bitspp) > 2 * BITS_PER_WORD || (bitspp) <= 0) ? 0 :	\
+	 ((packaged) ? PIXELS2WORDS_MIPI_PACKAGED(pixelNum, bitspp) :			\
+	  PIXELS2WORDS_UNPACKAGED(pixelNum, bitspp)))
+
+#define ALIGN(x, align) \
+	(align) ? (((x) + (align) - 1) & (~((align) - 1))) : (x)
+
+#define ALIGNx(pixelNum, bitspp, packaged, align) \
+	ALIGN(PIXELS2WORDS(pixelNum, bitspp, packaged), align)
 
 enum MediaType {
 	IMAGE_MEDIA = 0,

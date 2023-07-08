@@ -23,7 +23,7 @@ void* WorkerFunc(void *pParam)
 	while (1) {
 		if (!pProc->IsWorkOn()) {
 			BLOGDP("Work E");
-			return 0;
+			return NULL;
 		}
 
 		int32_t rt = BZ_SUCCESS;
