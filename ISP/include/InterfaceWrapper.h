@@ -8,6 +8,7 @@
 #pragma once
 #include "Utils.h"
 #include "BZInterface.h"
+#include <mutex>
 
 enum ISPLibsId {
 	ISP_ALG_LIB = 0,
@@ -44,6 +45,7 @@ class InterfaceWrapperBase {
 class InterfaceWrapper : public InterfaceWrapperBase {
 	public:
 		static InterfaceWrapper* GetInstance();
+		static int32_t RemoveInstance();
 		virtual int32_t AlgISPListCreate(int32_t id);
 		virtual int32_t AlgProcess(int32_t id, int32_t type, void *pCtrl);
 		virtual int32_t NotifyMain() { return 0; };
@@ -61,6 +63,7 @@ class InterfaceWrapper : public InterfaceWrapperBase {
 		int32_t InterfaceDeInit(int32_t libId);
 		int32_t AlgInterfaceInit();
 		int32_t AlgInterfaceDeInit();
+		static InterfaceWrapper *pItfW;
 		ISPLibs mLibs;
 		ISPLibsOps mLibsOPS;
 		BZParam mISPLibParams;

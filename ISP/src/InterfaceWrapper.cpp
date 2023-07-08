@@ -48,10 +48,43 @@ const char LIB_SYMBLE[LIB_FUNCS_NUM][SYMBLE_SIZE_MAX] = {
 	"RegistCallbacks"
 };
 
+InterfaceWrapper *InterfaceWrapper::pItfW = NULL;
+static mutex gInstanceLock;
+
 InterfaceWrapper* InterfaceWrapper::GetInstance()
 {
-	static InterfaceWrapper gInstance;
-	return gInstance.IsReady() ? &gInstance : NULL;
+	{
+		unique_lock <mutex> lock(gInstanceLock);
+
+		if (!pItfW) {
+			pItfW = new InterfaceWrapper();
+			if (!pItfW) {
+				ILOGE("Faild to new ITF");
+				return NULL;
+			}
+		}
+
+		return pItfW->IsReady() ? pItfW : NULL;
+	}
+}
+
+int32_t InterfaceWrapper::RemoveInstance()
+{
+	int32_t rt = ISP_SUCCESS;
+	static int32_t rCnt = 0;
+
+	{
+		unique_lock <mutex> lock(gInstanceLock);
+		if (pItfW) {
+			delete pItfW;
+			pItfW = NULL;
+		} else if (rCnt > 0) {
+			ILOGW("Remove ITF %d times", rCnt);
+		}
+		rCnt++;
+	}
+
+	return rt;
 }
 
 int32_t InterfaceWrapper::IsReady()
@@ -61,7 +94,7 @@ int32_t InterfaceWrapper::IsReady()
 
 InterfaceWrapper::InterfaceWrapper()
 {
-	mLibs = { nullptr };
+	mLibs = { NULL };
 	mLibsOPS = { 0 };
 	mISPLibParams = { 0 };
 	mState = ITFWRAPPER_STATE_NOT_READY;
@@ -79,6 +112,7 @@ InterfaceWrapper::~InterfaceWrapper()
 
 	rt = DeInit();
 
+	mState = ITFWRAPPER_STATE_NOT_READY;
 	if (!SUCCESS(rt)) {
 		ILOGE("Fail to deinit!");
 	} else {
@@ -130,7 +164,7 @@ int32_t InterfaceWrapper::LoadLib(int32_t libId, const char* path)
 {
 	int32_t rt = ISP_SUCCESS;
 
-	void** pLib = nullptr;
+	void** pLib = NULL;
 
 	switch(libId) {
 		case ISP_ALG_LIB:
@@ -180,7 +214,7 @@ int32_t InterfaceWrapper::ReleaseLib(int32_t libId)
 {
 	int32_t rt = ISP_SUCCESS;
 
-	void** pLib = nullptr;
+	void** pLib = NULL;
 
 	switch(libId) {
 		case ISP_ALG_LIB:
@@ -202,7 +236,7 @@ int32_t InterfaceWrapper::ReleaseLib(int32_t libId)
 #elif defined WIN32_SYSTEM
 			FreeLibrary((HMODULE)*pLib);
 #endif
-			*pLib = nullptr;
+			*pLib = NULL;
 			ILOGDI("Release lib:%d", libId);
 		}
 	}
@@ -247,7 +281,7 @@ int32_t InterfaceWrapper::InterfaceDeInit(int32_t libId)
 int32_t InterfaceWrapper::AlgInterfaceInit()
 {
 	int32_t rt = ISP_SUCCESS;
-	LIB_VOID_FUNC_ADDR funcs[LIB_FUNCS_NUM] = {nullptr};
+	LIB_VOID_FUNC_ADDR funcs[LIB_FUNCS_NUM] = {NULL};
 
 	if (!mLibs.pAlgLib) {
 		rt = ISP_FAILED;
@@ -296,7 +330,7 @@ int32_t InterfaceWrapper::AlgInterfaceInit()
 int32_t InterfaceWrapper::AlgInterfaceDeInit()
 {
 	int32_t rt = ISP_SUCCESS;
-	LIB_VOID_FUNC_ADDR funcs[LIB_FUNCS_NUM] = {nullptr};
+	LIB_VOID_FUNC_ADDR funcs[LIB_FUNCS_NUM] = {NULL};
 
 	if (!mLibs.pAlgLib) {
 		rt = ISP_FAILED;
@@ -320,7 +354,7 @@ int32_t InterfaceWrapper::AlgInterfaceDeInit()
 
 	if (SUCCESS(rt)) {
 		if (funcs[1]) {
-			funcs[1](nullptr);
+			funcs[1](NULL);
 		} else {
 			rt = ISP_FAILED;
 			ILOGE("Lib Func[1]:%p", funcs[1]);

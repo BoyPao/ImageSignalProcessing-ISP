@@ -316,6 +316,8 @@ void* CoreFunc(void)
 		postData	= MemoryPool<uchar>::GetInstance()->RevertBuffer(static_cast<uchar*>(postData));
 	}
 
+	InterfaceWrapper::RemoveInstance();
+
 	return NULL;
 
 }
