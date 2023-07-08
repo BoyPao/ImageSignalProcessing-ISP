@@ -11,7 +11,7 @@
 #include "FileManager.h"
 #include "ParamManager.h"
 #include "ISPListManager.h"
-#include "BufferManager.h"
+#include "MemPool.h"
 #include "ISPItf.h"
 
 #include <thread>

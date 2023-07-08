@@ -1,11 +1,11 @@
 // License: GPL-3.0-or-later
 /*
- * Buffer manager implementation.
+ * Memory pool implementation.
  *
  * Copyright (c) 2019 Peng Hao <635945005@qq.com>
  */
 
-#include "BufferManager.h"
+#include "MemPool.h"
 
 #if DBG_MEM_OVERWRITE_CHECK_ON
 void* OverwriteCheckingFunc(void* param)

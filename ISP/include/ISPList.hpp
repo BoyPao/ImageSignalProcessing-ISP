@@ -7,7 +7,7 @@
  */
 
 #include "ISPList.h"
-#include "BufferManager.h"
+#include "MemPool.h"
 #include "FileManager.h"
 
 const int32_t gNodeParamTypeMap[NEC_PROCESS_TYPE_NUM] =

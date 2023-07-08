@@ -7,7 +7,7 @@
 
 #include "ParamManager.h"
 #include "InterfaceWrapper.h"
-#include "BufferManager.h"
+#include "MemPool.h"
 
 #include "Setting_1920x1080_D65_1000Lux.h"
 

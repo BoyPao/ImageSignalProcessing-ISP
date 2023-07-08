@@ -95,13 +95,13 @@ class MemoryPool : public MemoryPoolItf<T>
 		static MemoryPool<T>* GetInstance();
 		virtual T* RequireBuffer(size_t TSize);
 		virtual T* RevertBuffer(T* pBuffer);
+		int32_t PrintPool();
 
 	private:
 		MemoryPool();
 		virtual ~MemoryPool();
 		int32_t AllocBlock(int32_t level);
 		int32_t ReleaseBlock(int32_t level, uint32_t index);
-		int32_t PrintPool();
 		int32_t MemoryReset(void* pAddr, size_t size, int32_t operation);
 		T *RequireFromExistBlock(size_t size);
 		T *RequireFromNewBlock(size_t size);
