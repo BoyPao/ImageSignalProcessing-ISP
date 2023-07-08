@@ -16,5 +16,6 @@ const ISPListProperty defaultListConfig = {
 	 {"CC",				PROCESS_CC,				NODE_ON},
 	 {"Gamma",			PROCESS_GAMMA,			NODE_ON},
 	 {"WNR",			PROCESS_WNR,			NODE_ON},
-	 {"EE",				PROCESS_EE,				NODE_ON}}
+	 {"EE",				PROCESS_EE,				NODE_ON},
+	 {"CODER",			PROCESS_CODER,			NODE_ON}}
 };

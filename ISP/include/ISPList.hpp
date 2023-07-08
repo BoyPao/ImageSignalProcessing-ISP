@@ -8,8 +8,9 @@
 
 #include "ISPList.h"
 #include "BufferManager.h"
+#include "FileManager.h"
 
-const int32_t gNodeTypeMap[NEC_PROCESS_TYPE_NUM] =
+const int32_t gNodeParamTypeMap[NEC_PROCESS_TYPE_NUM] =
 {
 	BZ_PARAM_TYPE_BLC,
 	BZ_PARAM_TYPE_LSC,
@@ -19,6 +20,7 @@ const int32_t gNodeTypeMap[NEC_PROCESS_TYPE_NUM] =
 	BZ_PARAM_TYPE_Gamma,
 	BZ_PARAM_TYPE_WNR,
 	BZ_PARAM_TYPE_EE,
+	BZ_PARAM_TYPE_NUM,
 	BZ_PARAM_TYPE_NUM,
 	BZ_PARAM_TYPE_NUM,
 	BZ_PARAM_TYPE_RAW2RGB,
@@ -51,7 +53,7 @@ const int32_t YuvListConfigure[] = {
 };
 
 const int32_t PostListConfigure[] = {
-	PROCESS_TYPE_NUM
+	PROCESS_CODER,
 };
 
 template<typename T1, typename T2>
@@ -96,7 +98,7 @@ int32_t ISPNode<T1, T2>::Init(ISPNodeProperty *cfg, T1* input, T2* output)
 	static_cast<BZCtrl*>(pCtrl)->pInfo = ISPParamManager::GetInstance()->GetParam(mHostId, BZ_PARAM_TYPE_IMAGE_INFO);
 	static_cast<BZCtrl*>(pCtrl)->pSrc = input;
 	static_cast<BZCtrl*>(pCtrl)->pDst = output;
-	static_cast<BZCtrl*>(pCtrl)->pParam = ISPParamManager::GetInstance()->GetParam(mHostId, gNodeTypeMap[mProperty.type]);
+	static_cast<BZCtrl*>(pCtrl)->pParam = ISPParamManager::GetInstance()->GetParam(mHostId, gNodeParamTypeMap[mProperty.type]);
 
 	mInited = true;
 
@@ -165,8 +167,11 @@ int32_t ISPNode<T1, T2>::Process()
 
 	BZCtrl *ctl = static_cast<BZCtrl*>(pCtrl);
 	ILOGDL("%s:Buffer(in:%p out:%p)", mProperty.name, ctl->pSrc, ctl->pDst);
+	if (mProperty.type == PROCESS_CODER) {
+		return FileManager::GetInstance()->SaveImgData(static_cast<uint8_t*>(ctl->pDst));
+	}
 	rt = InterfaceWrapper::GetInstance()->AlgProcess(mHostId,
-			gNodeTypeMap[mProperty.type],
+			gNodeParamTypeMap[mProperty.type],
 			pCtrl);
 	if (!SUCCESS(rt)) {
 		ILOGE("Failed to set ctrl at %s", mProperty.name);
@@ -248,7 +253,7 @@ int32_t ISPNecNode<T1, T2>::Init(ISPNodeProperty *cfg, T1* input, T2* output)
 	static_cast<BZCtrl*>(this->pCtrl)->pInfo = ISPParamManager::GetInstance()->GetParam(this->mHostId, BZ_PARAM_TYPE_IMAGE_INFO);
 	static_cast<BZCtrl*>(this->pCtrl)->pSrc = input;
 	static_cast<BZCtrl*>(this->pCtrl)->pDst = output;
-	static_cast<BZCtrl*>(this->pCtrl)->pParam = ISPParamManager::GetInstance()->GetParam(this->mHostId, gNodeTypeMap[this->mProperty.type]);
+	static_cast<BZCtrl*>(this->pCtrl)->pParam = ISPParamManager::GetInstance()->GetParam(this->mHostId, gNodeParamTypeMap[this->mProperty.type]);
 
 	this->mInited = true;
 
@@ -273,7 +278,7 @@ int32_t ISPNecNode<T1, T2>::Process()
 	BZCtrl *ctl = static_cast<BZCtrl*>(this->pCtrl);
 	ILOGDL("%s:Buffer(in:%p out:%p)", this->mProperty.name, ctl->pSrc, ctl->pDst);
 	rt = InterfaceWrapper::GetInstance()->AlgProcess(this->mHostId,
-			gNodeTypeMap[this->mProperty.type],
+			gNodeParamTypeMap[this->mProperty.type],
 			this->pCtrl);
 	if (!SUCCESS(rt)) {
 		ILOGE("Failed to set ctrl at %s", this->mProperty.name);
@@ -861,9 +866,6 @@ int32_t ISPList<T1, T2, T3, T4>::CreatePostList()
 		newNodeType = PostListConfigure[i];
 		FindNodePropertyIndex(newNodeType, &nodePropertyIndex);
 		if (nodePropertyIndex < 0) {
-			if (i == 0) { /* TODO[M]: Change this special logic */
-				continue;
-			}
 			rt = ISP_FAILED;
 			ILOGE("Not find node type:%d i:%d", newNodeType, i);
 			return rt;
@@ -1301,7 +1303,7 @@ int32_t ISPList<T1, T2, T3, T4>::NotifyNodeByType(int32_t type, NotifyData data)
 	if (type < BZ_PARAM_TYPE_RAW2RGB) {
 		ISPNode<T1, T1>* pRawNode = mRawHead->pNext;
 		while (pRawNode) {
-			if (type == gNodeTypeMap[pRawNode->GetProperty().type])
+			if (type == gNodeParamTypeMap[pRawNode->GetProperty().type])
 			{
 				pRawNode->Notify(data);
 				needFind = false;
@@ -1312,7 +1314,7 @@ int32_t ISPList<T1, T2, T3, T4>::NotifyNodeByType(int32_t type, NotifyData data)
 		if (needFind) {
 			ISPNode<T2, T2>* pRgbNode = mRgbHead->pNext;
 			while (pRgbNode) {
-				if (type == gNodeTypeMap[pRgbNode->GetProperty().type])
+				if (type == gNodeParamTypeMap[pRgbNode->GetProperty().type])
 				{
 					pRgbNode->Notify(data);
 					needFind = false;
@@ -1324,7 +1326,7 @@ int32_t ISPList<T1, T2, T3, T4>::NotifyNodeByType(int32_t type, NotifyData data)
 		if (needFind) {
 			ISPNode<T3, T3>* pYuvNode = mYuvHead->pNext;
 			while (pYuvNode) {
-				if (type == gNodeTypeMap[pYuvNode->GetProperty().type])
+				if (type == gNodeParamTypeMap[pYuvNode->GetProperty().type])
 				{
 					pYuvNode->Notify(data);
 					needFind = false;
@@ -1336,7 +1338,7 @@ int32_t ISPList<T1, T2, T3, T4>::NotifyNodeByType(int32_t type, NotifyData data)
 		if (needFind) {
 			ISPNode<T4, T4>* pPostNode = mPostHead->pNext;
 			while (pPostNode) {
-				if (type == gNodeTypeMap[pPostNode->GetProperty().type])
+				if (type == gNodeParamTypeMap[pPostNode->GetProperty().type])
 				{
 					pPostNode->Notify(data);
 					needFind = false;
@@ -1346,13 +1348,13 @@ int32_t ISPList<T1, T2, T3, T4>::NotifyNodeByType(int32_t type, NotifyData data)
 			}
 		}
 	} else {
-		if (type == gNodeTypeMap[NEC_PROCESS_HEAD]) {
+		if (type == gNodeParamTypeMap[NEC_PROCESS_HEAD]) {
 			rt = mRawHead->Notify(data);
-		} else if (type == gNodeTypeMap[NEC_PROCESS_CST_RAW2RGB]) {
+		} else if (type == gNodeParamTypeMap[NEC_PROCESS_CST_RAW2RGB]) {
 			rt = mRgbHead->Notify(data);
-		} else if (type == gNodeTypeMap[NEC_PROCESS_CST_RGB2YUV]) {
+		} else if (type == gNodeParamTypeMap[NEC_PROCESS_CST_RGB2YUV]) {
 			rt = mYuvHead->Notify(data);
-		} else if (type == gNodeTypeMap[NEC_PROCESS_CST_YUV2RGB]) {
+		} else if (type == gNodeParamTypeMap[NEC_PROCESS_CST_YUV2RGB]) {
 			rt = mPostHead->Notify(data);
 		}
 	}

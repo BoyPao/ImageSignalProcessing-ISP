@@ -120,12 +120,12 @@ int32_t ImgShow(void *data, size_t w, size_t h)
 #endif
 
 	if (supportWin) {
-		int32_t pixelNum = w * h;
 		int32_t showSizex = 0, showSizey = 0;
 		showSizey = winSizey * 2 / 3;
 		showSizex = showSizey * w / h;
 		ILOGDC("Display size(%dx%d)", showSizex, showSizey);
 #if DBG_OPENCV_ON
+		int32_t pixelNum = w * h;
 		Mat img = Mat(h, w, CV_8UC3, Scalar(0, 0, 0));
 		for (size_t row = 0; row < h; row++) {
 			for (size_t col = 0; col < w; col++) {
@@ -277,10 +277,6 @@ void* CoreFunc(void)
 				return NULL;
 			}
 		}
-	}
-
-	if (!SUCCESS(FileManager::GetInstance()->SaveImgData((uint8_t*)postData))) {
-		return NULL;
 	}
 
 	if (mediaInfo.type >= VIDEO_MEDIA && mediaInfo.type < MEDIA_TYPE_NUM) {
