@@ -35,3 +35,7 @@ enum BZResult {
 	BZ_SUCCESS = 0,
 	BZ_SKIP = 1
 };
+
+#if !DBG_OPENCV_ON
+typedef unsigned char uchar;
+#endif

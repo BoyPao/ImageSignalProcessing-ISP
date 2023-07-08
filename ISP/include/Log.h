@@ -17,7 +17,7 @@
 #define LOG_BUFFER_TIME_SIZE		24		/* 24 char "xxxx-xx-xx xx:xx:xx:xxx " */
 #define LOG_BUFFER_LEFT_SIZE		LOG_BUFFER_SIZE - LOG_BUFFER_PERSERVE_SIZE - LOG_BUFFER_TIME_SIZE - sizeof(long long int)
 
-void LogBase(const char* str, ...);
+int32_t LogBase(const char* str, ...);
 void LogAddInfo(bool needExtInfo, const char* str, va_list va);
 void LogPrint(const char* str, va_list va);
 
@@ -49,20 +49,20 @@ enum ISPDbgMask {
 
 #define LOG_MODULE "ISP "
 
-#define ISPLogError(on, str, ...)		((on) ?											\
-		({LogBase(LOG_MODULE "E" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__); (0);})	\
+#define ISPLogError(on, str, ...)		((on) ?								\
+		LogBase(LOG_MODULE "E" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__) \
 		: (0))
 
-#define ISPLogWarn(on, str, ...)		((on) ?											\
-		({LogBase(LOG_MODULE "W" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__); (0);})	\
+#define ISPLogWarn(on, str, ...)		((on) ?								\
+		LogBase(LOG_MODULE "W" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__) \
 		: (0))
 
-#define ISPLogInfo(on, str, ...)		((on) ?											\
-		({LogBase(LOG_MODULE "I" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__); (0);})	\
+#define ISPLogInfo(on, str, ...)		((on) ?								\
+		LogBase(LOG_MODULE "I" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__) \
 		: (0))
 
-#define ISPLogDebug(on, str, ...)		((on) ?											\
-		({LogBase(LOG_MODULE "D" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__); (0);})	\
+#define ISPLogDebug(on, str, ...)		((on) ?								\
+		LogBase(LOG_MODULE "D" LOG_FORMAT str LOG_FMT_PARAM, ##__VA_ARGS__) \
 		: (0))
 
 #define ILOGE(str, ...)	((LOG_ON) ? ISPLogError((LOG_LEVEL & LOG_ERROR_MASK), str, ##__VA_ARGS__) : (0))
@@ -70,9 +70,9 @@ enum ISPDbgMask {
 #define ILOGI(str, ...)	((LOG_ON) ? ISPLogInfo((LOG_LEVEL & LOG_INFO_MASK), str, ##__VA_ARGS__) : (0))
 #define ILOGD(str, ...)	((LOG_ON) ? ISPLogDebug((LOG_LEVEL & LOG_DEBUG_MASK), str, ##__VA_ARGS__) : (0))
 
-#define ILOGDC(str, ...)	((DBG_LEVEL & DBG_CORE_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
-#define ILOGDF(str, ...)	((DBG_LEVEL & DBG_FILE_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
-#define ILOGDL(str, ...)	((DBG_LEVEL & DBG_LIST_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
-#define ILOGDI(str, ...)	((DBG_LEVEL & DBG_INTF_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
-#define ILOGDM(str, ...)	((DBG_LEVEL & DBG_MEMY_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
-#define ILOGDP(str, ...)	((DBG_LEVEL & DBG_PARM_MASK) ? ({ILOGD(str, ##__VA_ARGS__); (0);}) : (0))
+#define ILOGDC(str, ...)	((DBG_LEVEL & DBG_CORE_MASK) ? ILOGD(str, ##__VA_ARGS__) : (0))
+#define ILOGDF(str, ...)	((DBG_LEVEL & DBG_FILE_MASK) ? ILOGD(str, ##__VA_ARGS__) : (0))
+#define ILOGDL(str, ...)	((DBG_LEVEL & DBG_LIST_MASK) ? ILOGD(str, ##__VA_ARGS__) : (0))
+#define ILOGDI(str, ...)	((DBG_LEVEL & DBG_INTF_MASK) ? ILOGD(str, ##__VA_ARGS__) : (0))
+#define ILOGDM(str, ...)	((DBG_LEVEL & DBG_MEMY_MASK) ? ILOGD(str, ##__VA_ARGS__) : (0))
+#define ILOGDP(str, ...)	((DBG_LEVEL & DBG_PARM_MASK) ? ILOGD(str, ##__VA_ARGS__) : (0))

@@ -34,7 +34,7 @@
 #define SUB_VERSION 1
 
 #if !DBG_OPENCV_ON
-typedef u_char uchar;
+typedef unsigned char uchar;
 #endif
 #define MEM_T uchar
 #define TO_SIZE_T(s) ((s) % sizeof(MEM_T)) ? \

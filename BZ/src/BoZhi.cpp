@@ -77,7 +77,7 @@ void* WrapAlloc(size_t size, size_t num)
 	if (BoZhi::GetInstance()->GetCallbacks()->UtilsFuncs.Alloc) {
 		return BoZhi::GetInstance()->GetCallbacks()->UtilsFuncs.Alloc(size * num);
 	} else {
-		return (void*) new u_char[size * num];
+		return (void*) new uchar[size * num];
 	}
 }
 
@@ -91,7 +91,7 @@ void* WrapFree(void* pBuf)
 	if (BoZhi::GetInstance()->GetCallbacks()->UtilsFuncs.Free) {
 		return BoZhi::GetInstance()->GetCallbacks()->UtilsFuncs.Free(pBuf);
 	} else {
-		delete[] static_cast<u_char*>(pBuf);
+		delete[] static_cast<uchar*>(pBuf);
 		pBuf = NULL;
 	}
 

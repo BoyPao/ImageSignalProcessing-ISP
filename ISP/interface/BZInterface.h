@@ -113,7 +113,7 @@ struct BZParam {
 };
 
 struct ISPUtilsFuncs {
-	void (*Log) (const char* str, ...);
+	int32_t (*Log) (const char* str, ...);
 	void (*DumpDataInt) (void* pData, ...);
 	void* (*Alloc) (size_t size, ...);
 	void* (*Free) (void* pBuf, ...);

@@ -85,7 +85,6 @@ int32_t ISPParamManager::CreateParam(int32_t hostId, int32_t settingId)
 		mActiveParamList.push_back(paramInfo);
 	}
 
-
 	return rt;
 }
 

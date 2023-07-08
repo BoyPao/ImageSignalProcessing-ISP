@@ -18,8 +18,6 @@
 #include "opencv2/photo.hpp"
 
 using namespace cv;
-#else
-typedef u_char uchar;
 #endif
 
 using namespace std;

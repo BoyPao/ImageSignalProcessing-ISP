@@ -10,7 +10,7 @@
 
 #define LOG_NEED_EXT_INFO true
 
-void LogBase(const char* str, ...)
+int32_t LogBase(const char* str, ...)
 {
 	bool needExtInfo = LOG_NEED_EXT_INFO;
 
@@ -18,6 +18,8 @@ void LogBase(const char* str, ...)
 	va_start(va, str);
 	LogAddInfo(needExtInfo, str, va);
 	va_end(va);
+
+	return 0;
 }
 
 void LogAddInfo(bool needExtInfo, const char* str, va_list va)
